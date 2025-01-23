@@ -1,0 +1,34 @@
+{
+  "name": "harmony",
+  "version": "1.0.0",
+  "main": "src/main/main.js",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development vite & cross-env NODE_ENV=development electron .",
+    "build": "vite build",
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CadenBPurdue/harmony.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CadenBPurdue/harmony/issues"
+  },
+  "homepage": "https://github.com/CadenBPurdue/harmony#readme",
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/material": "^6.4.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "cross-env": "^7.0.3",
+    "electron": "^34.0.1",
+    "vite": "^6.0.11"
+  }
+}
