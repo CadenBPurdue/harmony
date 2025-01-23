@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development vite & cross-env NODE_ENV=development electron .",
     "build": "vite build",
-    "start": "electron ."
+    "start": "electron .",
+    "test": "vitest"
   },
   "repository": {
     "type": "git",
@@ -26,9 +27,12 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
     "@vitejs/plugin-react": "^4.3.4",
     "cross-env": "^7.0.3",
     "electron": "^34.0.1",
-    "vite": "^6.0.11"
+    "vite": "^6.0.11",
+    "vitest": "^3.0.3"
   }
 }
