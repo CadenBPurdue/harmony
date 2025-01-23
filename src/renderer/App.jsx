@@ -10,7 +10,7 @@ function App() {
   return (
     <Container>
       <Typography variant="h4" sx={{ mt: 4, mb: 2 }}>
-        Welcome to Harmony
+        Welcome to Harmony!
       </Typography>
       <Typography variant="subtitle1" sx={{ mb: 4 }}>
         Authors: Adam Kahl, Caden Brennan, Ethan Burmane
