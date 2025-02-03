@@ -13,6 +13,7 @@ jobs:
       matrix:
         os: 
           - macos-latest
+          - ubuntu-latest
         arch:
           - x64
           - arm64
@@ -43,6 +44,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist_electron/*-${{ matrix.arch }}.dmg
+            dist_electron/*.dmg
+            dist_electron/*.tar.gz
+            dist_electron/*.deb
+            dist_electron/*.exe
+            dist_electron/*.msi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

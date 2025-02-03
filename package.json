@@ -55,6 +55,10 @@
       "target": ["dmg"],
       "category": "public.app-category.productivity"
     },
+    "linux": {
+      "target": ["deb", "snap"],
+      "category": "AudioVideo"
+    },
     "publish": [
       {
         "provider": "github",
