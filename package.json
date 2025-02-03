@@ -54,9 +54,6 @@
     },
     "mac": {
       "target": ["dmg"],
-      "dmg": {
-        "blockMap": false
-      },
       "category": "public.app-category.productivity"
     },
     "linux": {
