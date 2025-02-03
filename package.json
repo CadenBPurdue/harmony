@@ -61,8 +61,7 @@
       "category": "AudioVideo"
     },
     "win": {
-      "target": ["nsis"],
-      "category": "AudioVideo"
+      "target": ["nsis"]
     },
     "publish": null
   }
