@@ -45,9 +45,10 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dist_electron/*.dmg
-            dist_electron/*.deb
-            dist_electron/*.exe
+            draft: false # Set to true to create a draft (unpublished) release
+            files: |
+                dist_electron/*.dmg
+                dist_electron/*.deb
+                dist_electron/*.exe
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
