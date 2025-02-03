@@ -1,6 +1,7 @@
 {
   "name": "harmony",
-  "version": "1.0.0",
+  "version": "0.0.1",
+  "description": "A music playlist sharing application",
   "main": "src/main/main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development vite & cross-env NODE_ENV=development electron .",
@@ -34,10 +35,10 @@
     "@vitejs/plugin-react": "^4.3.4",
     "cross-env": "^7.0.3",
     "electron": "^34.0.1",
+    "electron-builder": "^25.1.8",
     "vite": "^6.0.11",
     "vitest": "^3.0.3"
   },
-
   "build": {
     "appId": "harmony",
     "productName": "Harmony",
@@ -50,15 +51,11 @@
       "buildResources": "assets",
       "output": "dist_electron"
     },
-    "extraResources": [
-      {
-        "from": "resources/",
-        "to": "resources/",
-        "filter": ["**/*"]
-      }
-    ],
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "category": "public.app-category.productivity"
     },
     "publish": [
