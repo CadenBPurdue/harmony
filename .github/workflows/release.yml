@@ -36,6 +36,8 @@ jobs:
 
       - name: Generate binaries
         run: npm run electron:build -- --${{ matrix.arch }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
