@@ -6,7 +6,8 @@
     "dev": "cross-env NODE_ENV=development vite & cross-env NODE_ENV=development electron .",
     "build": "vite build",
     "start": "electron .",
-    "test": "vitest"
+    "test": "vitest",
+    "electron:build": "electron-builder"
   },
   "repository": {
     "type": "git",
@@ -27,6 +28,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@electron-forge/publisher-github": "^7.6.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@vitejs/plugin-react": "^4.3.4",
@@ -34,5 +36,37 @@
     "electron": "^34.0.1",
     "vite": "^6.0.11",
     "vitest": "^3.0.3"
+  },
+
+  "build": {
+    "appId": "harmony",
+    "productName": "Harmony",
+    "files": [
+      "dist/**/*",
+      "src/main/main.js",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "assets",
+      "output": "dist_electron"
+    },
+    "extraResources": [
+      {
+        "from": "resources/",
+        "to": "resources/",
+        "filter": ["**/*"]
+      }
+    ],
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.productivity"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "CadenBPurdue",
+        "repo": "harmony"
+      }
+    ]
   }
 }
