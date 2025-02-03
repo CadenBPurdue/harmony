@@ -42,7 +42,7 @@
   "build": {
     "appId": "harmony",
     "artifactName": "${productName}-${version}-${os}-${arch}",
-    "productName": "Harmony",
+    "productName": "harmony",
     "files": [
       "dist/**/*",
       "src/main/main.js",
