@@ -48,5 +48,6 @@ jobs:
           files: |
             dist_electron/*.dmg
             dist_electron/*.deb
+            dist_electron/*.exe
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
