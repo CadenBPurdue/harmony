@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest]
-        arch: [x64]
+        arch: [x64, arm64]
 
     runs-on: ${{ matrix.os }}
 
@@ -47,9 +47,6 @@ jobs:
         with:
           files: |
             dist_electron/*.dmg
-            dist_electron/*.tar.gz
             dist_electron/*.deb
-            dist_electron/*.exe
-            dist_electron/*.msi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

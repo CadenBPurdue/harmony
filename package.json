@@ -41,6 +41,7 @@
   },
   "build": {
     "appId": "harmony",
+    "artifactName": "${productName}-${version}-${os}-${arch}",
     "productName": "Harmony",
     "files": [
       "dist/**/*",
