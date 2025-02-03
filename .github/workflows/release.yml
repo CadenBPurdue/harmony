@@ -38,7 +38,7 @@ jobs:
           sudo snap install snapcraft --classic
         
       - name: Package app
-        run: npm run electron:build -- --${{ matrix.arch }}
+        run: npm run electron:build:${{ matrix.arch }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

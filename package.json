@@ -9,7 +9,8 @@
     "build": "vite build",
     "start": "electron .",
     "test": "vitest",
-    "electron:build": "electron-builder"
+    "electron:build:arm64": "electron-builder --arm64",
+    "electron:build:x64": "electron-builder --x64"
   },
   "repository": {
     "type": "git",
