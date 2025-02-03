@@ -2,6 +2,7 @@
   "name": "harmony",
   "version": "0.0.1",
   "description": "A music playlist sharing application",
+  "author": "Adam Kahl <akahl@purdue.edu>",
   "main": "src/main/main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development vite & cross-env NODE_ENV=development electron .",
@@ -15,7 +16,6 @@
     "url": "git+https://github.com/CadenBPurdue/harmony.git"
   },
   "keywords": [],
-  "author": "",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/CadenBPurdue/harmony/issues"
