@@ -11,7 +11,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        os: [macos-latest]
+        os: [macos-latest, ubuntu-latest]
         arch: [x64, arm64]
 
     runs-on: ${{ matrix.os }}
