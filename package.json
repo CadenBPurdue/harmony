@@ -60,6 +60,10 @@
       "target": ["deb"],
       "category": "AudioVideo"
     },
+    "win": {
+      "target": ["nsis"],
+      "category": "AudioVideo"
+    },
     "publish": null
   }
 }
