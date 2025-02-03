@@ -2,3 +2,5 @@ node_modules
 build
 dist
 dist_electron
+.vscode
+.DS_Store

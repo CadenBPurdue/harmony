@@ -52,10 +52,7 @@
       "output": "dist_electron"
     },
     "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ],
+      "target": ["dmg"],
       "category": "public.app-category.productivity"
     },
     "publish": [

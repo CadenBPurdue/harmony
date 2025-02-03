@@ -16,13 +16,12 @@ function createWindow() {
   });
 
   // Load your React app (Vite dev server in development, or index.html in production)
-  // if (process.env.NODE_ENV === 'development') {
-  //   mainWindow.loadURL('http://localhost:5173'); 
-  // } else {
-  //   // In production, load the local index.html file
-  //   mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
-  // }
-  mainWindow.loadURL('http://localhost:5173'); 
+  if (process.env.NODE_ENV === 'development') {
+    mainWindow.loadURL('http://localhost:5173'); 
+  } else {
+    // In production, load the local index.html file
+    mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
+  }
 }
 
 app.whenReady().then(() => {

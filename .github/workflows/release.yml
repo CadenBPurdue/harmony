@@ -7,11 +7,17 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     strategy:
       matrix:
-        os: [macos-latest]
+        os: 
+          - macos-latest
+        arch:
+          - x64
+          - arm64
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout repository
@@ -25,13 +31,16 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build Electron app
-        run: npm run electron:build
+      - name: Build electron
+        run: npm run build -- --arch=${{ matrix.arch }}
+
+      - name: Generate binaries
+        run: npm run electron:build -- --arch=${{ matrix.arch }}
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/*.dmg
+            dist_electron/*-${{ matrix.arch }}.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
