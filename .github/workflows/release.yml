@@ -14,9 +14,6 @@ jobs:
         os: 
           - macos-latest
           - ubuntu-latest
-        arch:
-          - x64
-          - arm64
 
     runs-on: ${{ matrix.os }}
 
@@ -42,7 +39,7 @@ jobs:
           sudo snap install snapcraft --classic
         
       - name: Generate binaries
-        run: npm run electron:build -- --${{ matrix.arch }}
+        run: npm run electron:build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
