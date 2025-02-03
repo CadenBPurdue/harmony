@@ -38,7 +38,8 @@ jobs:
       - if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y snapcraft
+          sudo apt-get install -y snapd
+          sudo snap install snapcraft --classic
         
       - name: Generate binaries
         run: npm run electron:build -- --${{ matrix.arch }}
