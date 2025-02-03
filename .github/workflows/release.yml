@@ -35,6 +35,9 @@ jobs:
       - name: Build electron
         run: npm run build
 
+      - if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y snapcraft
+        
       - name: Generate binaries
         run: npm run electron:build -- --${{ matrix.arch }}
         env:
