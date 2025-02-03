@@ -11,9 +11,8 @@ jobs:
       contents: write
     strategy:
       matrix:
-        os: 
-          - macos-latest
-          - ubuntu-latest
+        os: [macos-latest]
+        arch: [x64]
 
     runs-on: ${{ matrix.os }}
 
@@ -29,7 +28,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build electron
+      - name: Build app
         run: npm run build
 
       - if: matrix.os == 'ubuntu-latest'
@@ -38,8 +37,8 @@ jobs:
           sudo apt-get install -y snapd
           sudo snap install snapcraft --classic
         
-      - name: Generate binaries
-        run: npm run electron:build
+      - name: Package app
+        run: npm run electron:build -- --${{ matrix.arch }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
