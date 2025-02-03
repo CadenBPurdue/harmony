@@ -54,18 +54,15 @@
     },
     "mac": {
       "target": ["dmg"],
+      "dmg": {
+        "blockMap": false
+      },
       "category": "public.app-category.productivity"
     },
     "linux": {
       "target": ["deb"],
       "category": "AudioVideo"
     },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "CadenBPurdue",
-        "repo": "harmony"
-      }
-    ]
+    "publish": null
   }
 }
