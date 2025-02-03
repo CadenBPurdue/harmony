@@ -32,7 +32,7 @@ jobs:
         run: npm install
 
       - name: Build electron
-        run: npm run build -- --arch=${{ matrix.arch }}
+        run: npm run build
 
       - name: Generate binaries
         run: npm run electron:build -- --arch=${{ matrix.arch }}
