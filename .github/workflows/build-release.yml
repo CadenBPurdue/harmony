@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - 'v*.*.*' # Trigger only on version tags like v1.0.0
-    branches:
-      - main
 
 jobs:
   build:
@@ -30,6 +28,16 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Verify tag matches version
+        id: verify_version
+        run: |
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "Tag version ($TAG_VERSION) does not match package.json version ($PACKAGE_VERSION)"
+            exit 1
+          fi
+
       - name: Build app
         run: npm run build
 
@@ -47,7 +55,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-            draft: false # Set to true to create a draft (unpublished) release
+            draft: true # Set to true to create a draft (unpublished) release
             files: |
                 dist_electron/*.dmg
                 dist_electron/*.deb
