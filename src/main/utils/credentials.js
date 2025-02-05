@@ -5,7 +5,7 @@ class CredentialsManager {
   constructor() {
     const credentials = {
       spotifyClientId: '3852c03c669e46dd93e28ee6d4bd15c4',
-      spotifyClientSecret: '5bccdf4f5f95455ab2cb604cb5511a56',
+      spotifyClientSecret: 'key',
       appleKeyId: 'your_apple_key_id',
       appleTeamId: 'your_apple_team_id'
     };
