@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - 'v*.*.*' # Trigger only on version tags like v1.0.0
-    branches:
-      - main
 
 jobs:
   build:
@@ -47,7 +45,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-            draft: false # Set to true to create a draft (unpublished) release
+            draft: true # Set to true to create a draft (unpublished) release
             files: |
                 dist_electron/*.dmg
                 dist_electron/*.deb
