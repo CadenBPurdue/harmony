@@ -27,7 +27,9 @@
     "@emotion/styled": "^11.14.0",
     "@mui/material": "^6.4.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "jsonwebtoken": "^9.0.0",
+    "node-fetch": "^3.3.0"
   },
   "devDependencies": {
     "@electron-forge/publisher-github": "^7.6.1",
@@ -47,6 +49,7 @@
     "files": [
       "dist/**/*",
       "src/main/main.js",
+      "src/main/preload.js",
       "package.json"
     ],
     "directories": {

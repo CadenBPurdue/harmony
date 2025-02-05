@@ -1,41 +1,85 @@
 // src/main/main.js
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain, protocol, session } = require('electron');
 const path = require('path');
+const { authManager } = require('./utils/auth_manager');
 
 function createWindow() {
+  // Set CSP headers for main window
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'self' 'unsafe-inline'; connect-src 'self' https://accounts.spotify.com"]
+      }
+    });
+  });
+
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      // The preload file if you use it
-      preload: path.join(__dirname, '../preload/preload.js'),
-      nodeIntegration: false, // generally good practice for security
-      contextIsolation: true, // recommended for security
-    },
-    name: 'mainWindow'
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: true
+    }
   });
 
-  // Load your React app (Vite dev server in development, or index.html in production)
+  ipcMain.handle('auth:spotify', async () => {
+    try {
+      console.log('Initiating Spotify auth...');
+      const result = await authManager.initiateSpotifyAuth();
+      console.log('Spotify auth result:', result);
+      return result;
+    } catch (error) {
+      console.error('Spotify auth error:', error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle('auth:status', () => {
+    return authManager.getAuthStatus();
+  });
+
   if (process.env.NODE_ENV === 'development') {
-    mainWindow.loadURL('http://localhost:5173'); 
+    mainWindow.loadURL('http://localhost:5173');
   } else {
-    // In production, load the local index.html file
     mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
   }
+
+  return mainWindow;
 }
 
-app.whenReady().then(() => {
-  createWindow();
+let mainWindow = null;
 
-  app.on('activate', function() {
-    // On macOS it's common to re-create a window if the dock icon is clicked and no other
-    // windows are open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+app.whenReady().then(() => {
+  // Register protocol
+  if (!app.isDefaultProtocolClient('harmony')) {
+    app.setAsDefaultProtocolClient('harmony');
+  }
+
+  protocol.registerHttpProtocol('harmony', (request, callback) => {
+    const url = request.url;
+    console.log('Protocol handler received URL:', url);
   });
+
+  mainWindow = createWindow();
 });
 
-// Quit when all windows are closed.
-app.on('window-all-closed', function() {
-  // On macOS, apps typically stay active until user explicitly quits.
-  if (process.platform !== 'darwin') app.quit();
+// Handle the protocol on macOS
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  console.log('Received URL on macOS:', url);
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    mainWindow = createWindow();
+  }
 });
