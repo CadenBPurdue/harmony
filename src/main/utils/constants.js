@@ -4,21 +4,20 @@ const { credentialsManager } = require('./credentials');
 const getAuthConstants = () => {
   const credentials = credentialsManager.getCredentials();
   
-  // Use the appropriate redirect URI based on environment
-  const redirectUri = process.env.NODE_ENV === 'development' 
-    ? 'http://localhost:5173/callback'
-    : 'http://localhost:3000/callback';
+  const redirectUri = 'http://localhost:8888/callback';
 
   return {
     SPOTIFY: {
       CLIENT_ID: credentials.spotifyClientId,
+      CLIENT_SECRET: credentials.spotifyClientSecret,
       REDIRECT_URI: redirectUri,
-      SCOPES: ['user-read-private', 'playlist-read-private', 'playlist-modify-public']
-    },
-    APPLE_MUSIC: {
-      KEY_ID: credentials.appleKeyId,
-      TEAM_ID: credentials.appleTeamId,
-      REDIRECT_URI: redirectUri
+      SCOPES: [
+        'user-read-private',
+        'user-read-email',
+        'playlist-read-private',
+        'playlist-modify-public',
+        'playlist-modify-private'
+      ]
     }
   };
 };
