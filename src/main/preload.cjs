@@ -1,5 +1,5 @@
 // src/main/preload.js
-import { contextBridge, ipcRenderer } from "electron";
+const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("electronAPI", {
   connectSpotify: () => ipcRenderer.invoke("auth:spotify"),

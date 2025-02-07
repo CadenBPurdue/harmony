@@ -1,8 +1,8 @@
 // src/main/utils/constants.js
-import { credentialsManager } from "./credentials";
+import { getCredentials } from "./credentials.js";
 
-const getAuthConstants = () => {
-  const credentials = credentialsManager.getCredentials();
+export const getAuthConstants = () => {
+  const credentials = getCredentials();
 
   const redirectUri = "http://localhost:8888/callback";
 
@@ -21,5 +21,3 @@ const getAuthConstants = () => {
     },
   };
 };
-
-export default { getAuthConstants };

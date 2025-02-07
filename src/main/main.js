@@ -1,7 +1,11 @@
 // src/main/main.js
 import path from "path";
+import { fileURLToPath } from "url";
 import { app, BrowserWindow, ipcMain, protocol, session } from "electron";
-import { authManager } from "./utils/auth_manager.js";
+import { initiateSpotifyAuth, getAuthStatus } from "./utils/auth_manager.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Declare mainWindow in the outer scope
 let mainWindow;
@@ -26,7 +30,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "preload.cjs"),
       webSecurity: true,
     },
   });
@@ -34,7 +38,7 @@ function createWindow() {
   ipcMain.handle("auth:spotify", async () => {
     try {
       console.log("Initiating Spotify auth...");
-      const result = await authManager.initiateSpotifyAuth();
+      const result = await initiateSpotifyAuth();
       console.log("Spotify auth result:", result);
       return result;
     } catch (error) {
@@ -44,7 +48,7 @@ function createWindow() {
   });
 
   ipcMain.handle("auth:status", () => {
-    return authManager.getAuthStatus();
+    return getAuthStatus();
   });
 
   if (process.env.NODE_ENV === "development") {
