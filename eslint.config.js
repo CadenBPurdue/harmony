@@ -1,4 +1,4 @@
-import pluginJs from "@eslint/js";
+import babelParser from "@babel/eslint-parser";
 import pluginImport from "eslint-plugin-import";
 import pluginPrettier from "eslint-plugin-prettier";
 import pluginReact from "eslint-plugin-react";
@@ -8,12 +8,29 @@ import globals from "globals";
 export default [
   {
     files: ["**/*.{js,mjs,cjs,jsx}"],
-    ignores: [".vscode/**", "dist/**", "dist_electron/**", "node_modules/**"],
-  },
-  {
+    ignores: [
+      ".vscode/**",
+      "dist/**",
+      "dist_electron/**",
+      "node_modules/**",
+      ".github/**",
+    ],
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
-      sourceType: "module", // Enforce ESM
+      ecmaVersion: "latest",
+      sourceType: "module",
+      parser: babelParser, // Use Babel parser for JSX support
+      parserOptions: {
+        requireConfigFile: false, // Allow parsing without a Babel config
+        babelOptions: {
+          presets: ["@babel/preset-react"], // Ensure React preset is used
+        },
+      },
+    },
+    plugins: {
+      import: pluginImport,
+      prettier: pluginPrettier,
+      react: pluginReact,
     },
     rules: {
       "import/no-commonjs": "error",
@@ -23,24 +40,24 @@ export default [
         "error",
         { alphabetize: { order: "asc", caseInsensitive: true } },
       ],
+      "prettier/prettier": "warn",
+      "react/jsx-uses-react": "error",
+      "react/jsx-uses-vars": "error",
     },
-  },
-  pluginJs.configs.recommended,
-  {
-    ...pluginReact.configs.flat.recommended,
     settings: {
-      react: {
-        version: "detect", // Automatically detect the react version
-      },
+      react: { version: "detect" },
     },
   },
   {
-    plugins: {
-      import: pluginImport,
-      prettier: pluginPrettier,
+    // Override for CommonJS files like preload.cjs
+    files: ["**/preload.cjs"],
+    languageOptions: {
+      sourceType: "script", // Set to "script" for CommonJS files
     },
     rules: {
-      "prettier/prettier": "warn",
+      "import/no-commonjs": "off", // Disable "no-commonjs" for preload.cjs
+      "no-undef": "off", // Allow undefined variables in CommonJS
+      "import/no-import-module-exports": "off", // Disable this rule for CommonJS files
     },
   },
 ];
