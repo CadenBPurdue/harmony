@@ -21,13 +21,13 @@ jobs:
         - name: Install dependencies
           run: npm install
 
-        - name: Run linter and fix issues
-          run: npm run lint -- --fix
+        - name: Run linter and try to fix issues
+          run: npm run lint:fix
 
         - name: Commit changes
           run: |
             git config --local user.name "GitHub Action"
             git config --local user.email "action@github.com"
-            git diff --exit-code || (git add . && git commit -m "Auto-format code using Black" && git push)
+            git diff --exit-code || (git add . && git commit -m "Auto-format code using ESlint" && git push)
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
