@@ -37,6 +37,7 @@ jobs:
             echo "Tag version ($TAG_VERSION) does not match package.json version ($PACKAGE_VERSION)"
             exit 1
           fi
+        shell: bash
 
       - name: Build app
         run: npm run build
