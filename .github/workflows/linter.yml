@@ -1,0 +1,33 @@
+name: Lint Code
+
+on: 
+    push:
+        branches:
+            - '**'
+
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+
+        steps:
+        - name: Checkout code
+          uses: actions/checkout@v2
+
+        - name: Set up Node.js
+          uses: actions/setup-node@v2
+          with:
+            node-version: '14'
+
+        - name: Install dependencies
+          run: npm install
+
+        - name: Run linter and fix issues
+          run: npm run lint -- --fix
+
+        - name: Commit changes
+          run: |
+            git config --local user.name "GitHub Action"
+            git config --local user.email "action@github.com"
+            git diff --exit-code || (git add . && git commit -m "Auto-format code using Black" && git push)
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
