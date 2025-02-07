@@ -1,10 +1,10 @@
 // src/main/utils/constants.js
-const { credentialsManager } = require('./credentials');
+import { credentialsManager } from "./credentials";
 
 const getAuthConstants = () => {
   const credentials = credentialsManager.getCredentials();
-  
-  const redirectUri = 'http://localhost:8888/callback';
+
+  const redirectUri = "http://localhost:8888/callback";
 
   return {
     SPOTIFY: {
@@ -12,14 +12,14 @@ const getAuthConstants = () => {
       CLIENT_SECRET: credentials.spotifyClientSecret,
       REDIRECT_URI: redirectUri,
       SCOPES: [
-        'user-read-private',
-        'user-read-email',
-        'playlist-read-private',
-        'playlist-modify-public',
-        'playlist-modify-private'
-      ]
-    }
+        "user-read-private",
+        "user-read-email",
+        "playlist-read-private",
+        "playlist-modify-public",
+        "playlist-modify-private",
+      ],
+    },
   };
 };
 
-module.exports = { getAuthConstants };
+export default { getAuthConstants };

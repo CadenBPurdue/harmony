@@ -1,10 +1,7 @@
 // src/main/preload.js
-const { contextBridge, ipcRenderer } = require('electron');
+import { contextBridge, ipcRenderer } from "electron";
 
-contextBridge.exposeInMainWorld(
-  'electronAPI',
-  {
-    connectSpotify: () => ipcRenderer.invoke('auth:spotify'),
-    getAuthStatus: () => ipcRenderer.invoke('auth:status')
-  }
-);
+contextBridge.exposeInMainWorld("electronAPI", {
+  connectSpotify: () => ipcRenderer.invoke("auth:spotify"),
+  getAuthStatus: () => ipcRenderer.invoke("auth:status"),
+});
