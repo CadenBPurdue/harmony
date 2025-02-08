@@ -4,13 +4,16 @@
   "description": "A music playlist sharing application",
   "author": "Adam Kahl <akahl@purdue.edu>",
   "main": "src/main/main.js",
+  "type": "module",
   "scripts": {
     "dev": "cross-env NODE_ENV=development vite & cross-env NODE_ENV=development electron .",
     "build": "vite build",
     "start": "electron .",
     "test": "vitest",
     "electron:build:arm64": "electron-builder --arm64",
-    "electron:build:x64": "electron-builder --x64"
+    "electron:build:x64": "electron-builder --x64",
+    "lint": "npx eslint .",
+    "lint:fix": "npx eslint . --fix"
   },
   "repository": {
     "type": "git",
@@ -26,19 +29,29 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/material": "^6.4.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "jsonwebtoken": "^9.0.0",
-    "node-fetch": "^3.3.0"
+    "node-fetch": "^3.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@babel/eslint-parser": "^7.26.5",
+    "@babel/preset-react": "^7.26.3",
     "@electron-forge/publisher-github": "^7.6.1",
+    "@eslint/js": "^9.19.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@vitejs/plugin-react": "^4.3.4",
     "cross-env": "^7.0.3",
     "electron": "^34.0.1",
     "electron-builder": "^25.1.8",
+    "eslint": "^9.19.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.2.3",
+    "eslint-plugin-react": "^7.37.4",
+    "globals": "^15.14.0",
+    "prettier": "^3.4.2",
     "vite": "^6.0.11",
     "vitest": "^3.0.3"
   },
@@ -57,15 +70,21 @@
       "output": "dist_electron"
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "category": "public.app-category.productivity"
     },
     "linux": {
-      "target": ["deb"],
+      "target": [
+        "deb"
+      ],
       "category": "AudioVideo"
     },
     "win": {
-      "target": ["nsis"]
+      "target": [
+        "nsis"
+      ]
     },
     "publish": null
   }
