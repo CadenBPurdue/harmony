@@ -1,4 +1,4 @@
-name: Build and (Optionally) Release
+name: Build and Release
 
 on:
   push:
@@ -12,12 +12,27 @@ on:
         default: 'macos-latest,ubuntu-latest,windows-latest'
 
 jobs:
+  generate-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          # Read the input and remove any whitespace
+          INPUT_OS="${{ github.event.inputs.os }}"
+          echo "Received OS input: '$INPUT_OS'"
+          # Convert the comma-separated list into a JSON array.
+          MATRIX=$(echo "[\"$(echo ${INPUT_OS} | sed 's/,/","/g')\"]")
+          echo "Generated matrix: $MATRIX"
+          # New recommended way to set output:
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+
   build:
-    # Use a matrix; if using manual trigger you can process the input
-    # (For brevity, this example simply uses all OS if triggered by a branch push)
+    needs: generate-matrix
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
         arch: [x64, arm64]
     runs-on: ${{ matrix.os }}
 
