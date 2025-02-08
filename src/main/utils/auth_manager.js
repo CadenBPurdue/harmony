@@ -1,362 +1,156 @@
 // src/main/utils/auth_manager.js
-import dotenv from "dotenv";
-import { BrowserWindow } from "electron";
-import fetch from "node-fetch";
+import http from "http";
+import { URL } from "url";
+import { BrowserWindow, session } from "electron";
+import { getAuthConstants } from "./constants.js";
 
-dotenv.config();
+let authWindow = null;
+let isSpotifyAuthenticated = false;
+let spotifyAuthData = null;
+let server = null;
+const serverPort = 8888;
 
-class AuthManager {
-  constructor() {
-    this.spotifyToken = null;
-    this.authWindow = null;
-    console.log("AuthManager initialized");
-  }
+function createCallbackServer(resolve, reject) {
+  return new Promise((serverResolve) => {
+    server = http.createServer((req, res) => {
+      (async () => {
+        try {
+          const urlParams = new URL(req.url, `http://localhost:${serverPort}`);
+          const code = urlParams.searchParams.get("code");
+          const error = urlParams.searchParams.get("error");
 
-  async initiateSpotifyAuth() {
-    console.log("Initiating Spotify auth...");
+          if (error) {
+            console.error("Spotify auth error:", error);
+            res.writeHead(400, { "Content-Type": "text/html" });
+            res.end(
+              "<h1>Authentication failed!</h1><p>You can close this window.</p>",
+            );
+            reject(new Error(`Spotify authentication error: ${error}`));
+            return;
+          }
 
-    const clientId = process.env.SPOTIFY_CLIENT_ID;
-    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+          if (code && urlParams.pathname === "/callback") {
+            console.log("Received Spotify auth code");
+            isSpotifyAuthenticated = true;
+            spotifyAuthData = { code };
 
-    if (!clientId || !clientSecret) {
-      throw new Error("Missing Spotify credentials in environment variables");
-    }
+            res.writeHead(200, { "Content-Type": "text/html" });
+            res.end(
+              "<h1>Authentication successful!</h1><p>You can close this window.</p>",
+            );
 
-    if (this.authWindow) {
-      console.log("Auth window already exists, focusing...");
-      this.authWindow.focus();
-      return;
-    }
+            if (authWindow) {
+              authWindow.close();
+            }
 
-    const redirectUri = "http://localhost:8888/callback";
-    const scope =
-      "user-read-private user-read-email playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private";
-    const state = Math.random().toString(36).substring(2, 15);
+            // Clean up the server
+            server.close(() => {
+              console.log("Callback server closed");
+            });
 
-    const authUrl = new URL("https://accounts.spotify.com/authorize");
-    authUrl.searchParams.append("client_id", clientId);
-    authUrl.searchParams.append("response_type", "code");
-    authUrl.searchParams.append("redirect_uri", redirectUri);
-    authUrl.searchParams.append("scope", scope);
-    authUrl.searchParams.append("show_dialog", "true");
-    authUrl.searchParams.append("state", state);
+            resolve({ success: true, code });
+          }
+        } catch (error) {
+          console.error("Server error:", error);
+          res.writeHead(500, { "Content-Type": "text/html" });
+          res.end("<h1>Server error occurred!</h1><p>Please try again.</p>");
+          reject(error);
+        }
+      })();
+    });
 
-    console.log("Auth URL generated:", authUrl.toString());
+    server.listen(serverPort, "localhost", () => {
+      console.log(`Callback server listening on port ${serverPort}`);
+      serverResolve();
+    });
+
+    server.on("error", (error) => {
+      console.error("Server error:", error);
+      reject(error);
+    });
+  });
+}
+
+export async function initiateSpotifyAuth() {
+  try {
+    const { SPOTIFY } = getAuthConstants();
+    const redirectUri = SPOTIFY.REDIRECT_URI;
 
     return new Promise((resolve, reject) => {
-      try {
-        console.log("Creating auth window...");
-        this.authWindow = new BrowserWindow({
-          width: 800,
-          height: 600,
-          webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
+      createCallbackServer(resolve, reject);
+
+      const partition = `persist:spotify-auth-${Date.now()}`;
+      const authSession = session.fromPartition(partition);
+
+      authSession.webRequest.onHeadersReceived((details, callback) => {
+        callback({
+          responseHeaders: {
+            ...details.responseHeaders,
+            "Access-Control-Allow-Origin": ["*"],
           },
         });
-
-        // Log all navigation events
-        this.authWindow.webContents.on("did-start-loading", () => {
-          console.log("Started loading:", this.authWindow.webContents.getURL());
-        });
-
-        this.authWindow.webContents.on("did-finish-load", () => {
-          console.log(
-            "Finished loading:",
-            this.authWindow.webContents.getURL(),
-          );
-        });
-
-        this.authWindow.webContents.on(
-          "did-fail-load",
-          (event, errorCode, errorDescription) => {
-            console.error("Failed to load:", {
-              errorCode,
-              errorDescription,
-              url: this.authWindow.webContents.getURL(),
-            });
-          },
-        );
-
-        // Handle navigation events
-        this.authWindow.webContents.on("will-navigate", (event, url) => {
-          console.log("Will navigate to:", url);
-          this.handleNavigation(url, state, resolve, reject);
-        });
-
-        this.authWindow.webContents.on("will-redirect", (event, url) => {
-          console.log("Will redirect to:", url);
-          this.handleNavigation(url, state, resolve, reject);
-        });
-
-        // New: Handle page title updates
-        this.authWindow.webContents.on("page-title-updated", (event, title) => {
-          console.log("Page title updated:", title);
-        });
-
-        // New: Log any console messages from the auth window
-        this.authWindow.webContents.on(
-          "console-message",
-          (event, level, message) => {
-            console.log("Auth window console:", message);
-          },
-        );
-
-        this.authWindow.on("closed", () => {
-          console.log("Auth window closed");
-          this.authWindow = null;
-          if (!this.spotifyToken) {
-            reject(new Error("Authentication window was closed"));
-          }
-        });
-
-        console.log("Loading auth URL:", authUrl.toString());
-        this.authWindow.loadURL(authUrl.toString());
-      } catch (error) {
-        console.error("Error in auth window creation:", error);
-        reject(error);
-        this.closeAuthWindow();
-      }
-    });
-  }
-
-  handleNavigation(url, expectedState, resolve, reject) {
-    console.log("Handling navigation to:", url);
-
-    try {
-      if (url.startsWith("http://localhost:8888/callback")) {
-        const urlObj = new URL(url);
-        const code = urlObj.searchParams.get("code");
-        const error = urlObj.searchParams.get("error");
-        const state = urlObj.searchParams.get("state");
-
-        console.log("Callback parameters:", {
-          hasCode: !!code,
-          error: error || "none",
-          stateMatch: state === expectedState,
-        });
-
-        if (error) {
-          throw new Error(`Authentication error: ${error}`);
-        }
-
-        if (state !== expectedState) {
-          throw new Error("State mismatch in callback");
-        }
-
-        if (code) {
-          this.exchangeCodeForToken(code)
-            .then(() => {
-              resolve({ success: true });
-              this.closeAuthWindow();
-            })
-            .catch((err) => {
-              console.error("Token exchange failed:", err);
-              reject(err);
-              this.closeAuthWindow();
-            });
-        }
-      }
-    } catch (error) {
-      console.error("Navigation handling error:", error);
-      reject(error);
-      this.closeAuthWindow();
-    }
-  }
-
-  validateCredentials(clientId, clientSecret) {
-    if (!clientId || !clientSecret) {
-      console.error("Missing credentials:", {
-        hasClientId: !!clientId,
-        hasClientSecret: !!clientSecret,
-      });
-      return false;
-    }
-
-    // Basic format validation
-    const isValidClientId = clientId.length === 32;
-    const isValidClientSecret = clientSecret.length === 32;
-
-    console.log("Credential validation:", {
-      clientIdLength: clientId.length,
-      clientSecretLength: clientSecret.length,
-      isValidClientId,
-      isValidClientSecret,
-    });
-
-    return isValidClientId && isValidClientSecret;
-  }
-
-  generateState() {
-    return Math.random().toString(36).substring(2, 15);
-  }
-
-  createAuthWindow(authUrl, state, resolve, reject) {
-    console.log("Creating auth window...");
-
-    this.authWindow = new BrowserWindow({
-      width: 800,
-      height: 600,
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-      },
-      show: false,
-    });
-
-    // Log navigation events
-    this.authWindow.webContents.on("will-navigate", (event, url) => {
-      console.log("Navigation detected:", url);
-      if (url.startsWith("http://localhost:8888/callback")) {
-        event.preventDefault();
-        this.handleCallback(url, state, resolve, reject);
-      }
-    });
-
-    this.authWindow.webContents.on("will-redirect", (event, url) => {
-      console.log("Redirect detected:", url);
-      if (url.startsWith("http://localhost:8888/callback")) {
-        event.preventDefault();
-        this.handleCallback(url, state, resolve, reject);
-      }
-    });
-
-    // Add error handling for page loads
-    this.authWindow.webContents.on(
-      "did-fail-load",
-      (event, errorCode, errorDescription) => {
-        console.error("Page load failed:", {
-          errorCode,
-          errorDescription,
-          url: this.authWindow.webContents.getURL(),
-        });
-      },
-    );
-
-    this.authWindow.webContents.on("did-finish-load", () => {
-      console.log("Page loaded:", this.authWindow.webContents.getURL());
-      this.authWindow.show();
-    });
-
-    this.authWindow.on("closed", () => {
-      console.log("Auth window closed");
-      this.authWindow = null;
-      if (!this.spotifyToken) {
-        reject(new Error("Authentication window was closed"));
-      }
-    });
-
-    console.log("Loading auth URL:", authUrl.toString());
-    this.authWindow.loadURL(authUrl.toString());
-  }
-
-  async handleCallback(url, originalState, resolve, reject) {
-    console.log("Processing callback URL...");
-    try {
-      const urlObj = new URL(url);
-      const params = Object.fromEntries(urlObj.searchParams);
-
-      console.log("Callback parameters:", {
-        ...params,
-        code: params.code ? `${params.code.substring(0, 6)}...` : undefined,
       });
 
-      if (params.error) {
-        throw new Error(`Spotify auth error: ${params.error}`);
-      }
+      const authUrl = new URL("https://accounts.spotify.com/authorize");
+      const params = new URLSearchParams({
+        client_id: SPOTIFY.CLIENT_ID,
+        response_type: "code",
+        redirect_uri: redirectUri,
+        scope: SPOTIFY.SCOPES.join(" "),
+        show_dialog: "true",
+      });
+      authUrl.search = params.toString();
 
-      if (params.state !== originalState) {
-        throw new Error("State mismatch in callback");
-      }
+      console.log("=== Spotify Auth Debug Info ===");
+      console.log("Client ID:", SPOTIFY.CLIENT_ID);
+      console.log("Redirect URI:", redirectUri);
+      console.log("Full Auth URL:", authUrl.toString());
+      console.log("============================");
 
-      if (!params.code) {
-        throw new Error("No authorization code received");
-      }
-
-      await this.exchangeCodeForToken(params.code);
-      resolve({ success: true });
-    } catch (error) {
-      console.error("Callback handling failed:", error);
-      reject(error);
-    } finally {
-      this.closeAuthWindow();
-    }
-  }
-
-  async exchangeCodeForToken(code) {
-    console.log("Exchanging code for token...");
-    const clientId = process.env.SPOTIFY_CLIENT_ID;
-    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-    const redirectUri = "http://localhost:8888/callback";
-
-    try {
-      const response = await fetch("https://accounts.spotify.com/api/token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization:
-            "Basic " +
-            Buffer.from(`${clientId}:${clientSecret}`).toString("base64"),
+      authWindow = new BrowserWindow({
+        width: 600,
+        height: 800,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          session: authSession,
+          webSecurity: true,
         },
-        body: new URLSearchParams({
-          grant_type: "authorization_code",
-          code,
-          redirect_uri: redirectUri,
-        }),
       });
 
-      const responseText = await response.text();
-      console.log("Token exchange response:", {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers),
-        body: responseText.substring(0, 100) + "...", // Log first 100 chars of response
+      authWindow.webContents.on("did-navigate", (event, url) => {
+        console.log("Auth window navigated to:", url);
       });
 
-      if (!response.ok) {
-        throw new Error(
-          `Token exchange failed: ${response.status} ${response.statusText}`,
-        );
-      }
+      authWindow.webContents.on(
+        "did-fail-load",
+        (event, errorCode, errorDescription) => {
+          console.error("Page failed to load:", errorCode, errorDescription);
+        },
+      );
 
-      const data = JSON.parse(responseText);
-      this.spotifyToken = {
-        accessToken: data.access_token,
-        refreshToken: data.refresh_token,
-        expiresIn: data.expires_in,
-        timestamp: Date.now(),
-      };
+      authWindow.loadURL(authUrl.toString());
 
-      console.log("Token exchange successful");
-    } catch (error) {
-      console.error("Token exchange error:", error);
-      throw error;
+      authWindow.on("closed", () => {
+        if (!isSpotifyAuthenticated) {
+          reject(new Error("Auth window was closed before completion"));
+        }
+      });
+    });
+  } catch (error) {
+    console.error("Spotify auth error:", error);
+    if (server) {
+      server.close();
     }
-  }
-
-  getAuthStatus() {
-    const status = {
-      isSpotifyAuthenticated: !!this.spotifyToken?.accessToken,
-      tokenExpiresIn: this.spotifyToken
-        ? Math.floor(
-            (this.spotifyToken.timestamp +
-              this.spotifyToken.expiresIn * 1000 -
-              Date.now()) /
-              1000,
-          )
-        : null,
-    };
-    console.log("Auth status:", status);
-    return status;
-  }
-
-  closeAuthWindow() {
-    if (this.authWindow) {
-      this.authWindow.close();
-      this.authWindow = null;
-    }
+    isSpotifyAuthenticated = false;
+    spotifyAuthData = null;
+    throw error;
   }
 }
 
-const authManager = new AuthManager();
-export { authManager };
+export function getAuthStatus() {
+  return {
+    isSpotifyAuthenticated,
+    spotifyAuthData,
+  };
+}

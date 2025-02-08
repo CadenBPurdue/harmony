@@ -10,27 +10,12 @@ import {
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
 
-console.log("Initial window.electronAPI check:", window.electronAPI);
-
 function App() {
   const [error, setError] = useState(null);
   const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
 
+  // Check auth status on component mount
   useEffect(() => {
-    console.log("Window API state:", {
-      hasWindow: typeof window !== "undefined",
-      hasElectronAPI: typeof window.electronAPI !== "undefined",
-      apis: window.electronAPI,
-    });
-    checkAuthStatus();
-  }, []);
-
-  useEffect(() => {
-    console.log("Testing APIs:", {
-      testAPI: window.testAPI?.ping?.(),
-      hasElectronAPI: !!window.electronAPI,
-      hasConnectSpotify: !!window.electronAPI?.connectSpotify,
-    });
     checkAuthStatus();
   }, []);
 
@@ -45,22 +30,20 @@ function App() {
 
   const handleSpotifyLogin = async () => {
     try {
-      console.log("Starting Spotify login process...");
       const result = await window.electronAPI.connectSpotify();
-      console.log("Spotify login result:", result);
-
       if (result.success) {
         setIsSpotifyConnected(true);
+        // Show success message
         setError({
           severity: "success",
           message: "Successfully connected to Spotify!",
         });
       }
     } catch (err) {
-      console.error("Detailed login error:", err);
+      console.error("Failed to connect to Spotify:", err);
       setError({
         severity: "error",
-        message: `Failed to connect to Spotify: ${err.message}`,
+        message: "Failed to connect to Spotify. Please try again.",
       });
       setIsSpotifyConnected(false);
     }
@@ -70,6 +53,9 @@ function App() {
     <Container>
       <Typography variant="h4" sx={{ mt: 4, mb: 2 }}>
         Welcome to Harmony!
+      </Typography>
+      <Typography variant="subtitle1" sx={{ mb: 4 }}>
+        Authors: Adam Kahl, Caden Brennan, Ethan Burmane
       </Typography>
 
       {/* Connection Status */}
@@ -88,7 +74,10 @@ function App() {
           onClick={handleSpotifyLogin}
           color={isSpotifyConnected ? "success" : "primary"}
         >
-          {isSpotifyConnected ? "Reconnect Spotify" : "Connect to Spotify"}
+          {isSpotifyConnected ? "Reconnect Spotify" : "Connect Spotify"}
+        </Button>
+        <Button variant="contained" onClick={() => {}}>
+          Connect Apple Music
         </Button>
       </Stack>
 
