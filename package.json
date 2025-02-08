@@ -4,6 +4,10 @@
   "description": "A music playlist sharing application",
   "author": "Adam Kahl <akahl@purdue.edu>",
   "main": "src/main/main.js",
+  "type": "module",
+ "electron": {
+      "nodeIntegration": true
+    },
   "scripts": {
     "dev": "cross-env NODE_ENV=development vite & cross-env NODE_ENV=development electron .",
     "build": "vite build",
@@ -23,6 +27,7 @@
   },
   "homepage": "https://github.com/CadenBPurdue/harmony#readme",
   "dependencies": {
+    "dotenv": "^16.0.3",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/material": "^6.4.1",

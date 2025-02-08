@@ -1,10 +1,22 @@
 // src/main/preload.js
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld(
-  'electronAPI',
-  {
-    connectSpotify: () => ipcRenderer.invoke('auth:spotify'),
-    getAuthStatus: () => ipcRenderer.invoke('auth:status')
+console.log('Preload script starting...');
+
+// Add a test API that doesn't rely on IPC
+contextBridge.exposeInMainWorld('testAPI', {
+  ping: () => 'pong'
+});
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  connectSpotify: () => {
+    console.log('Calling connectSpotify from preload');
+    return ipcRenderer.invoke('auth:spotify');
+  },
+  getAuthStatus: () => {
+    console.log('Calling getAuthStatus from preload');
+    return ipcRenderer.invoke('auth:status');
   }
-);
+});
+
+console.log('APIs exposed');
