@@ -1,14 +1,17 @@
 // src/main/main.js
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 import { app, BrowserWindow, ipcMain, protocol, session } from "electron";
-import { initiateSpotifyAuth, getAuthStatus } from "./utils/auth_manager.js";
+import { authManager } from "./utils/auth_manager.js";
+import { configManager } from "./utils/config.js";
+
+let mainWindow;
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Declare mainWindow in the outer scope
-let mainWindow;
 
 function createWindow() {
   // Set CSP headers for main window
@@ -17,14 +20,22 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         "Content-Security-Policy": [
-          "default-src 'self' 'unsafe-inline'; connect-src 'self' https://accounts.spotify.com",
-        ],
+          "default-src 'self' https://accounts.spotify.com https://*.scdn.co;",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com;",
+          "style-src 'self' 'unsafe-inline' https://*.spotify.com https://*.scdn.co;",
+          "font-src 'self' data: https://*.scdn.co;",
+          "img-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com data:;",
+          "connect-src 'self' https://*.spotify.com https://*.scdn.co https://*.ingest.sentry.io https://api.spotify.com https://www.google.com;",
+          "frame-src 'self' https://accounts.spotify.com https://www.google.com https://recaptcha.google.com;",
+          "media-src 'self' https://*.scdn.co;",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.apple.com https://js-cdn.music.apple.com;",
+          "connect-src 'self' https://*.apple.com https://api.music.apple.com;",
+        ].join(" "),
       },
     });
   });
 
-  // Assign to the outer mainWindow variable
-  mainWindow = new BrowserWindow({
+  const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
@@ -35,20 +46,91 @@ function createWindow() {
     },
   });
 
+  // IPC Handlers
   ipcMain.handle("auth:spotify", async () => {
     try {
+      console.log("Received auth:spotify IPC call");
+
+      // Check environment variables first
+      if (
+        !process.env.SPOTIFY_CLIENT_ID ||
+        !process.env.SPOTIFY_CLIENT_SECRET
+      ) {
+        console.error("Missing Spotify environment variables:", {
+          hasClientId: !!process.env.SPOTIFY_CLIENT_ID,
+          hasClientSecret: !!process.env.SPOTIFY_CLIENT_SECRET,
+        });
+        throw new Error(
+          "Spotify credentials not found in environment variables",
+        );
+      }
+
+      if (!configManager.hasCredentials("spotify")) {
+        // Instead of throwing error, let's set the credentials from env
+        configManager.setCredentials("spotify", {
+          clientId: process.env.SPOTIFY_CLIENT_ID,
+          clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+        });
+        console.log(
+          "Configured Spotify credentials from environment variables",
+        );
+      }
+
       console.log("Initiating Spotify auth...");
-      const result = await initiateSpotifyAuth();
+      const result = await authManager.initiateSpotifyAuth();
       console.log("Spotify auth result:", result);
       return result;
     } catch (error) {
-      console.error("Spotify auth error:", error);
+      console.error("Spotify auth error in IPC handler:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("auth:appleMusic", async () => {
+    try {
+      console.log("Received auth:appleMusic IPC call");
+      const result = await authManager.initiateAppleMusicAuth();
+      return result;
+    } catch (error) {
+      console.error("Apple Music auth error:", error);
       throw error;
     }
   });
 
   ipcMain.handle("auth:status", () => {
-    return getAuthStatus();
+    return authManager.getAuthStatus();
+  });
+
+  ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
+    try {
+      configManager.setCredentials("spotify", credentials);
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to save credentials:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("config:hasSpotifyCredentials", () => {
+    return configManager.hasCredentials("spotify");
+  });
+
+  ipcMain.handle("config:clearSpotifyCredentials", () => {
+    try {
+      configManager.setCredentials("spotify", null);
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to clear credentials:", error);
+      throw error;
+    }
+  });
+
+  mainWindow.webContents.on("did-finish-load", () => {
+    console.log("Window loaded");
+  });
+
+  mainWindow.webContents.on("console-message", (event, level, message) => {
+    console.log("Renderer Console:", message);
   });
 
   if (process.env.NODE_ENV === "development") {
@@ -63,18 +145,18 @@ function createWindow() {
 app.whenReady().then(() => {
   // Register protocol
   if (!app.isDefaultProtocolClient("harmony")) {
-    app.setAsDefaultProtocolClient("harmony");
+    const success = app.setAsDefaultProtocolClient("harmony");
+    console.log("Registered harmony:// protocol:", success);
   }
 
   protocol.handle("harmony", (request) => {
-    const url = request.url;
-    console.log("Protocol handler received URL:", url);
+    console.log("Harmony protocol request:", request.url);
+    return new Response("", { status: 200 });
   });
 
-  createWindow();
+  mainWindow = createWindow();
 });
 
-// Handle the protocol on macOS
 app.on("open-url", (event, url) => {
   event.preventDefault();
   console.log("Received URL on macOS:", url);

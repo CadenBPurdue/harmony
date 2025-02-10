@@ -15,6 +15,11 @@ class ConfigManager {
   getCredentials(service) {
     return this.credentials.get(service);
   }
+
+  validateAppleMusicCredentials(credentials) {
+    const { teamId, keyId, privateKey } = credentials;
+    return !!(teamId && keyId && privateKey);
+  }
 }
 
 const configManager = new ConfigManager();
