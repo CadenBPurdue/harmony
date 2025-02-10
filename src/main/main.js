@@ -1,14 +1,16 @@
 // src/main/main.js
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 import { app, BrowserWindow, ipcMain, protocol, session } from "electron";
 import { initiateSpotifyAuth, getAuthStatus } from "./utils/auth_manager.js";
+import { configManager } from "./utils/config.js";
+
+// Load environment variables
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Declare mainWindow in the outer scope
-let mainWindow;
 
 function createWindow() {
   // Set CSP headers for main window
@@ -17,14 +19,20 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         "Content-Security-Policy": [
-          "default-src 'self' 'unsafe-inline'; connect-src 'self' https://accounts.spotify.com",
-        ],
+          "default-src 'self' https://accounts.spotify.com https://*.scdn.co;",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com;",
+          "style-src 'self' 'unsafe-inline' https://*.spotify.com https://*.scdn.co;",
+          "font-src 'self' data: https://*.scdn.co;",
+          "img-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com data:;",
+          "connect-src 'self' https://*.spotify.com https://*.scdn.co https://*.ingest.sentry.io https://api.spotify.com https://www.google.com;",
+          "frame-src 'self' https://accounts.spotify.com https://www.google.com https://recaptcha.google.com;",
+          "media-src 'self' https://*.scdn.co;",
+        ].join(" "),
       },
     });
   });
 
-  // Assign to the outer mainWindow variable
-  mainWindow = new BrowserWindow({
+  const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
@@ -35,20 +43,45 @@ function createWindow() {
     },
   });
 
+  // IPC Handlers
   ipcMain.handle("auth:spotify", async () => {
-    try {
-      console.log("Initiating Spotify auth...");
-      const result = await initiateSpotifyAuth();
-      console.log("Spotify auth result:", result);
-      return result;
-    } catch (error) {
-      console.error("Spotify auth error:", error);
-      throw error;
-    }
+    return await initiateSpotifyAuth();
   });
 
   ipcMain.handle("auth:status", () => {
     return getAuthStatus();
+  });
+
+  ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
+    try {
+      configManager.setCredentials("spotify", credentials);
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to save credentials:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("config:hasSpotifyCredentials", () => {
+    return configManager.hasCredentials("spotify");
+  });
+
+  ipcMain.handle("config:clearSpotifyCredentials", () => {
+    try {
+      configManager.setCredentials("spotify", null);
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to clear credentials:", error);
+      throw error;
+    }
+  });
+
+  mainWindow.webContents.on("did-finish-load", () => {
+    console.log("Window loaded");
+  });
+
+  mainWindow.webContents.on("console-message", (event, level, message) => {
+    console.log("Renderer Console:", message);
   });
 
   if (process.env.NODE_ENV === "development") {
@@ -63,18 +96,18 @@ function createWindow() {
 app.whenReady().then(() => {
   // Register protocol
   if (!app.isDefaultProtocolClient("harmony")) {
-    app.setAsDefaultProtocolClient("harmony");
+    const success = app.setAsDefaultProtocolClient("harmony");
+    console.log("Registered harmony:// protocol:", success);
   }
 
   protocol.handle("harmony", (request) => {
-    const url = request.url;
-    console.log("Protocol handler received URL:", url);
+    console.log("Harmony protocol request:", request.url);
+    return new Response("", { status: 200 });
   });
 
-  createWindow();
+  mainWindow = createWindow();
 });
 
-// Handle the protocol on macOS
 app.on("open-url", (event, url) => {
   event.preventDefault();
   console.log("Received URL on macOS:", url);
