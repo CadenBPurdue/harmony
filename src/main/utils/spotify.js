@@ -2,6 +2,7 @@ const axios = require('axios');
 const sqlite3 = require('sqlite3');
 
 var COLLECTION_URL = 'https://open.spotify.com/playlist/5yal4glZg3isyuhkLenHeT';
+var SPOTIFY_USERNAME = 'ebtuhr';
 
 class SpotifyApi {
 
@@ -36,7 +37,39 @@ class SpotifyApi {
         return response.data.access_token;
     }
 
-    async getPlaylist(url) {
+    async getUserInfo() {
+
+        if (!this.token) { 
+            await this.initialize();
+        }
+
+        const response = axios.get(`https://api.spotify.com/v1/users/${username}`, {
+            headers: { 'Authorization': `Bearer ${this.token}` }
+        })
+        .then((response) => {
+            console.log(response.data);
+        }, (error) => {
+            console.log(error);
+        });
+    }
+
+    async getUserPlaylists(username) {
+
+        if (!this.token) { 
+            await this.initialize();
+        }
+
+        const response = axios.get(`https://api.spotify.com/v1/users/${username}/playlists`, {
+            headers: { 'Authorization': `Bearer ${this.token}` }
+        })
+        .then((response) => {
+            console.log(response.data);
+        }, (error) => {
+            console.log(error);
+        });
+    }
+
+    async getPlaylistFromUrl(url) {
 
         if (!this.token) { 
             await this.initialize();
@@ -93,4 +126,5 @@ class SpotifyApi {
 }
 
 let spotify = new SpotifyApi();
-spotify.getPlaylist(COLLECTION_URL);
+// spotify.getPlaylistFromUrl(COLLECTION_URL);
+spotify.getUserPlaylists(SPOTIFY_USERNAME);
