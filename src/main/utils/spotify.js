@@ -1,12 +1,10 @@
-const axios = require("axios");
-const sqlite3 = require("sqlite3");
-
-var COLLECTION_URL = "https://open.spotify.com/playlist/5yal4glZg3isyuhkLenHeT";
-var SPOTIFY_USERNAME = "ebtuhr";
+import axios from "axios";
 
 class SpotifyApi {
   constructor() {
     this.token = null;
+    this.user = null;
+    this.playlist = null;
   }
 
   async initialize() {
@@ -14,6 +12,9 @@ class SpotifyApi {
     if (!this.token) {
       throw new Error("Failed to get token");
     }
+
+    this.user = process.env.SPOTIFY_USERNAME;
+    this.playlist = process.env.PLAYLIST_URL;
   }
 
   static async getToken() {
@@ -39,13 +40,13 @@ class SpotifyApi {
     return response.data.access_token;
   }
 
-  async getUserInfo() {
+  async getUser() {
     if (!this.token) {
       await this.initialize();
     }
 
-    const response = axios
-      .get(`https://api.spotify.com/v1/users/${username}`, {
+    axios
+      .get(`https://api.spotify.com/v1/users/${this.user}`, {
         headers: { Authorization: `Bearer ${this.token}` },
       })
       .then(
@@ -58,13 +59,13 @@ class SpotifyApi {
       );
   }
 
-  async getUserPlaylists(username) {
+  async getUserPlaylists() {
     if (!this.token) {
       await this.initialize();
     }
 
-    const response = axios
-      .get(`https://api.spotify.com/v1/users/${username}/playlists`, {
+    axios
+      .get(`https://api.spotify.com/v1/users/${this.user}/playlists`, {
         headers: { Authorization: `Bearer ${this.token}` },
       })
       .then(
@@ -77,7 +78,7 @@ class SpotifyApi {
       );
   }
 
-  async getPlaylistFromUrl(url) {
+  async getPlaylistFromUrl() {
     if (!this.token) {
       await this.initialize();
     }
@@ -86,68 +87,23 @@ class SpotifyApi {
       throw new Error("Invalid playlist URL");
     }
 
-    const collection_id = url.split("playlist/")[1];
+    const collection_id = this.playlist.split("playlist/")[1];
 
     // TODO: get playlist id from user input (or other source)
-    const response = axios
+    axios
       .get(`https://api.spotify.com/v1/playlists/${collection_id}`, {
         headers: { Authorization: `Bearer ${this.token}` },
       })
       .then(
         (response) => {
-          this.storePlaylist(response.data); // store playlist
+          console.log(response.data);
         },
         (error) => {
           console.log(error);
         },
       );
   }
-
-  /* 
-    Stores the imported music from Spotify into its respective table in the database:
-    - each playlist will have its own table on the playlists database
-    - each album will have its own table on the albums database
-    */
-  async storePlaylist(musicObj) {
-    var db = null;
-    var table_name = musicObj.name;
-
-    db = new sqlite3.Database(`../db/playlists.db`, (err) => {
-      if (err) {
-        console.error(err.message);
-      }
-    });
-
-    // validate and fix table name
-    // TODO: add check for reserved keywords like SELECT or INSERT
-    table_name = table_name.replace(/[^a-zA-Z0-9]/g, "_");
-
-    db.serialize(() => {
-      db.run(
-        `CREATE TABLE IF NOT EXISTS ${table_name} (name TEXT, album TEXT, artist TEXT, uri TEXT, duration INTEGER)`,
-      );
-    });
-
-    musicObj.tracks.items.forEach((item) => {
-      db.run(
-        `INSERT INTO ${table_name} (name, album, artist, uri, duration) VALUES (?, ?, ?, ?, ?)`,
-        [
-          item.track.name,
-          item.track.album.name,
-          item.track.artists[0].name,
-          item.track.uri,
-          item.track.duration_ms,
-        ],
-        (err) => {
-          if (err) {
-            console.error(err.message);
-          }
-        },
-      );
-    });
-  }
 }
 
 const spotify = new SpotifyApi();
-// spotify.getPlaylistFromUrl(COLLECTION_URL);
-spotify.getUserPlaylists(SPOTIFY_USERNAME);
+spotify.initialize();
