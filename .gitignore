@@ -1,4 +1,7 @@
 node_modules
 build
 dist
-*.db
+dist_electron
+.vscode
+.DS_Store
+.env

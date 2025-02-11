@@ -1,42 +1,126 @@
 // src/main/main.js
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+import { app, BrowserWindow, ipcMain, protocol, session } from "electron";
+import { initiateSpotifyAuth, getAuthStatus } from "./utils/auth_manager.js";
+import { configManager } from "./utils/config.js";
+
+// Load environment variables
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function createWindow() {
+  // Set CSP headers for main window
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        "Content-Security-Policy": [
+          "default-src 'self' https://accounts.spotify.com https://*.scdn.co;",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com;",
+          "style-src 'self' 'unsafe-inline' https://*.spotify.com https://*.scdn.co;",
+          "font-src 'self' data: https://*.scdn.co;",
+          "img-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com data:;",
+          "connect-src 'self' https://*.spotify.com https://*.scdn.co https://*.ingest.sentry.io https://api.spotify.com https://www.google.com;",
+          "frame-src 'self' https://accounts.spotify.com https://www.google.com https://recaptcha.google.com;",
+          "media-src 'self' https://*.scdn.co;",
+        ].join(" "),
+      },
+    });
+  });
+
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      // The preload file if you use it
-      preload: path.join(__dirname, '../preload/preload.js'),
-      nodeIntegration: false, // generally good practice for security
-      contextIsolation: true, // recommended for security
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.cjs"),
+      webSecurity: true,
     },
-    name: 'mainWindow'
   });
 
-  // Load your React app (Vite dev server in development, or index.html in production)
-  // if (process.env.NODE_ENV === 'development') {
-  //   mainWindow.loadURL('http://localhost:5173'); 
-  // } else {
-  //   // In production, load the local index.html file
-  //   mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'));
-  // }
-  mainWindow.loadURL('http://localhost:5173'); 
+  // IPC Handlers
+  ipcMain.handle("auth:spotify", async () => {
+    return await initiateSpotifyAuth();
+  });
+
+  ipcMain.handle("auth:status", () => {
+    return getAuthStatus();
+  });
+
+  ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
+    try {
+      configManager.setCredentials("spotify", credentials);
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to save credentials:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("config:hasSpotifyCredentials", () => {
+    return configManager.hasCredentials("spotify");
+  });
+
+  ipcMain.handle("config:clearSpotifyCredentials", () => {
+    try {
+      configManager.setCredentials("spotify", null);
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to clear credentials:", error);
+      throw error;
+    }
+  });
+
+  mainWindow.webContents.on("did-finish-load", () => {
+    console.log("Window loaded");
+  });
+
+  mainWindow.webContents.on("console-message", (event, level, message) => {
+    console.log("Renderer Console:", message);
+  });
+
+  if (process.env.NODE_ENV === "development") {
+    mainWindow.loadURL("http://localhost:5173");
+  } else {
+    mainWindow.loadFile(path.join(__dirname, "../../dist/index.html"));
+  }
+
+  return mainWindow;
 }
 
 app.whenReady().then(() => {
-  createWindow();
+  // Register protocol
+  if (!app.isDefaultProtocolClient("harmony")) {
+    const success = app.setAsDefaultProtocolClient("harmony");
+    console.log("Registered harmony:// protocol:", success);
+  }
 
-  app.on('activate', function() {
-    // On macOS it's common to re-create a window if the dock icon is clicked and no other
-    // windows are open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  protocol.handle("harmony", (request) => {
+    console.log("Harmony protocol request:", request.url);
+    return new Response("", { status: 200 });
   });
+
+  mainWindow = createWindow();
 });
 
-// Quit when all windows are closed.
-app.on('window-all-closed', function() {
-  // On macOS, apps typically stay active until user explicitly quits.
-  if (process.platform !== 'darwin') app.quit();
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  console.log("Received URL on macOS:", url);
+});
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
+});
+
+app.on("activate", () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    mainWindow = createWindow();
+  }
 });
