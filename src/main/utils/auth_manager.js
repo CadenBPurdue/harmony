@@ -1,16 +1,36 @@
+// src/main/utils/auth_manager.js
 import fs from "fs";
 import dotenv from "dotenv";
 import { BrowserWindow } from "electron";
 import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
+import {
+  getSpotifyToken,
+  setSpotifyToken,
+  getAppleMusicToken,
+  setAppleMusicToken,
+} from "./safe_storage.js";
 
 dotenv.config();
 
-// Separate token storage
+console.log("[AuthManager] Initializing tokens...");
 let spotifyToken = null;
 let appleMusicToken = null;
 
-// Separate window handlers
+try {
+  spotifyToken = getSpotifyToken();
+  console.log("[AuthManager] Loaded Spotify token:", spotifyToken);
+} catch (error) {
+  console.error("[AuthManager] Error loading Spotify token:", error);
+}
+
+try {
+  appleMusicToken = getAppleMusicToken();
+  console.log("[AuthManager] Loaded Apple Music token:", appleMusicToken);
+} catch (error) {
+  console.error("[AuthManager] Error loading Apple Music token:", error);
+}
+
 let spotifyAuthWindow = null;
 let appleMusicAuthWindow = null;
 
@@ -90,6 +110,8 @@ async function exchangeCodeForToken(code) {
       expiresIn: data.expires_in,
       timestamp: Date.now(),
     };
+    console.log("[AuthManager] Setting new Spotify token:", spotifyToken);
+    setSpotifyToken(spotifyToken);
 
     console.log("[Spotify] Token exchange successful");
   } catch (error) {
@@ -163,7 +185,7 @@ function createSpotifyAuthWindow(authUrl, state, resolve, reject) {
     },
   });
 
-  // Updated CSP headers to include Spotify's CDN domains
+  // CSP headers to include Spotify's CDN domains
   spotifyAuthWindow.webContents.session.webRequest.onHeadersReceived(
     (details, callback) => {
       callback({
@@ -184,7 +206,7 @@ function createSpotifyAuthWindow(authUrl, state, resolve, reject) {
     },
   );
 
-  // Add certificate handling
+  // Certificate handling
   spotifyAuthWindow.webContents.session.setCertificateVerifyProc(
     (request, callback) => {
       callback(0);
@@ -289,7 +311,7 @@ function generateAppleMusicToken() {
 
 async function initiateAppleMusicAuth() {
   console.log("Starting initiateAppleMusicAuth...");
-  let isAuthenticating = false; // Add flag to prevent multiple authentications
+  let isAuthenticating = false; // Flag to prevent multiple authentications
 
   try {
     console.log("Generating developer token...");
@@ -319,7 +341,7 @@ async function initiateAppleMusicAuth() {
         backgroundColor: "#ffffff",
       });
 
-      // Add permission handling for iframes
+      // Permission handling for iframes
       appleMusicAuthWindow.webContents.session.setPermissionRequestHandler(
         (webContents, permission, callback) => {
           callback(true);
@@ -333,7 +355,7 @@ async function initiateAppleMusicAuth() {
         },
       );
 
-      // Add CSP headers
+      // CSP headers
       appleMusicAuthWindow.webContents.session.webRequest.onHeadersReceived(
         (details, callback) => {
           callback({
@@ -355,7 +377,7 @@ async function initiateAppleMusicAuth() {
         },
       );
 
-      // Add helper function to check for success
+      // Helper function to check for success
       function checkForSuccess(url) {
         if (isAuthenticating) return; // Skip if already authenticating
 
@@ -381,7 +403,11 @@ async function initiateAppleMusicAuth() {
               timestamp: Date.now(),
               expiresIn: 180 * 24 * 60 * 60,
             };
-            console.log("Apple Music token set:", appleMusicToken);
+            console.log(
+              "[AuthManager] Setting new Apple Music token:",
+              appleMusicToken,
+            );
+            setAppleMusicToken(appleMusicToken);
 
             console.log("Closing auth window...");
             closeAppleMusicAuthWindow();
@@ -392,7 +418,7 @@ async function initiateAppleMusicAuth() {
         }
       }
 
-      // Add single navigation listener for success check
+      // Single navigation listener for success check
       appleMusicAuthWindow.webContents.on("did-navigate", (event, url) => {
         console.log("Navigation occurred:", url);
         checkForSuccess(url);
@@ -411,7 +437,7 @@ async function initiateAppleMusicAuth() {
         checkForSuccess(url);
       });
 
-      // Add frame loading listener
+      // Frame loading listener
       appleMusicAuthWindow.webContents.on("did-frame-finish-load", () => {
         console.log("Frame finished loading");
         const currentURL = appleMusicAuthWindow.webContents.getURL();
@@ -419,7 +445,7 @@ async function initiateAppleMusicAuth() {
         checkForSuccess(currentURL);
       });
 
-      // Add error handling for failed navigation
+      // Error handling for failed navigation
       appleMusicAuthWindow.webContents.on(
         "did-fail-load",
         (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
@@ -496,6 +522,10 @@ function initiateSpotifyAuth() {
 }
 
 function getAuthStatus() {
+  console.log("[AuthManager] Checking auth status");
+  console.log("[AuthManager] Current Spotify token:", spotifyToken);
+  console.log("[AuthManager] Current Apple Music token:", appleMusicToken);
+
   return {
     isSpotifyAuthenticated: !!spotifyToken?.accessToken,
     isAppleMusicAuthenticated: !!appleMusicToken?.userToken,

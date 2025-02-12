@@ -16,6 +16,8 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+let mainWindow = null;
+
 function createWindow() {
   // Set CSP headers for main window
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
