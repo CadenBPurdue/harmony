@@ -363,7 +363,7 @@ async function initiateAppleMusicAuth() {
         // Check for various success URLs
         if (
           url.includes("music.apple.com/new") ||
-          url.includes("music.apple.com/us/browse") || 
+          url.includes("music.apple.com/us/browse") ||
           url.includes("music.apple.com/library") ||
           url.includes("music.apple.com/listen-now")
         ) {
