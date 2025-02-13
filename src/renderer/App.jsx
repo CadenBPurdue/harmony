@@ -8,8 +8,8 @@ import {
   Snackbar,
   Chip,
 } from "@mui/material";
-import { onAuthStateChanged, signInWithGoogle, auth } from "./firebase.js";
 import React, { useState, useEffect } from "react";
+import { onAuthStateChanged, signInWithGoogle, auth } from "./firebase.js";
 
 function App() {
   const [error, setError] = useState(null);
@@ -33,9 +33,6 @@ function App() {
     });
     return unsubscribe;
   }, []);
-
-
-  const [isAppleMusicConnected, setIsAppleMusicConnected] = useState(false);
 
   // Check auth status on component mount
   useEffect(() => {
