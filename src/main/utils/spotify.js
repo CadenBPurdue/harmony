@@ -3,7 +3,8 @@ import axios from "axios";
 class SpotifyApi {
   constructor() {
     this.token = null;
-    this.user = null;
+    this.username = null;
+    this.user_id = null;
   }
 
   async initialize() {
@@ -11,7 +12,8 @@ class SpotifyApi {
     if (!this.token) {
       throw new Error("Failed to get token");
     }
-    this.user = process.env.SPOTIFY_USER;
+    this.username = process.env.SPOTIFY_USERNAME;
+    this.user_id = await this.getUserInfo().id;
   }
 
   static async getToken() {
@@ -44,7 +46,7 @@ class SpotifyApi {
 
     try {
       const response = await axios.get(
-        `https://api.spotify.com/v1/users/${this.user}`,
+        `https://api.spotify.com/v1/users/${this.username}`,
         {
           headers: { Authorization: `Bearer ${this.token}` },
         },
@@ -63,7 +65,7 @@ class SpotifyApi {
 
     try {
       const response = await axios.get(
-        `https://api.spotify.com/v1/users/${this.user}/playlists`,
+        `https://api.spotify.com/v1/users/${this.username}/playlists`,
         {
           headers: { Authorization: `Bearer ${this.token}` },
         },
@@ -105,11 +107,9 @@ class SpotifyApi {
       await this.initialize();
     }
 
-    console.log("Token:", this.token);
-
     try {
       const response = await axios.post(
-        `https://api.spotify.com/v1/users/${this.user}/playlists`,
+        `https://api.spotify.com/v1/users/${this.username}/playlists`,
         {
           name: playlist_name,
           description: `Playlist transferred to Spotify using Harmony`,

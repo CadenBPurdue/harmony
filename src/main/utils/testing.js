@@ -47,6 +47,14 @@ class SpotifyUnitTest {
     console.log("_test_getPlaylistFromUrl passed");
   }
 
+  async _test_createEmptyPlaylist() {
+    const spotify = await this.setup();
+    const playlist_name = "Playlist Unit Test";
+    const playlist = await spotify.createEmptyPlaylist(playlist_name);
+    this.assert(playlist !== null, "Playlist should not be null");
+    console.log("_test_createEmptyPlaylist passed");
+  }
+
   async setup() {
     const spotify = new SpotifyApi();
     await spotify.initialize(process.env.SPOTIFY_USERNAME);
@@ -61,10 +69,13 @@ class SpotifyUnitTest {
 
   async main() {
     try {
-      await this._test_getToken();
+      const spotify = new SpotifyApi();
+      await spotify.initialize();
+      // await this._test_getToken();
       await this._test_getUserInfo();
-      await this._test_getUserPlaylists();
-      await this._test_getPlaylistFromUrl();
+    //   await this._test_getUserPlaylists();
+    //   await this._test_getPlaylistFromUrl();
+      await this._test_createEmptyPlaylist();
       console.log("All tests passed!");
     } catch (error) {
       console.error("Test failed:", error.message);
