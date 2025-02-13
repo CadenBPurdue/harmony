@@ -73,8 +73,8 @@ class SpotifyUnitTest {
       await spotify.initialize();
       // await this._test_getToken();
       await this._test_getUserInfo();
-    //   await this._test_getUserPlaylists();
-    //   await this._test_getPlaylistFromUrl();
+      //   await this._test_getUserPlaylists();
+      //   await this._test_getPlaylistFromUrl();
       await this._test_createEmptyPlaylist();
       console.log("All tests passed!");
     } catch (error) {
