@@ -192,14 +192,14 @@ function createSpotifyAuthWindow(authUrl, state, resolve, reject) {
         responseHeaders: {
           ...details.responseHeaders,
           "Content-Security-Policy": [
-            "default-src 'self' https://*.spotify.com https://*.scdn.co;",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.spotify.com https://*.scdn.co;",
+            "default-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com;",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com;",
             "style-src 'self' 'unsafe-inline' https://*.spotify.com https://*.scdn.co;",
-            "img-src 'self' https://*.spotify.com https://*.scdn.co data:;",
+            "img-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com data:;",
             "font-src 'self' https://*.spotify.com https://*.scdn.co https://encore.scdn.co data:;",
-            "connect-src 'self' https://*.spotify.com https://*.scdn.co;",
+            "connect-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com;",
             "media-src 'self' https://*.spotify.com https://*.scdn.co;",
-            "frame-src 'self' https://*.spotify.com https://*.scdn.co;",
+            "frame-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://recaptcha.google.com;",
           ].join(" "),
         },
       });
