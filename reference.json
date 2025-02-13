@@ -1,29 +1,20 @@
 {
     "user": "user id",
-    "url": "spotify or apple music url",
+    "origin": "spotify or apple music",
     "playlist_name": "playlist name",
     "playlist_id": "playlist id",
     "tracks": {
         "track_id1": {
             "track_name": "track name",
             "artist": "artist",
-            "album": "album",
-            "disk_number": "disk number",
-            "track_number": "track number",
-            "url": "url",
-            "duration": "duration"
+            "album": "album"
         }, 
         "track_id2": {
             "track_name": "track name",
             "artist": "artist",
-            "album": "album",
-            "disk_number": "disk number",
-            "track_number": "track number",
-            "url": "url",
-            "duration": "duration"
+            "album": "album"
         }
-    },
-    "collaborative": "boolean"
+    }
 }
 
 
