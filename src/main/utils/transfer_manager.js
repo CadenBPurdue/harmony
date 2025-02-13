@@ -13,12 +13,10 @@ class TransferManager {
     await this.spotify.initialize(username);
 
     try {
-      //   const playlist_obj = await this.spotify.getPlaylistFromUrl(url);
-      //   const playlist_json =
-      // await this.spotify.convertToUniversalFormat(playlist_obj);
-      const data = await this.spotify.createEmptyPlaylist("test");
-      //   return playlist_obj;
-      console.log(data);
+      const playlist_obj = await this.spotify.getPlaylistFromUrl(url);
+      const playlist_json =
+        await this.spotify.convertToUniversalFormat(playlist_obj);
+      console.log(playlist_json);
     } catch (error) {
       console.log(error);
       throw new Error("Failed to get playlist from URL");

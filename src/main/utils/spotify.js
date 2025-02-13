@@ -14,17 +14,15 @@ class SpotifyApi {
     this.user = username;
   }
 
-  static async getToken(code, redirect_uri) {
+  static async getToken() {
     if (!process.env.CLIENT_SECRET) {
       throw new Error("Must set CLIENT_SECRET environment variable");
     }
 
     const params = new URLSearchParams();
-    params.append("grant_type", "authorization_code");
-    params.append("code", code);
-    params.append("redirect_uri", redirect_uri);
-    params.append("client_id", process.env.SPOTIFY_CLIENT_ID);
-    params.append("client_secret", process.env.SPOTIFY_CLIENT_SECRET);
+    params.append("grant_type", "client_credentials");
+    params.append("client_id", "3852c03c669e46dd93e28ee6d4bd15c4");
+    params.append("client_secret", process.env.CLIENT_SECRET);
 
     const response = await axios.post(
       "https://accounts.spotify.com/api/token",
