@@ -6,12 +6,12 @@ class SpotifyApi {
     this.user = null;
   }
 
-  async initialize(username, code, redirect_uri) {
-    this.token = await SpotifyApi.getToken(code, redirect_uri);
+  async initialize() {
+    this.token = await SpotifyApi.getToken();
     if (!this.token) {
       throw new Error("Failed to get token");
     }
-    this.user = username;
+    this.user = process.env.SPOTIFY_USER;
   }
 
   static async getToken() {
@@ -37,7 +37,7 @@ class SpotifyApi {
     return response.data.access_token;
   }
 
-  async getUser() {
+  async getUserInfo() {
     if (!this.token) {
       await this.initialize();
     }
