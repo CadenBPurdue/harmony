@@ -6,39 +6,37 @@ class SpotifyApi {
     this.user = null;
   }
 
-  async initialize(username) {
-    this.token = await SpotifyApi.getToken();
+  async initialize(username, code, redirect_uri) {
+    this.token = await SpotifyApi.getToken(code, redirect_uri);
     if (!this.token) {
       throw new Error("Failed to get token");
     }
     this.user = username;
   }
 
-  static async getToken() {
+  static async getToken(code, redirect_uri) {
     if (!process.env.CLIENT_SECRET) {
       throw new Error("Must set CLIENT_SECRET environment variable");
     }
 
     const params = new URLSearchParams();
-    params.append("grant_type", "client_credentials");
+    params.append("grant_type", "authorization_code");
+    params.append("code", code);
+    params.append("redirect_uri", redirect_uri);
     params.append("client_id", "3852c03c669e46dd93e28ee6d4bd15c4");
     params.append("client_secret", process.env.CLIENT_SECRET);
 
-    try {
-      const response = await axios.post(
-        "https://accounts.spotify.com/api/token",
-        params,
-        {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
+    const response = await axios.post(
+      "https://accounts.spotify.com/api/token",
+      params,
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
         },
-      );
-      return response.data.access_token;
-    } catch (error) {
-      console.log(error);
-      throw new Error("Failed to get token");
-    }
+      },
+    );
+
+    return response.data.access_token;
   }
 
   async getUser() {
@@ -109,33 +107,45 @@ class SpotifyApi {
       await this.initialize();
     }
 
-    var playlist_id = null;
+    console.log("Token:", this.token);
 
-    axios.post("https://api.spotify.com/v1/users/{user_id}/playlists", {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      data: {
-        name: playlist_name,
-        description: `Playlist transferred from Apple Music using Harmony`,
-        public: false,
-      },
-    });
+    try {
+      const response = await axios.post(
+        `https://api.spotify.com/v1/users/${this.user}/playlists`,
+        {
+          name: playlist_name,
+          description: `Playlist transferred to Spotify using Harmony`,
+          public: false,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
 
-    return playlist_id;
+      // Return the playlist ID from the response
+      return response.data.id;
+    } catch (error) {
+      console.error(
+        "Error creating playlist:",
+        error.response ? error.response.data : error.message,
+      );
+      throw new Error("Failed to create playlist");
+    }
   }
 
-  async convertToUniversalFormat(response) {
+  async convertToUniversalFormat(data) {
     var playlist = {
-      name: response.data.name,
-      spotify_url: response.data.external_urls.spotify,
+      name: data.name,
+      spotify_url: data.external_urls.spotify,
       apple_music_url: null,
-      number_of_tracks: response.data.tracks.total,
+      number_of_tracks: data.tracks.total,
     };
 
     playlist.tracks = [];
-    response.data.tracks.items.forEach((item) => {
+    data.tracks.items.forEach((item) => {
       const track = {
         name: item.track.name,
         artist: item.track.artists[0].name,
