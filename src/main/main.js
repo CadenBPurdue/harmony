@@ -6,6 +6,8 @@ import { app, BrowserWindow, ipcMain, protocol, session } from "electron";
 import { initiateSpotifyAuth, getAuthStatus } from "./utils/auth_manager.js";
 import { configManager } from "./utils/config.js";
 
+let mainWindow;
+
 // Load environment variables
 dotenv.config();
 

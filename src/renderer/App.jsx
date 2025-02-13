@@ -8,11 +8,33 @@ import {
   Snackbar,
   Chip,
 } from "@mui/material";
+import { onAuthStateChanged, signInWithGoogle, auth } from "./firebase.js";
 import React, { useState, useEffect } from "react";
 
 function App() {
   const [error, setError] = useState(null);
   const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
+  const [user, setUser] = useState(null);
+
+  // Firebase authentication on startup
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        signInWithGoogle().catch((err) => {
+          console.error("Firebase auth error:", err);
+          setError({
+            severity: "error",
+            message: "Firebase authentication failed. Please try again.",
+          });
+        });
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+
 
   // Check auth status on component mount
   useEffect(() => {
