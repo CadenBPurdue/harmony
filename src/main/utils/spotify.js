@@ -1,98 +1,75 @@
 import axios from "axios";
+import dotenv from "dotenv";
 
 class SpotifyApi {
   constructor() {
-    this.token = null;
-    this.username = null;
+    this.auth_token = null;
     this.user_id = null;
   }
 
   async initialize() {
-    this.token = await SpotifyApi.getToken();
-    if (!this.token) {
+    dotenv.config();
+    this.auth_token = process.env.SPOTIFY_AUTH_TOKEN;
+    if (!this.auth_token) {
       throw new Error("Failed to get token");
     }
-    this.username = process.env.SPOTIFY_USERNAME;
-    this.user_id = await this.getUserInfo().id;
+    this.user_id = await this.getUserId();
   }
 
-  static async getToken() {
-    if (!process.env.CLIENT_SECRET) {
-      throw new Error("Must set CLIENT_SECRET environment variable");
-    }
-
-    const params = new URLSearchParams();
-    params.append("grant_type", "client_credentials");
-    params.append("client_id", "3852c03c669e46dd93e28ee6d4bd15c4");
-    params.append("client_secret", process.env.CLIENT_SECRET);
-
-    const response = await axios.post(
-      "https://accounts.spotify.com/api/token",
-      params,
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      },
-    );
-
-    return response.data.access_token;
-  }
-
-  async getUserInfo() {
-    if (!this.token) {
+  async getUserId() {
+    if (!this.auth_token) {
       await this.initialize();
     }
 
     try {
-      const response = await axios.get(
-        `https://api.spotify.com/v1/users/${this.username}`,
-        {
-          headers: { Authorization: `Bearer ${this.token}` },
-        },
-      );
-      return response.data;
+      const response = await axios.get("https://api.spotify.com/v1/me", {
+        headers: { Authorization: `Bearer ${this.auth_token}` },
+      });
+      return response.data.id;
     } catch (error) {
       console.log(error);
-      throw new Error("Failed to fetch user data");
+      throw new Error("Failed to fetch user ID");
     }
   }
 
-  async getUserPlaylists() {
-    if (!this.token) {
+  async getPlaylistLibrary() {
+    if (!this.auth_token) {
       await this.initialize();
     }
 
     try {
       const response = await axios.get(
-        `https://api.spotify.com/v1/users/${this.username}/playlists`,
+        `https://api.spotify.com/v1/users/${this.user_id}/playlists`,
         {
-          headers: { Authorization: `Bearer ${this.token}` },
+          headers: { Authorization: `Bearer ${this.auth_token}` },
         },
       );
-      return response.data;
+
+      const playlist_promises = response.data.items.map(async (item) => {
+        const playlist_id = item.id;
+        const playlist_obj = await this.getPlaylist(playlist_id);
+        const playlist_uf = await this.convertToUniversalFormat(playlist_obj);
+        return playlist_uf;
+      });
+      const playlists = await Promise.all(playlist_promises);
+
+      return playlists;
     } catch (error) {
       console.log(error);
       throw new Error("Failed to fetch user playlists");
     }
   }
 
-  async getPlaylistFromUrl(url) {
-    if (!this.token) {
+  async getPlaylist(id) {
+    if (!this.auth_token) {
       await this.initialize();
     }
 
-    if (url.search("playlist") == -1) {
-      throw new Error("Invalid playlist URL");
-    }
-
-    const collection_id = url.split("playlist/")[1];
-
     try {
       const response = await axios.get(
-        `https://api.spotify.com/v1/playlists/${collection_id}`,
+        `https://api.spotify.com/v1/playlists/${id}`,
         {
-          headers: { Authorization: `Bearer ${this.token}` },
+          headers: { Authorization: `Bearer ${this.auth_token}` },
         },
       );
       return response.data;
@@ -102,28 +79,27 @@ class SpotifyApi {
     }
   }
 
-  async createEmptyPlaylist(playlist_name) {
-    if (!this.token) {
+  async createEmptyPlaylist(playlist_name, playlist_description = "") {
+    if (!this.auth_token) {
       await this.initialize();
     }
 
     try {
       const response = await axios.post(
-        `https://api.spotify.com/v1/users/${this.username}/playlists`,
+        `https://api.spotify.com/v1/users/${this.user_id}/playlists`,
         {
           name: playlist_name,
-          description: `Playlist transferred to Spotify using Harmony`,
+          description: `${playlist_description} (Transferred to Spotify using Harmony)`,
           public: false,
         },
         {
           headers: {
-            Authorization: `Bearer ${this.token}`,
+            Authorization: `Bearer ${this.auth_token}`,
             "Content-Type": "application/json",
           },
         },
       );
 
-      // Return the playlist ID from the response
       return response.data.id;
     } catch (error) {
       console.error(
@@ -134,12 +110,82 @@ class SpotifyApi {
     }
   }
 
+  async populatePlaylist(playlist_id, playlist_uf) {
+    if (!this.auth_token) {
+      await this.initialize();
+    }
+
+    try {
+      const song_uri_promises = [];
+      playlist_uf.tracks.forEach((track) => {
+        song_uri_promises.push(this.findSong(track));
+      });
+      const song_uris = await Promise.all(song_uri_promises);
+
+      for (let i = song_uris.length - 1; i >= 0; i--) {
+        if (song_uris[i] === null) {
+          song_uris.splice(i, 1);
+        }
+      }
+
+      const response = await axios.post(
+        `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`,
+        { uris: song_uris },
+        {
+          headers: {
+            Authorization: `Bearer ${this.auth_token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      console.log(response.data);
+    } catch (error) {
+      console.error(
+        "Error populating playlist:",
+        error.response ? error.response.data : error.message,
+      );
+      throw new Error("Failed to populate playlist");
+    }
+  }
+
+  async findSong(song_uf) {
+    if (!this.auth_token) {
+      await this.initialize();
+    }
+
+    try {
+      const song_title = song_uf.name.split(" ").join("%20");
+      const song_artist = song_uf.artist.split(" ").join("%20");
+      const song_album = song_uf.album.split(" ").join("%20");
+
+      const response = await axios.get(
+        `https://api.spotify.com/v1/search?q=track:${song_title}%20artist:${song_artist}%20album:${song_album}&type=track`,
+        {
+          headers: { Authorization: `Bearer ${this.auth_token}` },
+        },
+      );
+
+      if (response.data.tracks.items.length === 0) {
+        return null;
+      }
+
+      return response.data.tracks.items[0].uri;
+    } catch (error) {
+      console.log(error);
+      throw new Error("Failed to find song");
+    }
+  }
+
   async convertToUniversalFormat(data) {
     var playlist = {
+      user: data.owner.display_name,
+      origin: "Spotify",
       name: data.name,
-      spotify_url: data.external_urls.spotify,
-      apple_music_url: null,
       number_of_tracks: data.tracks.total,
+      duration: data.duration_ms,
+      description: data.description,
+      image: data.images[0].url,
     };
 
     playlist.tracks = [];
@@ -148,15 +194,35 @@ class SpotifyApi {
         name: item.track.name,
         artist: item.track.artists[0].name,
         album: item.track.album.name,
-        disc_number: item.track.disc_number,
-        track_number: item.track.track_number,
         duration: item.track.duration_ms,
-        spotify_url: item.track.external_urls.spotify,
+        image: item.track.album.images[0].url,
       };
       playlist.tracks.push(track);
     });
     return playlist;
   }
 }
+
+async function runner() {
+  const spotify = new SpotifyApi();
+  await spotify.initialize();
+
+  // making the empty playlist
+  const playlist_id = await spotify.createEmptyPlaylist("Andrew's Playlist");
+  // console.log(playlist_id);
+
+  // getting the tranferred playlist
+  const playlist = await spotify.getPlaylist("2r2V05xfXLf4YGQx2WRuFl");
+  // console.log(playlist);
+  const playlist_uf = await spotify.convertToUniversalFormat(playlist);
+  // console.log(playlist_uf);
+
+  console.log("Transferring playlist...");
+
+  // transferring playlist
+  await spotify.populatePlaylist(playlist_id, playlist_uf);
+}
+
+await runner();
 
 export { SpotifyApi };
