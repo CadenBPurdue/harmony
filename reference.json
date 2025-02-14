@@ -1,18 +1,26 @@
 {
-    "user": "user id",
+    "user": "user id of the playlist owner",
     "origin": "spotify or apple music",
-    "playlist_name": "playlist name",
+    "name": "playlist name",
     "playlist_id": "playlist id",
+    "number_of_tracks": "number of tracks in the playlist",
+    "duration": "duration of the playlist",
+    "description": "playlist description",
+    "image": "image url",
     "tracks": {
         "track_id1": {
-            "track_name": "track name",
+            "name": "track name",
             "artist": "artist",
-            "album": "album"
+            "album": "album",
+            "duration": "duration",
+            "image": "image url"
         }, 
         "track_id2": {
-            "track_name": "track name",
+            "name": "track name",
             "artist": "artist",
-            "album": "album"
+            "album": "album",
+            "duration": "duration",
+            "image": "image url"
         }
     }
 }
