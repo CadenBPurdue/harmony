@@ -38,7 +38,7 @@ class AppleMusicApi {
       baseURL: "https://api.music.apple.com",
       baseURL: "https://api.music.apple.com",
       headers: {
-        "Authorization": `Bearer ${this.developerToken}`,
+        Authorization: `Bearer ${this.developerToken}`,
         "Music-User-Token": this.userToken,
         "Content-Type": "application/json",
       },
@@ -270,4 +270,3 @@ class AppleMusicApi {
 
 const appleMusicApi = new AppleMusicApi();
 export { appleMusicApi };
-
