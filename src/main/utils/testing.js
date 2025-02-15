@@ -1,28 +1,17 @@
-import dotenv from "dotenv";
 import { SpotifyApi } from "./spotify.js";
 
 class SpotifyUnitTest {
-  async _test_env() {
-    dotenv.config();
-    const client_id = process.env.SPOTIFY_CLIENT_ID;
-    this.assert(client_id !== undefined, "Client ID should not be null");
-  }
-
-  async _test_getToken() {
-    const spotify = await this.setup();
-    this.assert(spotify.auth_token !== null, "Token should not be null");
-    console.log("_test_getToken passed");
-  }
-
-  async _test_getUserPlaylists() {
-    const spotify = await this.setup();
+  async _test_getPlaylistLibrary() {
+    const spotify = new SpotifyApi();
+    await spotify.initialize();
     const playlists = await spotify.getPlaylistLibrary();
     this.assert(playlists !== null, "Playlists should not be null");
     console.log("_test_getUserPlaylists passed");
   }
 
   async _test_getPlaylistFromUrl() {
-    const spotify = await this.setup();
+    const spotify = new SpotifyApi();
+    await spotify.initialize();
 
     const valid_url_1 =
       "https://open.spotify.com/playlist/7dNySe6is1ETaEBmDD5TPp";
@@ -55,10 +44,22 @@ class SpotifyUnitTest {
     console.log("_test_createEmptyPlaylist passed");
   }
 
-  async setup() {
+  async apple_to_spotify() {
     const spotify = new SpotifyApi();
     await spotify.initialize();
-    return spotify;
+
+    const appleMusic = new AppleMusicApi();
+    await appleMusic.initialize();
+
+    // fetching apple music playlist
+    const apple_playlist_id = "";
+    const apple_playlist = await appleMusic.getPlaylist(apple_playlist_id);
+
+    // making the empty playlist
+    const playlist_id = await spotify.createEmptyPlaylist("Andrew's Playlist");
+
+    // transferring playlist
+    await spotify.populatePlaylist(playlist_id, apple_playlist);
   }
 
   assert(condition, message = "Assertion failed") {
@@ -69,14 +70,7 @@ class SpotifyUnitTest {
 
   async main() {
     try {
-      // this._test_env();
-      // const spotify = new SpotifyApi();
-      // await spotify.initialize();
-      // await this._test_getAccessToken();
-      // await this._test_getPlaylistLibrary();
-      // await this._test_getPlaylist();
-      await this._test_createEmptyPlaylist("test");
-      console.log("All tests passed!");
+      await this.apple_to_spotify();
     } catch (error) {
       console.error("Test failed:", error.message);
     }
