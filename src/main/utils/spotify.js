@@ -47,8 +47,7 @@ class SpotifyApi {
 
       const playlist_promises = response.data.items.map(async (item) => {
         const playlist_id = item.id;
-        const playlist_obj = await this.getPlaylist(playlist_id);
-        const playlist_uf = await this.convertToUniversalFormat(playlist_obj);
+        const playlist_uf = await this.getPlaylist(playlist_id);
         return playlist_uf;
       });
       const playlists = await Promise.all(playlist_promises);
@@ -72,7 +71,7 @@ class SpotifyApi {
           headers: { Authorization: `Bearer ${this.auth_token}` },
         },
       );
-      return response.data;
+      return this.convertToUniversalFormat(response.data);
     } catch (error) {
       console.log(error);
       throw new Error("Failed to fetch playlist from URL");
@@ -122,9 +121,11 @@ class SpotifyApi {
       });
       const song_uris = await Promise.all(song_uri_promises);
 
+      var null_songs = 0;
       for (let i = song_uris.length - 1; i >= 0; i--) {
         if (song_uris[i] === null) {
           song_uris.splice(i, 1);
+          null_songs++;
         }
       }
 
@@ -139,6 +140,7 @@ class SpotifyApi {
         },
       );
 
+      console.log(`${null_songs} songs were not found.`);
       console.log(response.data);
     } catch (error) {
       console.error(
@@ -177,7 +179,7 @@ class SpotifyApi {
     }
   }
 
-  async convertToUniversalFormat(data) {
+  static async convertToUniversalFormat(data) {
     var playlist = {
       user: data.owner.display_name,
       origin: "Spotify",
@@ -202,27 +204,5 @@ class SpotifyApi {
     return playlist;
   }
 }
-
-async function runner() {
-  const spotify = new SpotifyApi();
-  await spotify.initialize();
-
-  // making the empty playlist
-  const playlist_id = await spotify.createEmptyPlaylist("Andrew's Playlist");
-  // console.log(playlist_id);
-
-  // getting the tranferred playlist
-  const playlist = await spotify.getPlaylist("2r2V05xfXLf4YGQx2WRuFl");
-  // console.log(playlist);
-  const playlist_uf = await spotify.convertToUniversalFormat(playlist);
-  // console.log(playlist_uf);
-
-  console.log("Transferring playlist...");
-
-  // transferring playlist
-  await spotify.populatePlaylist(playlist_id, playlist_uf);
-}
-
-await runner();
 
 export { SpotifyApi };
