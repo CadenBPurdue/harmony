@@ -55,18 +55,6 @@ function closeSpotifyAuthWindow() {
   }
 }
 
-function closeAppleMusicAuthWindow() {
-  console.log("[Apple Music] Attempting to close auth window");
-  if (appleMusicAuthWindow) {
-    console.log("[Apple Music] Auth window exists, closing...");
-    appleMusicAuthWindow.close();
-    appleMusicAuthWindow = null;
-    console.log("[Apple Music] Auth window closed and reference cleared");
-  } else {
-    console.log("[Apple Music] No auth window to close");
-  }
-}
-
 async function exchangeCodeForToken(code) {
   console.log("[Spotify] Starting token exchange...");
   const clientId = process.env.SPOTIFY_CLIENT_ID;
@@ -377,12 +365,10 @@ async function initiateAppleMusicAuth() {
         },
       );
 
-      // Helper function to check for success
-      function checkForSuccess(url) {
-        if (isAuthenticating) return; // Skip if already authenticating
+      async function checkForSuccess(url) {
+        if (isAuthenticating || !appleMusicAuthWindow) return;
 
         console.log("Checking URL for success:", url);
-        // Check for various success URLs
         if (
           url.includes("music.apple.com/new") ||
           url.includes("music.apple.com/us/browse") ||
@@ -390,35 +376,74 @@ async function initiateAppleMusicAuth() {
           url.includes("music.apple.com/listen-now")
         ) {
           console.log("Success URL detected:", url);
-
-          // Set flag to prevent multiple authentications
           isAuthenticating = true;
 
-          // Give a small delay to ensure everything is settled
-          setTimeout(() => {
+          try {
+            // Get cookies before closing the window
+            const cookies =
+              await appleMusicAuthWindow.webContents.session.cookies.get({
+                domain: ".apple.com",
+              });
+
+            // Find the music user token cookie
+            const musicUserTokenCookie = cookies.find(
+              (cookie) =>
+                cookie.name === "media-user-token" ||
+                cookie.name === "music-user-token",
+            );
+
+            if (!musicUserTokenCookie) {
+              throw new Error("Music user token cookie not found");
+            }
+
             console.log("Setting Apple Music token...");
             appleMusicToken = {
               token: devToken,
-              userToken: "authenticated",
+              userToken: musicUserTokenCookie.value,
               timestamp: Date.now(),
-              expiresIn: 180 * 24 * 60 * 60,
+              expiresIn: 180 * 24 * 60 * 60, // 180 days
             };
+
             console.log(
               "[AuthManager] Setting new Apple Music token:",
               appleMusicToken,
             );
-            setAppleMusicToken(appleMusicToken);
+            await setAppleMusicToken(appleMusicToken);
 
-            console.log("Closing auth window...");
-            closeAppleMusicAuthWindow();
+            // Store the success state
+            const success = { success: true };
 
-            console.log("Resolving auth promise...");
-            resolve({ success: true });
-          }, 500);
+            // Close the window
+            if (appleMusicAuthWindow) {
+              appleMusicAuthWindow.destroy();
+              appleMusicAuthWindow = null;
+            }
+
+            // Resolve with the success state
+            resolve(success);
+          } catch (error) {
+            console.error("Error during authentication:", error);
+            if (appleMusicAuthWindow) {
+              appleMusicAuthWindow.destroy();
+              appleMusicAuthWindow = null;
+            }
+            reject(error);
+          }
         }
       }
 
-      // Single navigation listener for success check
+      // Window event handlers
+      appleMusicAuthWindow.on("closed", () => {
+        console.log("Auth window closed event triggered");
+        if (appleMusicAuthWindow) {
+          appleMusicAuthWindow = null;
+        }
+        if (!appleMusicToken?.userToken && !isAuthenticating) {
+          reject(new Error("Authentication window was closed"));
+        }
+      });
+
+      // Navigation event handlers
       appleMusicAuthWindow.webContents.on("did-navigate", (event, url) => {
         console.log("Navigation occurred:", url);
         checkForSuccess(url);
@@ -440,12 +465,14 @@ async function initiateAppleMusicAuth() {
       // Frame loading listener
       appleMusicAuthWindow.webContents.on("did-frame-finish-load", () => {
         console.log("Frame finished loading");
-        const currentURL = appleMusicAuthWindow.webContents.getURL();
-        console.log("Current URL after frame load:", currentURL);
-        checkForSuccess(currentURL);
+        if (appleMusicAuthWindow) {
+          const currentURL = appleMusicAuthWindow.webContents.getURL();
+          console.log("Current URL after frame load:", currentURL);
+          checkForSuccess(currentURL);
+        }
       });
 
-      // Error handling for failed navigation
+      // Error handling
       appleMusicAuthWindow.webContents.on(
         "did-fail-load",
         (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
@@ -457,17 +484,6 @@ async function initiateAppleMusicAuth() {
           });
         },
       );
-
-      appleMusicAuthWindow.on("closed", () => {
-        console.log("Auth window closed event triggered");
-        appleMusicAuthWindow = null;
-        if (!appleMusicToken?.userToken && !isAuthenticating) {
-          console.log("No user token found, rejecting with error");
-          reject(new Error("Authentication window was closed"));
-        } else {
-          console.log("User token exists, window closed normally");
-        }
-      });
 
       // Load the Apple Music URL
       const musicKitUrl = new URL("https://music.apple.com/us/login");
@@ -498,7 +514,7 @@ function initiateSpotifyAuth() {
 
   const redirectUri = "http://localhost:8888/callback";
   const scope =
-    "user-read-private user-read-email playlist-read-private playlist-modify-public";
+    "user-read-private user-read-email playlist-read-private playlist-modify-public playlist-modify-private";
   const state = generateState();
 
   console.log("[Spotify] Building auth URL");
