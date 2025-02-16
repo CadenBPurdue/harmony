@@ -1,0 +1,28 @@
+{
+    "user": "user id of the playlist owner",
+    "origin": "spotify or apple music",
+    "name": "playlist name",
+    "playlist_id": "playlist id",
+    "number_of_tracks": "number of tracks in the playlist",
+    "duration": "duration of the playlist",
+    "description": "playlist description",
+    "image": "image url",
+    "tracks": {
+        "track_id1": {
+            "name": "track name",
+            "artist": "artist",
+            "album": "album",
+            "duration": "duration",
+            "image": "image url"
+        }, 
+        "track_id2": {
+            "name": "track name",
+            "artist": "artist",
+            "album": "album",
+            "duration": "duration",
+            "image": "image url"
+        }
+    }
+}
+
+
