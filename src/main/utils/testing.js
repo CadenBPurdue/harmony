@@ -1,4 +1,5 @@
 import { SpotifyApi } from "./spotify.js";
+// import { AppleMusicApi } from "./apple.js";
 
 class SpotifyUnitTest {
   async _test_getPlaylistLibrary() {
@@ -48,18 +49,17 @@ class SpotifyUnitTest {
     const spotify = new SpotifyApi();
     await spotify.initialize();
 
-    const appleMusic = new AppleMusicApi();
-    await appleMusic.initialize();
-
     // fetching apple music playlist
-    const apple_playlist_id = "";
-    const apple_playlist = await appleMusic.getPlaylist(apple_playlist_id);
+    const spotify_playlist_id = "2r2V05xfXLf4YGQx2WRuFl";
+    const spotify_playlist = await spotify.getPlaylist(spotify_playlist_id);
 
     // making the empty playlist
-    const playlist_id = await spotify.createEmptyPlaylist("Andrew's Playlist");
+    const playlist_id = await spotify.createEmptyPlaylist(
+      spotify_playlist.name,
+    );
 
     // transferring playlist
-    await spotify.populatePlaylist(playlist_id, apple_playlist);
+    await spotify.populatePlaylist(playlist_id, spotify_playlist);
   }
 
   assert(condition, message = "Assertion failed") {

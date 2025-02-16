@@ -1,19 +1,56 @@
 import axios from "axios";
 import dotenv from "dotenv";
+// import { getSpotifyToken } from "./safe_storage";
 
 class SpotifyApi {
   constructor() {
     this.auth_token = null;
+    this.refresh_token = null;
+    this.client_id = null;
+    this.client_secret = null;
     this.user_id = null;
   }
 
   async initialize() {
     dotenv.config();
-    this.auth_token = process.env.SPOTIFY_AUTH_TOKEN;
-    if (!this.auth_token) {
-      throw new Error("Failed to get token");
-    }
+    this.auth_token = process.env.SPOTIFY_AUTH_TOKEN; // change this to use safe storage
+    this.refresh_token = process.env.SPOTIFY_REFRESH_TOKEN; // change this to use safe storage
+    this.client_id = process.env.SPOTIFY_CLIENT_ID; // change this to use safe storage
+    this.client_secret = process.env.SPOTIFY_CLIENT_SECRET; // change this to use safe storage
+    await this.refreshToken();
+    this.tokenHandler(); // token will refresh every 55 minutes
     this.user_id = await this.getUserId();
+  }
+
+  tokenHandler() {
+    setInterval(() => {
+      this.refreshToken();
+    }, 3300000);
+  }
+
+  async refreshToken() {
+    try {
+      console.log(this.auth_token);
+      const response = await axios.post(
+        "https://accounts.spotify.com/api/token",
+        `grant_type=refresh_token&refresh_token=${this.refresh_token}`,
+        {
+          headers: {
+            Authorization: `Basic ${Buffer.from(
+              `${this.client_id}:${this.client_secret}`,
+            ).toString("base64")}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        },
+      );
+
+      this.auth_token = response.data.access_token;
+      console.log("\n\n" + this.auth_token);
+      this.refresh_token = response.data.refresh_token;
+    } catch (error) {
+      console.log(error);
+      throw new Error("Failed to refresh token");
+    }
   }
 
   async getUserId() {
@@ -71,7 +108,7 @@ class SpotifyApi {
           headers: { Authorization: `Bearer ${this.auth_token}` },
         },
       );
-      return this.convertToUniversalFormat(response.data);
+      return SpotifyApi.convertToUniversalFormat(response.data);
     } catch (error) {
       console.log(error);
       throw new Error("Failed to fetch playlist from URL");
@@ -204,5 +241,8 @@ class SpotifyApi {
     return playlist;
   }
 }
+
+const spotify = new SpotifyApi();
+spotify.initialize();
 
 export { SpotifyApi };
