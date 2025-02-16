@@ -514,7 +514,7 @@ function initiateSpotifyAuth() {
 
   const redirectUri = "http://localhost:8888/callback";
   const scope =
-    "user-read-private user-read-email playlist-read-private playlist-modify-public";
+    "user-read-private user-read-email playlist-read-private playlist-modify-public playlist-modify-private";
   const state = generateState();
 
   console.log("[Spotify] Building auth URL");
