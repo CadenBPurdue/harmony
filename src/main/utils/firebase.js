@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getGoogleToken } from "./safe_storage.js";
 import { getAuth, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 
 // Your Firebase config from Firebase Console
@@ -14,6 +15,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
 
 // Sign in using the google 
 async function authenticateWithFirebase() {
@@ -28,9 +30,11 @@ async function authenticateWithFirebase() {
     try {
         const userCredential = await signInWithCredential(auth, credential);
         console.log("[Firebase] successfully authenticated:", userCredential.user);
+        return userCredential;
     } catch (error) {
         console.error("[Firebase] authentication failed:", error);
+        throw error;
     }
-}
+};
 
 export { firebaseApp, authenticateWithFirebase };
