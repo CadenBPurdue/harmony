@@ -19,14 +19,17 @@ function App() {
   // Custom function to sign in with Google via IPC
   const handleGoogleSignIn = async () => {
     try {
-      // Invoke the "auth:google" handler in the main process
-      const tokens = await window.electronAPI.invoke("auth:google");
+      console.log("Starting Google sign-in process...");
+      // Invoke the "signInWithGoogle" handler in the main process
+      const tokens = await window.electronAPI.signInWithGoogle();
+      console.log("Received tokens from Google:", tokens);
       if (!tokens || !tokens.id_token) {
         throw new Error("No ID token received from Google");
       }
       // Create a Firebase credential using the received ID token
       const credential = GoogleAuthProvider.credential(tokens.id_token);
       const userCredential = await signInWithCredential(auth, credential);
+      console.log("User signed in successfully:", userCredential.user);
       setUser(userCredential.user);
     } catch (err) {
       console.error("Google sign-in error:", err);
@@ -39,6 +42,7 @@ function App() {
 
   // Check auth status on component mount
   useEffect(() => {
+    handleGoogleSignIn();
     checkAuthStatus();
   }, []);
 

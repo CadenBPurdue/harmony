@@ -2,13 +2,23 @@
 import dotenv from "dotenv";
 import { BrowserWindow } from "electron";
 import fetch from "node-fetch";
+import { setGoogleToken, getGoogleToken } from "./safe_storage.js";
 dotenv.config();
 
 let googleAuthWindow = null;
+let googleToken = null;
 
 function generateState() {
   // Use a secure random generator in production
   return Math.random().toString(36).substring(2, 15);
+}
+
+// Initialize token
+try {
+  googleToken = getGoogleToken();
+  console.log("[GoogleAuth] Loaded token:", googleToken);
+} catch (error) {
+  console.error("[GoogleAuth] Error loading token:", error);
 }
 
 function closeGoogleAuthWindow() {
@@ -81,8 +91,19 @@ async function exchangeCodeForTokens(code) {
     throw new Error(`Token exchange failed: ${response.statusText}`);
   }
 
-  // The response will include fields like access_token, id_token, refresh_token, etc.
-  return await response.json();
+  const tokens = await response.json();
+  
+  // Store tokens in safe storage
+  googleToken = {
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token,
+    idToken: tokens.id_token,
+    expiresIn: tokens.expires_in,
+    timestamp: Date.now(),
+  };
+
+  await setGoogleToken(googleToken);
+  return tokens;
 }
 
 function createGoogleAuthWindow(authUrl, state, resolve, reject) {
@@ -118,6 +139,14 @@ function createGoogleAuthWindow(authUrl, state, resolve, reject) {
 
 export function initiateGoogleAuth() {
   return new Promise((resolve, reject) => {
+    // Check if we have a valid token
+    if (googleToken && googleToken.timestamp) {
+      const expirationTime = googleToken.timestamp + (googleToken.expiresIn * 1000);
+      if (Date.now() < expirationTime) {
+        return resolve(googleToken);
+      }
+    }
+
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const redirectUri = process.env.GOOGLE_REDIRECT_URI; // e.g., "myapp://auth"
     const scope = "openid email profile";
@@ -130,7 +159,7 @@ export function initiateGoogleAuth() {
     authUrl.searchParams.append("response_type", "code");
     authUrl.searchParams.append("scope", scope);
     authUrl.searchParams.append("state", state);
-    // Optionally add `prompt=consent` or other parameters if needed
+    authUrl.searchParams.append("prompt", "consent");
 
     createGoogleAuthWindow(authUrl, state, resolve, reject);
   });

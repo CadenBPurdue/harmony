@@ -154,3 +154,28 @@ export function clearAppleMusicToken() {
     fs.unlinkSync(devPath);
   }
 }
+
+export function setGoogleToken(token) {
+  console.log("[SafeStorage] Setting Google token:", token);
+  return saveEncrypted(token, path.join(storagePath, "google.enc"));
+}
+
+export function getGoogleToken() {
+  console.log("[SafeStorage] Getting Google token");
+  const token = loadEncrypted(path.join(storagePath, "google.enc"));
+  console.log("[SafeStorage] Retrieved Google token:", token);
+  return token;
+}
+
+export function clearGoogleToken() {
+  console.log("[SafeStorage] Clearing Google token");
+  const filePath = path.join(storagePath, "google.enc");
+  const devPath = `${filePath}.json`;
+
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+  if (fs.existsSync(devPath)) {
+    fs.unlinkSync(devPath);
+  }
+}

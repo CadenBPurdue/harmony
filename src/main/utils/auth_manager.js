@@ -9,6 +9,7 @@ import {
   setSpotifyToken,
   getAppleMusicToken,
   setAppleMusicToken,
+  getGoogleToken,
 } from "./safe_storage.js";
 
 dotenv.config();
@@ -16,6 +17,7 @@ dotenv.config();
 console.log("[AuthManager] Initializing tokens...");
 let spotifyToken = null;
 let appleMusicToken = null;
+let googleToken = null;
 
 try {
   spotifyToken = getSpotifyToken();
@@ -541,25 +543,20 @@ function getAuthStatus() {
   console.log("[AuthManager] Checking auth status");
   console.log("[AuthManager] Current Spotify token:", spotifyToken);
   console.log("[AuthManager] Current Apple Music token:", appleMusicToken);
+  console.log("[AuthManager] Current Google token:", googleToken);
 
   return {
     isSpotifyAuthenticated: !!spotifyToken?.accessToken,
     isAppleMusicAuthenticated: !!appleMusicToken?.userToken,
+    isGoogleAuthenticated: !!googleToken?.accessToken,
     spotifyExpiresIn: spotifyToken
-      ? Math.floor(
-          (spotifyToken.timestamp +
-            spotifyToken.expiresIn * 1000 -
-            Date.now()) /
-            1000,
-        )
+      ? Math.floor((spotifyToken.timestamp + spotifyToken.expiresIn * 1000 - Date.now()) / 1000)
       : null,
     appleMusicExpiresIn: appleMusicToken
-      ? Math.floor(
-          (appleMusicToken.timestamp +
-            appleMusicToken.expiresIn * 1000 -
-            Date.now()) /
-            1000,
-        )
+      ? Math.floor((appleMusicToken.timestamp + appleMusicToken.expiresIn * 1000 - Date.now()) / 1000)
+      : null,
+    googleExpiresIn: googleToken
+      ? Math.floor((googleToken.timestamp + googleToken.expiresIn * 1000 - Date.now()) / 1000)
       : null,
   };
 }
