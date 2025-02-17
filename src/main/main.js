@@ -13,10 +13,11 @@ import {
 import {
   initiateSpotifyAuth,
   initiateAppleMusicAuth,
+  initiateGoogleAuth,
   getAuthStatus,
 } from "./utils/auth_manager.js";
 import { configManager } from "./utils/config.js";
-import { initiateGoogleAuth } from "./utils/google_auth_manager.js"; // <-- Import the Google auth module
+import { authenticateWithFirebase } from "./utils/firebase.js";
 
 // Load environment variables
 dotenv.config();
@@ -35,11 +36,11 @@ function createWindow() {
         "Content-Security-Policy": [
           "default-src 'self' https://accounts.spotify.com https://*.scdn.co https://*.apple.com https://js-cdn.music.apple.com https://apis.google.com https://*.firebaseapp.com https://*.googleapis.com;",
           "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com https://*.apple.com https://js-cdn.music.apple.com https://apis.google.com https://*.firebaseapp.com https://*.googleapis.com;",
-          "style-src 'self' 'unsafe-inline' https://*.spotify.com https://*.scdn.co https://*.apple.com;",
-          "font-src 'self' data: https://*.scdn.co https://*.apple.com;",
-          "img-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com data: https://*.apple.com;",
+          "style-src 'self' 'unsafe-inline' https://*.spotify.com https://*.scdn.co https://*.apple.com https://fonts.googleapis.com https://www.gstatic.com https://accounts.google.com;",
+          "font-src 'self' data: https://*.scdn.co https://*.apple.com https://fonts.gstatic.com;",
+          "img-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com data: https://*.apple.com https://ssl.gstatic.com https://lh3.googleusercontent.com;",
           "connect-src 'self' https://*.spotify.com https://*.scdn.co https://*.ingest.sentry.io https://api.spotify.com https://www.google.com https://*.apple.com https://api.music.apple.com https://*.googleapis.com https://*.firebaseapp.com;",
-          "frame-src 'self' https://accounts.spotify.com https://www.google.com https://recaptcha.google.com https://*.apple.com https://harmony-oss.firebaseapp.com;",
+          "frame-src 'self' https://accounts.spotify.com https://www.google.com https://recaptcha.google.com https://*.apple.com https://harmony-oss.firebaseapp.com https://accounts.google.com;",
           "media-src 'self' https://*.scdn.co https://*.apple.com;",
         ].join(" "),
       },
@@ -126,9 +127,7 @@ function createWindow() {
     }
   });
 
-  // -------------------------
-  // Add Google Auth IPC Handler
-  // -------------------------
+  // Google Auth IPC Handler
   ipcMain.handle("auth:google", async () => {
     try {
       return await initiateGoogleAuth();
@@ -137,6 +136,18 @@ function createWindow() {
       throw error;
     }
   });
+
+  // Firebase Auth IPC Handler
+  ipcMain.handle("auth:firebase", async () => {
+    try {
+      await authenticateWithFirebase();
+      return { success: true };
+    } catch (error) {
+      console.error("Firebase auth failed:", error);
+      throw error;
+    }
+  });
+  
 
   mainWindow.webContents.on("did-finish-load", () => {
     console.log("Window loaded");

@@ -14,36 +14,12 @@ function App() {
   const [error, setError] = useState(null);
   const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
   const [isAppleMusicConnected, setIsAppleMusicConnected] = useState(false);
-  const [user, setUser] = useState(null);
-
-  // Custom function to sign in with Google via IPC
-  const handleGoogleSignIn = async () => {
-    try {
-      console.log("Starting Google sign-in process...");
-      // Invoke the "signInWithGoogle" handler in the main process
-      const tokens = await window.electronAPI.signInWithGoogle();
-      console.log("Received tokens from Google:", tokens);
-      if (!tokens || !tokens.id_token) {
-        throw new Error("No ID token received from Google");
-      }
-      // Create a Firebase credential using the received ID token
-      const credential = GoogleAuthProvider.credential(tokens.id_token);
-      const userCredential = await signInWithCredential(auth, credential);
-      console.log("User signed in successfully:", userCredential.user);
-      setUser(userCredential.user);
-    } catch (err) {
-      console.error("Google sign-in error:", err);
-      setError({
-        severity: "error",
-        message: "Google sign-in failed. Please try again.",
-      });
-    }
-  };
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
 
   // Check auth status on component mount
   useEffect(() => {
-    handleGoogleSignIn();
     checkAuthStatus();
+    window.electronAPI.connectFirebase();
   }, []);
 
   const checkAuthStatus = async () => {
@@ -51,6 +27,11 @@ function App() {
       const status = await window.electronAPI.getAuthStatus();
       setIsSpotifyConnected(status.isSpotifyAuthenticated);
       setIsAppleMusicConnected(status.isAppleMusicAuthenticated);
+      setIsGoogleConnected(status.isGoogleAuthenticated);
+
+      if (!status.isGoogleAuthenticated) {
+        handleGoogleLogin();
+      }
     } catch (err) {
       console.error("Failed to check auth status:", err);
     }
@@ -96,6 +77,26 @@ function App() {
       setIsAppleMusicConnected(false);
     }
   };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await window.electronAPI.connectGoogle();
+      if (result.success) {
+        setIsGoogleConnected(true);
+        setError({
+          severity: "success",
+          message: "Successfully connected to Google!",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to connect to Google:", err);
+      setError({
+        severity: "error",
+        message: `Failed to connect to Google: ${err.message}`,
+      });
+      setIsGoogleConnected(false);
+    }
+  }
 
   return (
     <Container>

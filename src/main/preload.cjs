@@ -13,6 +13,18 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("auth:appleMusic");
   },
 
+  // Google authentication
+  connectGoogle: () => {
+    console.log("Calling connectGoogle from preload");
+    return ipcRenderer.invoke("auth:google");
+  },
+
+  // Firebase authentication
+  connectFirebase: () => {
+    console.log("Calling connectFirebase from preload");
+    return ipcRenderer.invoke("auth:firebase");
+  },
+
   // Check authentication status
   getAuthStatus: () => {
     console.log("Calling getAuthStatus from preload");
@@ -29,12 +41,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   openExternal: (url) => {
     console.log("Opening external URL:", url);
     shell.openExternal(url);
-  },
-
-  // Google authentication via IPC
-  signInWithGoogle: () => {
-    console.log("Calling signInWithGoogle from preload");
-    return ipcRenderer.invoke("auth:google");
   },
 });
 
