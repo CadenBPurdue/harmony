@@ -464,8 +464,11 @@ class AppleMusicApi {
         trackEntries,
         5,
         1000,
-        async ([trackInfo]) => {
+        async ([_, trackInfo]) => {
           try {
+            console.log(
+              `[PopulatePlaylist] Processing track: ${trackInfo.name} by ${trackInfo.artist}`,
+            );
             const catalogId = await this.findSong(trackInfo);
             if (catalogId) {
               return {
@@ -507,10 +510,9 @@ class AppleMusicApi {
           `[PopulatePlaylist] Adding batch of ${batch.length} tracks (${i + 1}-${i + batch.length})`,
         );
 
-        await this.api.post(
-          `/v1/me/library/playlists/${playlistId}/tracks`,
-          batch,
-        );
+        await this.api.post(`/v1/me/library/playlists/${playlistId}/tracks`, {
+          data: batch,
+        });
 
         // Add delay between batches
         if (i + 25 < validTracks.length) {
