@@ -1,8 +1,11 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithCredential,
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getGoogleToken } from "./safe_storage.js";
-
 
 // Your Firebase config from Firebase Console
 const firebaseConfig = {
@@ -27,14 +30,14 @@ async function authenticateWithFirebase() {
 
   const credential = GoogleAuthProvider.credential(idToken);
 
-    try {
-        const userCredential = await signInWithCredential(auth, credential);
-        console.log("[Firebase] successfully authenticated:", userCredential.user);
-        return userCredential;
-    } catch (error) {
-        console.error("[Firebase] authentication failed:", error);
-        throw error;
-    }
-};
+  try {
+    const userCredential = await signInWithCredential(auth, credential);
+    console.log("[Firebase] successfully authenticated:", userCredential.user);
+    return userCredential;
+  } catch (error) {
+    console.error("[Firebase] authentication failed:", error);
+    throw error;
+  }
+}
 
 export { firebaseApp, authenticateWithFirebase };
