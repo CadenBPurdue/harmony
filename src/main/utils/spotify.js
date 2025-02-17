@@ -1,6 +1,7 @@
 import axios from "axios";
 import dotenv from "dotenv";
 // import { getSpotifyToken } from "./safe_storage";
+import sqlite3 from "sqlite3";
 
 class SpotifyApi {
   constructor() {
@@ -93,6 +94,29 @@ class SpotifyApi {
     } catch (error) {
       console.log(error);
       throw new Error("Failed to fetch user playlists");
+    }
+  }
+
+  async storePlaylisLocally(playlist_ufs) {
+    // store the playlist to the local database `playlists.db`
+    try {
+      const db = new sqlite3.Database("playlists.db");
+      db.serialize(() => {
+        db.run(
+          "CREATE TABLE IF NOT EXISTS playlists (name TEXT PRIMARY KEY, origin TEXT, songs TEXT)",
+        );
+
+        const stmt = db.prepare(
+          "INSERT INTO playlists (name, origin, songs) VALUES (?, ?, ?)",
+        );
+        playlist_ufs.forEach((playlist_uf) => {
+          stmt.run(playlist_uf.name, playlist_uf.origin);
+        });
+        stmt.finalize();
+      });
+      db.close();
+    } catch (error) {
+      console.error("Error storing playlists locally:", error);
     }
   }
 
