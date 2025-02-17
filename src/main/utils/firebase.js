@@ -1,12 +1,7 @@
 import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithCredential,
-} from "firebase/auth";
-import { getGoogleToken } from "./safe_storage.js";
 import { getAuth, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getGoogleToken } from "./safe_storage.js";
 
 
 // Your Firebase config from Firebase Console
