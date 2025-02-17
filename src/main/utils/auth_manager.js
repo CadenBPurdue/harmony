@@ -1,4 +1,5 @@
 // src/main/utils/auth_manager.js
+import { clear } from "console";
 import fs from "fs";
 import dotenv from "dotenv";
 import { BrowserWindow, session } from "electron";
@@ -13,7 +14,6 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
-import { clear } from "console";
 
 dotenv.config();
 
@@ -575,7 +575,9 @@ function createGoogleAuthWindow(authUrl, state, resolve, reject) {
     },
   );
 
-  googleAuthWindow.loadURL(authUrl.toString()).catch((err) => {reject(err);});
+  googleAuthWindow.loadURL(authUrl.toString()).catch((err) => {
+    reject(err);
+  });
 
   // Listen for navigation events that may indicate our callback URL.
   googleAuthWindow.webContents.on("will-redirect", (event, url) => {

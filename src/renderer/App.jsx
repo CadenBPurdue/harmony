@@ -96,7 +96,7 @@ function App() {
       });
       setIsGoogleConnected(false);
     }
-  }
+  };
 
   return (
     <Container>
