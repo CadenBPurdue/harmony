@@ -92,7 +92,7 @@ async function exchangeCodeForTokens(code) {
   }
 
   const tokens = await response.json();
-  
+
   // Store tokens in safe storage
   googleToken = {
     accessToken: tokens.access_token,
@@ -141,7 +141,8 @@ export function initiateGoogleAuth() {
   return new Promise((resolve, reject) => {
     // Check if we have a valid token
     if (googleToken && googleToken.timestamp) {
-      const expirationTime = googleToken.timestamp + (googleToken.expiresIn * 1000);
+      const expirationTime =
+        googleToken.timestamp + googleToken.expiresIn * 1000;
       if (Date.now() < expirationTime) {
         return resolve(googleToken);
       }
