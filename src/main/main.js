@@ -2,13 +2,14 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { app, BrowserWindow, ipcMain, protocol, session } from "electron";
+import { app, BrowserWindow, ipcMain, protocol, session, shell } from "electron";
 import {
   initiateSpotifyAuth,
   initiateAppleMusicAuth,
   getAuthStatus,
 } from "./utils/auth_manager.js";
 import { configManager } from "./utils/config.js";
+import { initiateGoogleAuth } from "./utils/google_auth_manager.js"; // <-- Import the Google auth module
 
 // Load environment variables
 dotenv.config();
@@ -25,13 +26,13 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         "Content-Security-Policy": [
-          "default-src 'self' https://accounts.spotify.com https://*.scdn.co https://*.apple.com https://js-cdn.music.apple.com;",
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com https://*.apple.com https://js-cdn.music.apple.com;",
+          "default-src 'self' https://accounts.spotify.com https://*.scdn.co https://*.apple.com https://js-cdn.music.apple.com https://apis.google.com https://*.firebaseapp.com https://*.googleapis.com;",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com https://*.apple.com https://js-cdn.music.apple.com https://apis.google.com https://*.firebaseapp.com https://*.googleapis.com;",
           "style-src 'self' 'unsafe-inline' https://*.spotify.com https://*.scdn.co https://*.apple.com;",
           "font-src 'self' data: https://*.scdn.co https://*.apple.com;",
           "img-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com data: https://*.apple.com;",
-          "connect-src 'self' https://*.spotify.com https://*.scdn.co https://*.ingest.sentry.io https://api.spotify.com https://www.google.com https://*.apple.com https://api.music.apple.com;",
-          "frame-src 'self' https://accounts.spotify.com https://www.google.com https://recaptcha.google.com https://*.apple.com;",
+          "connect-src 'self' https://*.spotify.com https://*.scdn.co https://*.ingest.sentry.io https://api.spotify.com https://www.google.com https://*.apple.com https://api.music.apple.com https://*.googleapis.com https://*.firebaseapp.com;",
+          "frame-src 'self' https://accounts.spotify.com https://www.google.com https://recaptcha.google.com https://*.apple.com https://harmony-oss.firebaseapp.com;",
           "media-src 'self' https://*.scdn.co https://*.apple.com;",
         ].join(" "),
       },
@@ -50,6 +51,11 @@ function createWindow() {
   });
 
   // IPC Handlers
+  ipcMain.on("open-external", (event, url) => {
+    console.log("Opening external URL in main process:", url);
+    shell.openExternal(url);
+  });
+
   ipcMain.handle("auth:spotify", async () => {
     return await initiateSpotifyAuth();
   });
@@ -109,6 +115,18 @@ function createWindow() {
       return { success: true };
     } catch (error) {
       console.error("Failed to clear credentials:", error);
+      throw error;
+    }
+  });
+
+  // -------------------------
+  // Add Google Auth IPC Handler
+  // -------------------------
+  ipcMain.handle("auth:google", async () => {
+    try {
+      return await initiateGoogleAuth();
+    } catch (error) {
+      console.error("Google auth failed:", error);
       throw error;
     }
   });

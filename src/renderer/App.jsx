@@ -14,7 +14,29 @@ function App() {
   const [error, setError] = useState(null);
   const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
   const [isAppleMusicConnected, setIsAppleMusicConnected] = useState(false);
+  const [user, setUser] = useState(null);
 
+  // Custom function to sign in with Google via IPC
+  const handleGoogleSignIn = async () => {
+    try {
+      // Invoke the "auth:google" handler in the main process
+      const tokens = await window.electronAPI.invoke("auth:google");
+      if (!tokens || !tokens.id_token) {
+        throw new Error("No ID token received from Google");
+      }
+      // Create a Firebase credential using the received ID token
+      const credential = GoogleAuthProvider.credential(tokens.id_token);
+      const userCredential = await signInWithCredential(auth, credential);
+      setUser(userCredential.user);
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+      setError({
+        severity: "error",
+        message: "Google sign-in failed. Please try again.",
+      });
+    }
+  };
+  
   // Check auth status on component mount
   useEffect(() => {
     checkAuthStatus();
