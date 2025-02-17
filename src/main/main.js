@@ -147,7 +147,6 @@ function createWindow() {
       throw error;
     }
   });
-  
 
   mainWindow.webContents.on("did-finish-load", () => {
     console.log("Window loaded");
