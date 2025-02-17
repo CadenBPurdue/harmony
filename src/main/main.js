@@ -2,7 +2,14 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { app, BrowserWindow, ipcMain, protocol, session, shell } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  protocol,
+  session,
+  shell,
+} from "electron";
 import {
   initiateSpotifyAuth,
   initiateAppleMusicAuth,

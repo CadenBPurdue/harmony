@@ -36,7 +36,7 @@ function App() {
       });
     }
   };
-  
+
   // Check auth status on component mount
   useEffect(() => {
     checkAuthStatus();
