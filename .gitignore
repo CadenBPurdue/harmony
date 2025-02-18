@@ -4,5 +4,5 @@ dist
 dist_electron
 .vscode
 .DS_Store
-.env
-.p8
+*.env
+*.p8

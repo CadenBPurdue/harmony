@@ -2,13 +2,8 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { app, BrowserWindow, ipcMain, protocol, session } from "electron";
-import {
-  initiateSpotifyAuth,
-  initiateAppleMusicAuth,
-  getAuthStatus,
-} from "./utils/auth_manager.js";
-import { configManager } from "./utils/config.js";
+import { app, BrowserWindow, protocol, session } from "electron";
+import { registerIpcHandlers } from "./utils/registerIpcHandlers.js";
 
 // Load environment variables
 dotenv.config();
@@ -25,13 +20,13 @@ function createWindow() {
       responseHeaders: {
         ...details.responseHeaders,
         "Content-Security-Policy": [
-          "default-src 'self' https://accounts.spotify.com https://*.scdn.co https://*.apple.com https://js-cdn.music.apple.com;",
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com https://*.apple.com https://js-cdn.music.apple.com;",
-          "style-src 'self' 'unsafe-inline' https://*.spotify.com https://*.scdn.co https://*.apple.com;",
-          "font-src 'self' data: https://*.scdn.co https://*.apple.com;",
-          "img-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com data: https://*.apple.com;",
-          "connect-src 'self' https://*.spotify.com https://*.scdn.co https://*.ingest.sentry.io https://api.spotify.com https://www.google.com https://*.apple.com https://api.music.apple.com;",
-          "frame-src 'self' https://accounts.spotify.com https://www.google.com https://recaptcha.google.com https://*.apple.com;",
+          "default-src 'self' https://accounts.spotify.com https://*.scdn.co https://*.apple.com https://js-cdn.music.apple.com https://apis.google.com https://*.firebaseapp.com https://*.googleapis.com;",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com https://*.apple.com https://js-cdn.music.apple.com https://apis.google.com https://*.firebaseapp.com https://*.googleapis.com;",
+          "style-src 'self' 'unsafe-inline' https://*.spotify.com https://*.scdn.co https://*.apple.com https://fonts.googleapis.com https://www.gstatic.com https://accounts.google.com;",
+          "font-src 'self' data: https://*.scdn.co https://*.apple.com https://fonts.gstatic.com;",
+          "img-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com data: https://*.apple.com https://ssl.gstatic.com https://lh3.googleusercontent.com;",
+          "connect-src 'self' https://*.spotify.com https://*.scdn.co https://*.ingest.sentry.io https://api.spotify.com https://www.google.com https://*.apple.com https://api.music.apple.com https://*.googleapis.com https://*.firebaseapp.com;",
+          "frame-src 'self' https://accounts.spotify.com https://www.google.com https://recaptcha.google.com https://*.apple.com https://harmony-oss.firebaseapp.com https://accounts.google.com;",
           "media-src 'self' https://*.scdn.co https://*.apple.com;",
         ].join(" "),
       },
@@ -47,70 +42,6 @@ function createWindow() {
       preload: path.join(__dirname, "preload.cjs"),
       webSecurity: true,
     },
-  });
-
-  // IPC Handlers
-  ipcMain.handle("auth:spotify", async () => {
-    return await initiateSpotifyAuth();
-  });
-
-  ipcMain.handle("auth:status", () => {
-    return getAuthStatus();
-  });
-
-  ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
-    try {
-      configManager.setCredentials("spotify", credentials);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to save credentials:", error);
-      throw error;
-    }
-  });
-
-  ipcMain.handle("config:hasSpotifyCredentials", () => {
-    return configManager.hasCredentials("spotify");
-  });
-
-  ipcMain.handle("config:clearSpotifyCredentials", () => {
-    try {
-      configManager.setCredentials("spotify", null);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to clear credentials:", error);
-      throw error;
-    }
-  });
-
-  ipcMain.handle("auth:appleMusic", async () => {
-    return await initiateAppleMusicAuth();
-  });
-
-  ipcMain.handle(
-    "config:setAppleMusicCredentials",
-    async (event, credentials) => {
-      try {
-        configManager.setCredentials("appleMusic", credentials);
-        return { success: true };
-      } catch (error) {
-        console.error("Failed to save credentials:", error);
-        throw error;
-      }
-    },
-  );
-
-  ipcMain.handle("config:hasAppleMusicCredentials", () => {
-    return configManager.hasCredentials("appleMusic");
-  });
-
-  ipcMain.handle("config:clearAppleMusicCredentials", () => {
-    try {
-      configManager.setCredentials("appleMusic", null);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to clear credentials:", error);
-      throw error;
-    }
   });
 
   mainWindow.webContents.on("did-finish-load", () => {
@@ -141,6 +72,9 @@ app.whenReady().then(() => {
     console.log("Harmony protocol request:", request.url);
     return new Response("", { status: 200 });
   });
+
+  // Register IPC handlers
+  registerIpcHandlers();
 
   mainWindow = createWindow();
 });

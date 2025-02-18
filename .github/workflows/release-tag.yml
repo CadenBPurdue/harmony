@@ -1,0 +1,56 @@
+name: Tagged Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  verify-version:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Verify tag matches version
+      id: verify_version
+      run: |
+        TAG_VERSION=${GITHUB_REF#refs/tags/v}
+        PACKAGE_VERSION=$(node -p "require('./package.json').version")
+        if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
+          echo "Tag version ($TAG_VERSION) does not match package.json version ($PACKAGE_VERSION)"
+          exit 1
+        fi
+      shell: bash
+
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        arch: [x64, arm64]
+    uses: ./.github/workflows/build-electron.yml
+    with:
+      os: ${{ matrix.os }}
+      arch: ${{ matrix.arch }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist_electron
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: dist_electron/*
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

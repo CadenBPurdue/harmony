@@ -1,5 +1,6 @@
 // src/main/utils/auth_manager.js
 import fs from "fs";
+import path from "path";
 import dotenv from "dotenv";
 import { BrowserWindow } from "electron";
 import jwt from "jsonwebtoken";
@@ -9,13 +10,31 @@ import {
   setSpotifyToken,
   getAppleMusicToken,
   setAppleMusicToken,
+  getGoogleToken,
+  setGoogleToken,
+  clearGoogleToken,
 } from "./safe_storage.js";
 
-dotenv.config();
+const isDev = process.env.NODE_ENV === "development";
+
+const envPath = isDev
+  ? ".env" // In development, .env is at your project root
+  : path.join(process.resourcesPath, ".env"); // In production, .env is in the resources folder
+
+dotenv.config({ path: envPath });
+
+function base64decode(base64) {
+  if (process.env.NODE_ENV === "development") {
+    return base64;
+  }
+
+  return Buffer.from(base64, "base64").toString("utf-8");
+}
 
 console.log("[AuthManager] Initializing tokens...");
 let spotifyToken = null;
 let appleMusicToken = null;
+let googleToken = null;
 
 try {
   spotifyToken = getSpotifyToken();
@@ -31,10 +50,20 @@ try {
   console.error("[AuthManager] Error loading Apple Music token:", error);
 }
 
+try {
+  googleToken = getGoogleToken();
+  console.log("[AuthManager] Loaded Google token:", googleToken);
+} catch (error) {
+  console.error("[AuthManager] Error loading Google token:", error);
+  clearGoogleToken();
+  googleToken = null;
+}
+
 let spotifyAuthWindow = null;
 let appleMusicAuthWindow = null;
+let googleAuthWindow = null;
 
-// Spotify-specific functions
+// Helper Functions
 function validateCredentials(clientId, clientSecret) {
   return clientId?.length === 32 && clientSecret?.length === 32;
 }
@@ -43,26 +72,20 @@ function generateState() {
   return Math.random().toString(36).substring(2, 15);
 }
 
+// Spotify Auth Functions
 function closeSpotifyAuthWindow() {
-  console.log("[Spotify] Attempting to close auth window");
   if (spotifyAuthWindow) {
-    console.log("[Spotify] Auth window exists, closing...");
     spotifyAuthWindow.close();
     spotifyAuthWindow = null;
-    console.log("[Spotify] Auth window closed and reference cleared");
-  } else {
-    console.log("[Spotify] No auth window to close");
   }
 }
 
-async function exchangeCodeForToken(code) {
-  console.log("[Spotify] Starting token exchange...");
+async function exchangeSpotifyCodeForToken(code) {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
   const redirectUri = "http://localhost:8888/callback";
 
   try {
-    console.log("[Spotify] Making token exchange request...");
     const response = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
       headers: {
@@ -79,40 +102,25 @@ async function exchangeCodeForToken(code) {
     });
 
     if (!response.ok) {
-      console.error(
-        "[Spotify] Token exchange failed:",
-        response.status,
-        response.statusText,
-      );
-      throw new Error(
-        `Token exchange failed: ${response.status} ${response.statusText}`,
-      );
+      throw new Error(`Token exchange failed: ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log("[Spotify] Token exchange response received");
-
     spotifyToken = {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
       expiresIn: data.expires_in,
       timestamp: Date.now(),
     };
-    console.log("[AuthManager] Setting new Spotify token:", spotifyToken);
     setSpotifyToken(spotifyToken);
-
-    console.log("[Spotify] Token exchange successful");
   } catch (error) {
-    console.error("[Spotify] Token exchange error:", error);
+    console.error("Spotify Token exchange error:", error);
     throw error;
   }
 }
 
 function handleSpotifyNavigation(url, expectedState, resolve, reject) {
-  console.log("[Spotify] Handling navigation to:", url);
-
   if (!url.startsWith("http://localhost:8888/callback")) {
-    console.log("[Spotify] Not a callback URL, ignoring");
     return;
   }
 
@@ -121,48 +129,38 @@ function handleSpotifyNavigation(url, expectedState, resolve, reject) {
   const state = urlObj.searchParams.get("state");
   const error = urlObj.searchParams.get("error");
 
-  console.log("[Spotify] Callback parameters:", { code: !!code, state, error });
-
   if (error) {
-    console.error("[Spotify] Auth error in callback:", error);
-    return reject(new Error(`Authentication error: ${error}`));
+    reject(new Error(`Authentication error: ${error}`));
+    closeSpotifyAuthWindow();
+    return;
   }
   if (state !== expectedState) {
-    console.error("[Spotify] State mismatch:", {
-      expected: expectedState,
-      received: state,
-    });
-    return reject(new Error("State mismatch in callback"));
+    reject(new Error("State mismatch in callback"));
+    closeSpotifyAuthWindow();
+    return;
   }
   if (!code) {
-    console.error("[Spotify] No authorization code received");
-    return reject(new Error("No authorization code received"));
+    reject(new Error("No authorization code received"));
+    closeSpotifyAuthWindow();
+    return;
   }
 
-  console.log("[Spotify] Valid callback received, exchanging code for token");
-  exchangeCodeForToken(code)
+  exchangeSpotifyCodeForToken(code)
     .then(() => {
-      console.log("[Spotify] Authentication completed successfully");
       resolve({ success: true });
     })
     .catch(reject)
     .finally(() => {
-      console.log("[Spotify] Cleaning up after auth completion");
       closeSpotifyAuthWindow();
     });
 }
 
 function createSpotifyAuthWindow(authUrl, state, resolve, reject) {
-  console.log("[Spotify] Creating auth window...");
-  console.log("[Spotify] Auth URL:", authUrl.toString());
-
   if (spotifyAuthWindow) {
-    console.log("[Spotify] Auth window already exists, focusing");
     spotifyAuthWindow.focus();
     return;
   }
 
-  console.log("[Spotify] Creating new BrowserWindow");
   spotifyAuthWindow = new BrowserWindow({
     width: 800,
     height: 600,
@@ -182,10 +180,10 @@ function createSpotifyAuthWindow(authUrl, state, resolve, reject) {
           "Content-Security-Policy": [
             "default-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com;",
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com;",
-            "style-src 'self' 'unsafe-inline' https://*.spotify.com https://*.scdn.co;",
+            "style-src 'self' 'unsafe-inline' https://*.spotify.com https://*.scdn.co https://*.apple.com https://fonts.googleapis.com https://www.gstatic.com https://accounts.google.com;",
             "img-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com data:;",
-            "font-src 'self' https://*.spotify.com https://*.scdn.co https://encore.scdn.co data:;",
-            "connect-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com;",
+            "font-src 'self' data: https://*.scdn.co https://*.apple.com https://fonts.gstatic.com https://accounts.google.com;",
+            "connect-src 'self' https://*.spotify.com https://*.scdn.co https://*.ingest.sentry.io https://api.spotify.com https://www.google.com https://*.apple.com https://api.music.apple.com https://*.googleapis.com https://*.firebaseapp.com https://accounts.google.com;",
             "media-src 'self' https://*.spotify.com https://*.scdn.co;",
             "frame-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://recaptcha.google.com;",
           ].join(" "),
@@ -201,72 +199,58 @@ function createSpotifyAuthWindow(authUrl, state, resolve, reject) {
     },
   );
 
-  console.log("[Spotify] Setting up event listeners");
-
-  spotifyAuthWindow.webContents.on("did-start-loading", () => {
-    console.log("[Spotify] Window started loading");
-  });
-
-  spotifyAuthWindow.webContents.on("did-finish-load", () => {
-    console.log("[Spotify] Window finished loading");
-    console.log(
-      "[Spotify] Current URL:",
-      spotifyAuthWindow.webContents.getURL(),
-    );
-  });
-
-  spotifyAuthWindow.webContents.on(
-    "did-fail-load",
-    (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
-      console.error("[Spotify] Failed to load:", {
-        errorCode,
-        errorDescription,
-        validatedURL,
-        isMainFrame,
-      });
-    },
-  );
-
   spotifyAuthWindow.webContents.on("will-navigate", (event, url) => {
-    console.log("[Spotify] Will navigate:", url);
     handleSpotifyNavigation(url, state, resolve, reject);
   });
-
-  spotifyAuthWindow.webContents.on("will-redirect", (event, url) => {
-    console.log("[Spotify] Will redirect:", url);
-    handleSpotifyNavigation(url, state, resolve, reject);
-  });
-
-  spotifyAuthWindow.webContents.on(
-    "console-message",
-    (event, level, message) => {
-      console.log("[Spotify Window Console]", message);
-    },
-  );
 
   spotifyAuthWindow.on("closed", () => {
-    console.log("[Spotify] Window closed");
     spotifyAuthWindow = null;
     if (!spotifyToken) {
-      console.log("[Spotify] No token present, rejecting");
       reject(new Error("Authentication window was closed"));
     }
   });
 
-  console.log("[Spotify] Loading auth URL");
   spotifyAuthWindow
     .loadURL(authUrl.toString(), {
       extraHeaders: "Origin: https://accounts.spotify.com\n",
     })
     .catch((error) => {
-      console.error("[Spotify] Error loading auth URL:", error);
       reject(error);
     });
 }
 
-// Apple Music specific functions
+function initiateSpotifyAuth() {
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+
+  if (!validateCredentials(clientId, clientSecret)) {
+    throw new Error("Invalid Spotify credentials");
+  }
+
+  const redirectUri = "http://localhost:8888/callback";
+  const scope =
+    "user-read-private user-read-email playlist-read-private playlist-modify-public playlist-modify-private";
+  const state = generateState();
+
+  const authUrl = new URL("https://accounts.spotify.com/authorize");
+  authUrl.searchParams.append("client_id", clientId);
+  authUrl.searchParams.append("response_type", "code");
+  authUrl.searchParams.append("redirect_uri", redirectUri);
+  authUrl.searchParams.append("scope", scope);
+  authUrl.searchParams.append("show_dialog", "true");
+  authUrl.searchParams.append("state", state);
+
+  return new Promise((resolve, reject) => {
+    try {
+      createSpotifyAuthWindow(authUrl, state, resolve, reject);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+// Apple Music Auth Functions
 function generateAppleMusicToken() {
-  console.log("Starting generateAppleMusicToken...");
   try {
     const teamId = process.env.APPLE_TEAM_ID;
     const keyId = process.env.APPLE_KEY_ID;
@@ -277,7 +261,6 @@ function generateAppleMusicToken() {
     }
 
     const privateKey = fs.readFileSync(privateKeyPath, "utf8");
-    console.log("Private key read successfully");
 
     const token = jwt.sign({}, privateKey, {
       algorithm: "ES256",
@@ -288,7 +271,6 @@ function generateAppleMusicToken() {
         kid: keyId,
       },
     });
-    console.log("JWT token generated successfully");
 
     return token;
   } catch (error) {
@@ -298,13 +280,10 @@ function generateAppleMusicToken() {
 }
 
 async function initiateAppleMusicAuth() {
-  console.log("Starting initiateAppleMusicAuth...");
   let isAuthenticating = false; // Flag to prevent multiple authentications
 
   try {
-    console.log("Generating developer token...");
     const devToken = generateAppleMusicToken();
-    console.log("Developer token generated successfully");
 
     return new Promise((resolve, reject) => {
       if (appleMusicAuthWindow) {
@@ -365,17 +344,15 @@ async function initiateAppleMusicAuth() {
         },
       );
 
-      async function checkForSuccess(url) {
+      async function checkForAppleMusicSuccess(url) {
         if (isAuthenticating || !appleMusicAuthWindow) return;
 
-        console.log("Checking URL for success:", url);
         if (
           url.includes("music.apple.com/new") ||
           url.includes("music.apple.com/us/browse") ||
           url.includes("music.apple.com/library") ||
           url.includes("music.apple.com/listen-now")
         ) {
-          console.log("Success URL detected:", url);
           isAuthenticating = true;
 
           try {
@@ -396,7 +373,6 @@ async function initiateAppleMusicAuth() {
               throw new Error("Music user token cookie not found");
             }
 
-            console.log("Setting Apple Music token...");
             appleMusicToken = {
               token: devToken,
               userToken: musicUserTokenCookie.value,
@@ -404,10 +380,6 @@ async function initiateAppleMusicAuth() {
               expiresIn: 180 * 24 * 60 * 60, // 180 days
             };
 
-            console.log(
-              "[AuthManager] Setting new Apple Music token:",
-              appleMusicToken,
-            );
             await setAppleMusicToken(appleMusicToken);
 
             // Store the success state
@@ -434,7 +406,6 @@ async function initiateAppleMusicAuth() {
 
       // Window event handlers
       appleMusicAuthWindow.on("closed", () => {
-        console.log("Auth window closed event triggered");
         if (appleMusicAuthWindow) {
           appleMusicAuthWindow = null;
         }
@@ -445,30 +416,25 @@ async function initiateAppleMusicAuth() {
 
       // Navigation event handlers
       appleMusicAuthWindow.webContents.on("did-navigate", (event, url) => {
-        console.log("Navigation occurred:", url);
-        checkForSuccess(url);
+        checkForAppleMusicSuccess(url);
       });
 
       appleMusicAuthWindow.webContents.on(
         "did-navigate-in-page",
         (event, url) => {
-          console.log("In-page navigation occurred:", url);
-          checkForSuccess(url);
+          checkForAppleMusicSuccess(url);
         },
       );
 
       appleMusicAuthWindow.webContents.on("will-redirect", (event, url) => {
-        console.log("Redirect detected:", url);
-        checkForSuccess(url);
+        checkForAppleMusicSuccess(url);
       });
 
       // Frame loading listener
       appleMusicAuthWindow.webContents.on("did-frame-finish-load", () => {
-        console.log("Frame finished loading");
         if (appleMusicAuthWindow) {
           const currentURL = appleMusicAuthWindow.webContents.getURL();
-          console.log("Current URL after frame load:", currentURL);
-          checkForSuccess(currentURL);
+          checkForAppleMusicSuccess(currentURL);
         }
       });
 
@@ -501,50 +467,189 @@ async function initiateAppleMusicAuth() {
   }
 }
 
-function initiateSpotifyAuth() {
-  console.log("[Spotify] Initiating auth...");
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+// Google Auth Functions
+function closeGoogleAuthWindow() {
+  if (googleAuthWindow) {
+    googleAuthWindow.close();
+    googleAuthWindow = null;
+  }
+}
 
-  console.log("[Spotify] Validating credentials");
-  if (!validateCredentials(clientId, clientSecret)) {
-    console.error("[Spotify] Invalid credentials");
-    throw new Error("Invalid Spotify credentials");
+async function exchangeGoogleCodeForToken(code) {
+  const clientId = base64decode(process.env.GOOGLE_CLIENT_ID);
+  const clientSecret = base64decode(process.env.GOOGLE_CLIENT_SECRET);
+  const redirectUri = base64decode(process.env.GOOGLE_REDIRECT_URI);
+
+  const tokenUrl = "https://oauth2.googleapis.com/token";
+
+  const params = new URLSearchParams();
+  params.append("code", code);
+  params.append("client_id", clientId);
+  params.append("client_secret", clientSecret);
+  params.append("redirect_uri", redirectUri);
+  params.append("grant_type", "authorization_code");
+
+  const response = await fetch(tokenUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: params.toString(),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Token exchange failed: ${response.statusText}`);
   }
 
-  const redirectUri = "http://localhost:8888/callback";
-  const scope =
-    "user-read-private user-read-email playlist-read-private playlist-modify-public playlist-modify-private";
-  const state = generateState();
+  const tokens = await response.json();
 
-  console.log("[Spotify] Building auth URL");
-  const authUrl = new URL("https://accounts.spotify.com/authorize");
-  authUrl.searchParams.append("client_id", clientId);
-  authUrl.searchParams.append("response_type", "code");
-  authUrl.searchParams.append("redirect_uri", redirectUri);
-  authUrl.searchParams.append("scope", scope);
-  authUrl.searchParams.append("show_dialog", "true");
-  authUrl.searchParams.append("state", state);
+  // Store tokens in safe storage
+  googleToken = {
+    accessToken: tokens.access_token,
+    refreshToken: tokens.refresh_token,
+    idToken: tokens.id_token,
+    expiresIn: tokens.expires_in,
+    timestamp: Date.now(),
+  };
 
-  console.log("[Spotify] Starting auth process with URL:", authUrl.toString());
-  return new Promise((resolve, reject) => {
-    try {
-      createSpotifyAuthWindow(authUrl, state, resolve, reject);
-    } catch (error) {
-      console.error("[Spotify] Error creating auth window:", error);
-      reject(error);
-    }
+  await setGoogleToken(googleToken);
+  return tokens;
+}
+
+function handleGoogleNavigation(url, expectedState, resolve, reject) {
+  const redirectUri = base64decode(process.env.GOOGLE_REDIRECT_URI);
+  if (!url.startsWith(redirectUri)) {
+    return;
+  }
+
+  const urlObj = new URL(url);
+  const code = urlObj.searchParams.get("code");
+  const state = urlObj.searchParams.get("state");
+  const error = urlObj.searchParams.get("error");
+
+  if (error) {
+    reject(new Error(`Authentication error: ${error}`));
+    closeGoogleAuthWindow();
+    return;
+  }
+  if (state !== expectedState) {
+    reject(new Error("State mismatch in callback"));
+    closeGoogleAuthWindow();
+    return;
+  }
+  if (!code) {
+    reject(new Error("No authorization code received"));
+    closeGoogleAuthWindow();
+    return;
+  }
+
+  exchangeGoogleCodeForToken(code)
+    .then((tokens) => {
+      resolve(tokens);
+    })
+    .catch(reject)
+    .finally(() => {
+      closeGoogleAuthWindow();
+    });
+}
+
+function createGoogleAuthWindow(authUrl, state, resolve, reject) {
+  if (googleAuthWindow) {
+    googleAuthWindow.focus();
+    return;
+  }
+
+  googleAuthWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+
+  // CSP headers
+  googleAuthWindow.webContents.session.webRequest.onHeadersReceived(
+    (details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          "Content-Security-Policy": [
+            "default-src 'self' https://*.google.com https://accounts.google.com;",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://accounts.google.com;",
+            "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://*.google.com https://accounts.google.com https://ssl.gstatic.com;",
+            "style-src 'self' 'unsafe-inline' https://*.google.com https://accounts.google.com;",
+            "style-src-elem 'self' 'unsafe-inline' https://*.google.com https://accounts.google.com https://*.gstatic.com;",
+            "img-src 'self' data: https://*.google.com https://accounts.google.com https://lh3.googleusercontent.com https://ssl.gstatic.com;",
+            "font-src 'self' data: https://*.google.com https://accounts.google.com https://fonts.gstatic.com;",
+            "connect-src 'self' https://*.google.com https://accounts.google.com;",
+            "frame-src 'self' https://*.google.com https://accounts.google.com;",
+          ].join(" "),
+        },
+      });
+    },
+  );
+
+  googleAuthWindow.loadURL(authUrl.toString()).catch((err) => {
+    reject(err);
+  });
+
+  // Listen for navigation events that may indicate our callback URL.
+  googleAuthWindow.webContents.on("will-redirect", (event, url) => {
+    handleGoogleNavigation(url, state, resolve, reject);
+  });
+  googleAuthWindow.webContents.on("did-navigate", (event, url) => {
+    handleGoogleNavigation(url, state, resolve, reject);
+  });
+
+  googleAuthWindow.on("closed", () => {
+    googleAuthWindow = null;
+    // Reject with a cancellation error and a flag (or custom message) indicating user cancellation
+    reject(new Error("Authentication window was closed by the user."));
   });
 }
 
-function getAuthStatus() {
-  console.log("[AuthManager] Checking auth status");
-  console.log("[AuthManager] Current Spotify token:", spotifyToken);
-  console.log("[AuthManager] Current Apple Music token:", appleMusicToken);
+async function initiateGoogleAuth() {
+  return new Promise((resolve, reject) => {
+    // Check if we have a valid token
+    if (googleToken && googleToken.timestamp) {
+      const expirationTime =
+        googleToken.timestamp + googleToken.expiresIn * 1000;
+      if (Date.now() < expirationTime) {
+        return resolve(googleToken);
+      }
+    }
 
+    const clientId = base64decode(process.env.GOOGLE_CLIENT_ID);
+    const clientSecret = base64decode(process.env.GOOGLE_CLIENT_SECRET);
+    const redirectUri = base64decode(process.env.GOOGLE_REDIRECT_URI);
+
+    const scope = "openid email profile";
+    const state = generateState();
+
+    // Build the Google OAuth URL.
+    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    authUrl.searchParams.append("client_id", clientId);
+    authUrl.searchParams.append("redirect_uri", redirectUri);
+    authUrl.searchParams.append("response_type", "code");
+    authUrl.searchParams.append("scope", scope);
+    authUrl.searchParams.append("state", state);
+    authUrl.searchParams.append("prompt", "consent");
+
+    createGoogleAuthWindow(authUrl, state, resolve, reject);
+  });
+}
+
+function clearAuthData() {
+  clearGoogleToken();
+  googleToken = null;
+}
+
+function getAuthStatus() {
   return {
     isSpotifyAuthenticated: !!spotifyToken?.accessToken,
     isAppleMusicAuthenticated: !!appleMusicToken?.userToken,
+    isGoogleAuthenticated: !!googleToken?.accessToken,
     spotifyExpiresIn: spotifyToken
       ? Math.floor(
           (spotifyToken.timestamp +
@@ -561,7 +666,19 @@ function getAuthStatus() {
             1000,
         )
       : null,
+    googleExpiresIn: googleToken
+      ? Math.floor(
+          (googleToken.timestamp + googleToken.expiresIn * 1000 - Date.now()) /
+            1000,
+        )
+      : null,
   };
 }
 
-export { initiateSpotifyAuth, initiateAppleMusicAuth, getAuthStatus };
+export {
+  initiateSpotifyAuth,
+  initiateAppleMusicAuth,
+  initiateGoogleAuth,
+  getAuthStatus,
+  clearAuthData,
+};

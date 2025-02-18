@@ -4,11 +4,9 @@ This directory contains the GitHub workflows for this repository. Each workflow 
 
 ## Workflow Files
 
-#### [build-release](build-release.yml)
+#### [release-tag](release-tag.yml)
 
-This workflow is triggered in two ways:
-
-1. A new version tag is pushed to the repository.
+This workflow is triggered when a new version tag is pushed to the repository.
 
 This can be done by running the following command:
 
@@ -28,17 +26,32 @@ If you just want to delete a tag (both locally and remotely), you can use:
 git tag -d vX.Y.Z && git push --delete origin vX.Y.Z
 ```
 
-2. Manual triggering of the workflow.
+#### [release-manual.yml](release-manual.yml)
+
+This workflow is triggered manually in 2 ways:
+
+1. Manual trigger on github.com
 
 This can be done by going to the "Actions" tab of the repository, selecting the "Build Release" workflow, and clicking on the "Run workflow" button. There is an input field for the operating system. This can be left empty to build for all operating systems, or set to a comma-separated list of operating systems. The available options are:
 - `ubuntu-latest`
 - `windows-latest`
 - `macos-latest`
 
-> **Note:** This method only runs on the `main` branch. If you want to run it on a different branch, can use the GitHub CLI to trigger the workflow. For example, to run it on the `develop` branch on macos and ubuntu, you can use the following command:
->```bash
->gh workflow run build-release.yml --ref develop os=macos-latest,ubuntu-latest
->```
+2. Triggered by GitHub CLI
+
+This can be done by running the following command:
+
+```bash
+gh workflow run release-manual.yml -f os=macos-latest,ubuntu-latest
+```
+
+If you want to run on a different branch, you can use the `--ref` option to specify the branch. For example, to run on the `develop` branch on macos and ubuntu, you can use the following command:
+
+```bash
+gh workflow run release-manual.yml --ref develop -f os=macos-latest
+```
+
+gh workflow run build-release.yml --ref develop -f os=macos-latest
 
 #### [build-test](build-test.yml)
 

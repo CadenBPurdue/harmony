@@ -1,0 +1,66 @@
+name: Build Electron App
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        description: 'Operating System'
+        required: true
+        type: string
+      arch:
+        description: 'Architecture'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ${{ inputs.os }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Inject secrets
+      run: |
+        echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+        echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+        echo "GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}" >> .env
+        echo "FIREBASE_API_KEY=${{ secrets.FIREBASE_API_KEY }}" >> .env
+        echo "FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }}" >> .env
+        echo "FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}" >> .env
+        echo "FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}" >> .env
+
+    - name: Build app
+      run: npm run build
+
+    - if: inputs.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y snapd
+        sudo snap install snapcraft --classic
+
+    - name: Package app
+      run: npm run electron:build:${{ inputs.arch }}
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Artifacts MacOS
+      if: inputs.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ inputs.os }}-${{ inputs.arch }}
+        path: dist_electron/*.dmg
+
+    - name: Upload Artifacts Windows
+      if: inputs.os == 'windows-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ inputs.os }}-${{ inputs.arch }}
+        path: dist_electron/*.exe

@@ -14,10 +14,12 @@ function App() {
   const [error, setError] = useState(null);
   const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
   const [isAppleMusicConnected, setIsAppleMusicConnected] = useState(false);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
 
   // Check auth status on component mount
   useEffect(() => {
     checkAuthStatus();
+    window.electronAPI.connectFirebase();
   }, []);
 
   const checkAuthStatus = async () => {
@@ -25,6 +27,7 @@ function App() {
       const status = await window.electronAPI.getAuthStatus();
       setIsSpotifyConnected(status.isSpotifyAuthenticated);
       setIsAppleMusicConnected(status.isAppleMusicAuthenticated);
+      setIsGoogleConnected(status.isGoogleAuthenticated);
     } catch (err) {
       console.error("Failed to check auth status:", err);
     }
@@ -98,6 +101,14 @@ function App() {
               : "Not Connected to Apple Music"
           }
           color={isAppleMusicConnected ? "success" : "default"}
+        />
+        <Chip
+          label={
+            isGoogleConnected
+              ? "Connected to Google"
+              : "Not Connected to Google"
+          }
+          color={isGoogleConnected ? "success" : "default"}
         />
       </Stack>
 
