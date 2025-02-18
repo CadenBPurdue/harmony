@@ -1,4 +1,6 @@
+import path from "path";
 import dotenv from "dotenv";
+import { app } from "electron";
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -12,8 +14,6 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
-import { app } from "electron";
-import path from "path";
 
 dotenv.config({
   path: app.isPackaged

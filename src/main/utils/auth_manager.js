@@ -1,6 +1,7 @@
 // src/main/utils/auth_manager.js
 import { clear } from "console";
 import fs from "fs";
+import path from "path";
 import dotenv from "dotenv";
 import { app, BrowserWindow, session } from "electron";
 import jwt from "jsonwebtoken";
@@ -14,7 +15,6 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
-import path from "path";
 
 dotenv.config({
   path: app.isPackaged
@@ -26,7 +26,7 @@ function base64decode(base64) {
   if (process.env.NODE_ENV === "development") {
     return base64;
   }
-  
+
   return Buffer.from(base64, "base64").toString("utf-8");
 }
 
@@ -475,10 +475,9 @@ function closeGoogleAuthWindow() {
 }
 
 async function exchangeGoogleCodeForToken(code) {
-
-  let clientId = base64decode(process.env.GOOGLE_CLIENT_ID);
-  let clientSecret = base64decode(process.env.GOOGLE_CLIENT_SECRET);
-  let redirectUri = base64decode(process.env.GOOGLE_REDIRECT_URI);
+  const clientId = base64decode(process.env.GOOGLE_CLIENT_ID);
+  const clientSecret = base64decode(process.env.GOOGLE_CLIENT_SECRET);
+  const redirectUri = base64decode(process.env.GOOGLE_REDIRECT_URI);
 
   const tokenUrl = "https://oauth2.googleapis.com/token";
 
@@ -619,10 +618,9 @@ async function initiateGoogleAuth() {
       }
     }
 
-    let clientId = base64decode(process.env.GOOGLE_CLIENT_ID);
-    let clientSecret = base64decode(process.env.GOOGLE_CLIENT_SECRET);
-    let redirectUri = base64decode(process.env.GOOGLE_REDIRECT_URI);
-
+    const clientId = base64decode(process.env.GOOGLE_CLIENT_ID);
+    const clientSecret = base64decode(process.env.GOOGLE_CLIENT_SECRET);
+    const redirectUri = base64decode(process.env.GOOGLE_REDIRECT_URI);
 
     const scope = "openid email profile";
     const state = generateState();
