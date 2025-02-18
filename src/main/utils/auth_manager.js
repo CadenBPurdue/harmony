@@ -15,7 +15,11 @@ import {
   clearGoogleToken,
 } from "./safe_storage.js";
 
-dotenv.config();
+dotenv.config({
+  path: app.isPackaged
+      ? path.join(process.resourcesPath, '.env')
+      : path.resolve(process.cwd(), '.env'),
+})
 
 console.log("[AuthManager] Initializing tokens...");
 let spotifyToken = null;
