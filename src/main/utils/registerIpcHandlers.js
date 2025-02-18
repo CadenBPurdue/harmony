@@ -81,6 +81,11 @@ export function registerIpcHandlers() {
     try {
       return await initiateGoogleAuth();
     } catch (error) {
+      if (error.message === "Authentication window was closed by the user.") {
+        // Handle user cancellation gracefully
+        console.warn("User cancelled Google authentication.");
+        return { cancelled: true };
+      }
       console.error("Google auth failed:", error);
       throw error;
     }
@@ -91,6 +96,10 @@ export function registerIpcHandlers() {
       await authenticateWithFirebase();
       return { success: true };
     } catch (error) {
+      if (error.message === "Authentication window was closed by the user.") {
+        console.warn("User cancelled Firebase authentication.");
+        return { cancelled: true };
+      }
       console.error("Firebase auth failed:", error);
       throw error;
     }

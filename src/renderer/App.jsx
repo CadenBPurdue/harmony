@@ -74,25 +74,6 @@ function App() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      const result = await window.electronAPI.connectGoogle();
-      if (result.success) {
-        setIsGoogleConnected(true);
-        setError({
-          severity: "success",
-          message: "Successfully connected to Google!",
-        });
-      }
-    } catch (err) {
-      console.error("Failed to connect to Google:", err);
-      setError({
-        severity: "error",
-        message: `Failed to connect to Google: ${err.message}`,
-      });
-      setIsGoogleConnected(false);
-    }
-  };
 
   return (
     <Container>
@@ -121,6 +102,14 @@ function App() {
               : "Not Connected to Apple Music"
           }
           color={isAppleMusicConnected ? "success" : "default"}
+        />
+        <Chip
+          label={
+            isGoogleConnected
+              ? "Connected to Google"
+              : "Not Connected to Google"
+          }
+          color={isGoogleConnected ? "success" : "default"}
         />
       </Stack>
 

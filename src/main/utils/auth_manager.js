@@ -23,7 +23,7 @@ const __dirname = path.dirname(__filename);
 const isDev = process.env.NODE_ENV === "development";
 
 const envPath = isDev
-  ? path.join(__dirname, ".env") // In development, .env is at your project root
+  ? ".env" // In development, .env is at your project root
   : path.join(process.resourcesPath, ".env"); // In production, .env is in the resources folder
 
 dotenv.config({ path: envPath });
@@ -609,7 +609,8 @@ function createGoogleAuthWindow(authUrl, state, resolve, reject) {
 
   googleAuthWindow.on("closed", () => {
     googleAuthWindow = null;
-    reject(new Error("Authentication window was closed"));
+    // Reject with a cancellation error and a flag (or custom message) indicating user cancellation
+    reject(new Error("Authentication window was closed by the user."));
   });
 }
 
