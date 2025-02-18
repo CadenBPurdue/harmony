@@ -16,11 +16,16 @@ import {
 dotenv.config();
 
 // Your Firebase config from Firebase Console
+const decodeIfProduction = (value) =>
+  process.env.NODE_ENV === "production"
+    ? Buffer.from(value, "base64").toString("utf8")
+    : value;
+
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  apiKey: decodeIfProduction(process.env.FIREBASE_API_KEY),
+  authDomain: decodeIfProduction(process.env.FIREBASE_AUTH_DOMAIN),
+  projectId: decodeIfProduction(process.env.FIREBASE_PROJECT_ID),
+  storageBucket: decodeIfProduction(process.env.FIREBASE_STORAGE_BUCKET),
 };
 
 // Function to sign in to firebase using the Google token
