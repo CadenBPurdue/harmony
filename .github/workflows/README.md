@@ -37,7 +37,7 @@ This can be done by going to the "Actions" tab of the repository, selecting the 
 
 > **Note:** This method only runs on the `main` branch. If you want to run it on a different branch, can use the GitHub CLI to trigger the workflow. For example, to run it on the `develop` branch on macos and ubuntu, you can use the following command:
 >```bash
->gh workflow run build-release.yml --ref develop os=macos-latest,ubuntu-latest
+>gh workflow run build-release.yml --ref develop -f os=macos-latest,ubuntu-latest
 >```
 
 #### [build-test](build-test.yml)

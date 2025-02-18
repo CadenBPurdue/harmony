@@ -9,6 +9,7 @@ on:
       os:
         description: 'Operating Systems to build (comma separated, e.g. macos-latest,ubuntu-latest,windows-latest)'
         required: false
+        default: 'ubuntu-latest,macos-latest,windows-latest'
 
 jobs:
   generate-matrix:
