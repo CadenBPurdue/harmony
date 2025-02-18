@@ -15,7 +15,6 @@ on:
 jobs:
   build:
     runs-on: ${{ inputs.os }}
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
