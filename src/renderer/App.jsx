@@ -20,7 +20,7 @@ function App() {
   useEffect(() => {
     checkAuthStatus();
     window.electronAPI.connectFirebase();
-  }, []);
+  }, []); // Add an empty dependency array to ensure this runs only once
 
   const checkAuthStatus = async () => {
     try {
@@ -30,7 +30,7 @@ function App() {
       setIsGoogleConnected(status.isGoogleAuthenticated);
 
       if (!status.isGoogleAuthenticated) {
-        handleGoogleLogin();
+        await handleGoogleLogin();
       }
     } catch (err) {
       console.error("Failed to check auth status:", err);

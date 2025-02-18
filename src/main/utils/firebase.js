@@ -23,12 +23,7 @@ const firebaseConfig = {
   storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
 };
 
-// Initialize Firebase
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const db = getFirestore(firebaseApp);
-
-// Sign in using the Google token
+// Function to sign in to firebase using the Google token
 async function authenticateWithFirebase() {
   const tokenData = getGoogleToken();
   if (!tokenData || !tokenData.idToken) {
@@ -40,6 +35,11 @@ async function authenticateWithFirebase() {
   const credential = GoogleAuthProvider.credential(idToken);
 
   try {
+    // Initialize Firebase
+    const firebaseApp = initializeApp(firebaseConfig);
+    const auth = getAuth(firebaseApp);
+    const db = getFirestore(firebaseApp);
+
     const userCredential = await signInWithCredential(auth, credential);
     console.log("[Firebase] successfully authenticated:", userCredential.user);
     return userCredential;
@@ -62,6 +62,12 @@ async function authenticateWithFirebase() {
           const newCredential = GoogleAuthProvider.credential(
             newTokenData.idToken,
           );
+
+          // Re-initialize Firebase with the new token
+          const firebaseApp = initializeApp(firebaseConfig);
+          const auth = getAuth(firebaseApp);
+          const db = getFirestore(firebaseApp);
+
           const userCredential = await signInWithCredential(
             auth,
             newCredential,
@@ -85,4 +91,4 @@ async function authenticateWithFirebase() {
   }
 }
 
-export { firebaseApp, authenticateWithFirebase };
+export { authenticateWithFirebase };
