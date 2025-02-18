@@ -5,8 +5,12 @@ import {
   signInWithCredential,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getGoogleToken, setGoogleToken, clearGoogleToken } from "./safe_storage.js";
 import { initiateGoogleAuth } from "./auth_manager.js";
+import {
+  getGoogleToken,
+  setGoogleToken,
+  clearGoogleToken,
+} from "./safe_storage.js";
 
 // Your Firebase config from Firebase Console
 const firebaseConfig = {
@@ -23,7 +27,7 @@ const db = getFirestore(firebaseApp);
 
 // Sign in using the Google token
 async function authenticateWithFirebase() {
-  let tokenData = getGoogleToken();
+  const tokenData = getGoogleToken();
   if (!tokenData || !tokenData.idToken) {
     console.error("[Firebase] No authentication token found.");
     return;
@@ -38,7 +42,9 @@ async function authenticateWithFirebase() {
     return userCredential;
   } catch (error) {
     if (error.code === "auth/invalid-credential") {
-      console.log("[Firebase] Token expired or invalid, reinitiating authentication...");
+      console.log(
+        "[Firebase] Token expired or invalid, reinitiating authentication...",
+      );
       try {
         // Clear the existing Google token
         clearGoogleToken();
@@ -50,9 +56,17 @@ async function authenticateWithFirebase() {
           await setGoogleToken(newTokenData);
 
           // Retry Firebase authentication with the new token
-          const newCredential = GoogleAuthProvider.credential(newTokenData.idToken);
-          const userCredential = await signInWithCredential(auth, newCredential);
-          console.log("[Firebase] successfully authenticated after reinitiation:", userCredential.user);
+          const newCredential = GoogleAuthProvider.credential(
+            newTokenData.idToken,
+          );
+          const userCredential = await signInWithCredential(
+            auth,
+            newCredential,
+          );
+          console.log(
+            "[Firebase] successfully authenticated after reinitiation:",
+            userCredential.user,
+          );
           return userCredential;
         } else {
           throw new Error("Failed to obtain new Google token");
