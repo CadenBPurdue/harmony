@@ -1,5 +1,5 @@
-import { fileURLToPath } from "url";
 import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { app } from "electron";
 import { initializeApp } from "firebase/app";
