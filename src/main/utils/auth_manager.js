@@ -1,10 +1,8 @@
 // src/main/utils/auth_manager.js
-import { clear } from "console";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { app, BrowserWindow, session } from "electron";
+import { BrowserWindow } from "electron";
 import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
 import {
@@ -16,9 +14,6 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const isDev = process.env.NODE_ENV === "development";
 
