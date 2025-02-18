@@ -11,6 +11,9 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // Your Firebase config from Firebase Console
 const firebaseConfig = {

@@ -65,8 +65,7 @@
     "productName": "harmony",
     "files": [
       "dist/**/*",
-      "src/main/main.js",
-      "src/main/preload.js",
+      "src/**/*",
       "package.json"
     ],
     "directories": {
