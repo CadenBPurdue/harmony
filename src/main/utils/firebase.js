@@ -15,11 +15,7 @@ import {
   clearGoogleToken,
 } from "./safe_storage.js";
 
-dotenv.config({
-  path: app.isPackaged
-    ? path.join(process.resourcesPath, ".env")
-    : path.resolve(process.cwd(), ".env"),
-});
+dotenv.config();
 
 function base64decode(base64) {
   if (process.env.NODE_ENV === "development") {
