@@ -40,7 +40,6 @@ jobs:
       with:
         path: .
         merge-multiple: true  # Merge files into the root
-        pattern: "*.dmg, *.msi, *.deb"
 
     - name: Rename Files and Move to Release
       run: |
