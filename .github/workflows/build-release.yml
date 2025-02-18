@@ -44,10 +44,12 @@ jobs:
       run: |
           mkdir -p dist_electron/release  # Ensure the release directory exists
           for file in dist_electron/*; do
-            # Remove the version number and create the new filename
-            new_name=$(echo "$file" | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+//')
-            # Move the renamed file to the release directory
-            mv "$file" "dist_electron/release/$(basename "$new_name")"
+            if [ "$file" != "dist_electron/release" ]; then
+              # Remove the version number and create the new filename
+              new_name=$(echo "$file" | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+//')
+              # Move the renamed file to the release directory
+              mv "$file" "release/$(basename "$new_name")"
+            fi
           done
 
     - name: Create Manual Release
