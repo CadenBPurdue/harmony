@@ -2,22 +2,8 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  protocol,
-  session,
-  shell,
-} from "electron";
-import {
-  initiateSpotifyAuth,
-  initiateAppleMusicAuth,
-  initiateGoogleAuth,
-  getAuthStatus,
-} from "./utils/auth_manager.js";
-import { configManager } from "./utils/config.js";
-import { authenticateWithFirebase } from "./utils/firebase.js";
+import { app, BrowserWindow, protocol, session } from "electron";
+import { registerIpcHandlers } from "./utils/registerIpcHandlers.js";
 
 // Load environment variables
 dotenv.config();
@@ -58,96 +44,6 @@ function createWindow() {
     },
   });
 
-  // IPC Handlers
-  ipcMain.on("open-external", (event, url) => {
-    console.log("Opening external URL in main process:", url);
-    shell.openExternal(url);
-  });
-
-  ipcMain.handle("auth:spotify", async () => {
-    return await initiateSpotifyAuth();
-  });
-
-  ipcMain.handle("auth:status", () => {
-    return getAuthStatus();
-  });
-
-  ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
-    try {
-      configManager.setCredentials("spotify", credentials);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to save credentials:", error);
-      throw error;
-    }
-  });
-
-  ipcMain.handle("config:hasSpotifyCredentials", () => {
-    return configManager.hasCredentials("spotify");
-  });
-
-  ipcMain.handle("config:clearSpotifyCredentials", () => {
-    try {
-      configManager.setCredentials("spotify", null);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to clear credentials:", error);
-      throw error;
-    }
-  });
-
-  ipcMain.handle("auth:appleMusic", async () => {
-    return await initiateAppleMusicAuth();
-  });
-
-  ipcMain.handle(
-    "config:setAppleMusicCredentials",
-    async (event, credentials) => {
-      try {
-        configManager.setCredentials("appleMusic", credentials);
-        return { success: true };
-      } catch (error) {
-        console.error("Failed to save credentials:", error);
-        throw error;
-      }
-    },
-  );
-
-  ipcMain.handle("config:hasAppleMusicCredentials", () => {
-    return configManager.hasCredentials("appleMusic");
-  });
-
-  ipcMain.handle("config:clearAppleMusicCredentials", () => {
-    try {
-      configManager.setCredentials("appleMusic", null);
-      return { success: true };
-    } catch (error) {
-      console.error("Failed to clear credentials:", error);
-      throw error;
-    }
-  });
-
-  // Google Auth IPC Handler
-  ipcMain.handle("auth:google", async () => {
-    try {
-      return await initiateGoogleAuth();
-    } catch (error) {
-      console.error("Google auth failed:", error);
-      throw error;
-    }
-  });
-
-  // Firebase Auth IPC Handler
-  ipcMain.handle("auth:firebase", async () => {
-    try {
-      await authenticateWithFirebase();
-      return { success: true };
-    } catch (error) {
-      console.error("Firebase auth failed:", error);
-      throw error;
-    }
-  });
-
   mainWindow.webContents.on("did-finish-load", () => {
     console.log("Window loaded");
   });
@@ -176,6 +72,9 @@ app.whenReady().then(() => {
     console.log("Harmony protocol request:", request.url);
     return new Response("", { status: 200 });
   });
+
+  // Register IPC handlers
+  registerIpcHandlers();
 
   mainWindow = createWindow();
 });

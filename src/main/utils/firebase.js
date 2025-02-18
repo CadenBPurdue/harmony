@@ -1,3 +1,4 @@
+import { fileURLToPath } from "url";
 import path from "path";
 import dotenv from "dotenv";
 import { app } from "electron";
@@ -14,6 +15,9 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const isDev = process.env.NODE_ENV === "development";
 

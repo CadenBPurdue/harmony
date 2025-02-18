@@ -1,0 +1,98 @@
+import { ipcMain, shell } from "electron";
+import {
+  initiateSpotifyAuth,
+  initiateAppleMusicAuth,
+  initiateGoogleAuth,
+  getAuthStatus,
+} from "./auth_manager.js";
+import { configManager } from "./config.js";
+import { authenticateWithFirebase } from "./firebase.js";
+
+export function registerIpcHandlers() {
+  ipcMain.on("open-external", (event, url) => {
+    console.log("Opening external URL in main process:", url);
+    shell.openExternal(url);
+  });
+
+  ipcMain.handle("auth:spotify", async () => {
+    return await initiateSpotifyAuth();
+  });
+
+  ipcMain.handle("auth:status", () => {
+    return getAuthStatus();
+  });
+
+  ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
+    try {
+      configManager.setCredentials("spotify", credentials);
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to save credentials:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("config:hasSpotifyCredentials", () => {
+    return configManager.hasCredentials("spotify");
+  });
+
+  ipcMain.handle("config:clearSpotifyCredentials", () => {
+    try {
+      configManager.setCredentials("spotify", null);
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to clear credentials:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("auth:appleMusic", async () => {
+    return await initiateAppleMusicAuth();
+  });
+
+  ipcMain.handle(
+    "config:setAppleMusicCredentials",
+    async (event, credentials) => {
+      try {
+        configManager.setCredentials("appleMusic", credentials);
+        return { success: true };
+      } catch (error) {
+        console.error("Failed to save credentials:", error);
+        throw error;
+      }
+    },
+  );
+
+  ipcMain.handle("config:hasAppleMusicCredentials", () => {
+    return configManager.hasCredentials("appleMusic");
+  });
+
+  ipcMain.handle("config:clearAppleMusicCredentials", () => {
+    try {
+      configManager.setCredentials("appleMusic", null);
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to clear credentials:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("auth:google", async () => {
+    try {
+      return await initiateGoogleAuth();
+    } catch (error) {
+      console.error("Google auth failed:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("auth:firebase", async () => {
+    try {
+      await authenticateWithFirebase();
+      return { success: true };
+    } catch (error) {
+      console.error("Firebase auth failed:", error);
+      throw error;
+    }
+  });
+}
