@@ -17,9 +17,9 @@ import {
 
 dotenv.config({
   path: app.isPackaged
-      ? path.join(process.resourcesPath, '.env')
-      : path.resolve(process.cwd(), '.env'),
-})
+    ? path.join(process.resourcesPath, ".env")
+    : path.resolve(process.cwd(), ".env"),
+});
 
 console.log("[AuthManager] Initializing tokens...");
 let spotifyToken = null;

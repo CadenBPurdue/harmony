@@ -15,9 +15,9 @@ import {
 
 dotenv.config({
   path: app.isPackaged
-      ? path.join(process.resourcesPath, '.env')
-      : path.resolve(process.cwd(), '.env'),
-})
+    ? path.join(process.resourcesPath, ".env")
+    : path.resolve(process.cwd(), ".env"),
+});
 
 // Your Firebase config from Firebase Console
 const decodeIfProduction = (value) =>
