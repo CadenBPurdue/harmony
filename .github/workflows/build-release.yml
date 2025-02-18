@@ -40,6 +40,9 @@ jobs:
       with:
         path: dist_electron
 
+    - name: List Files in dist_electron
+      run: ls -al dist_electron
+
     - name: Rename Files (Remove Version Numbers) and Move to Release Directory
       run: |
           mkdir -p release  # Ensure the release directory exists
@@ -51,6 +54,9 @@ jobs:
               mv "$file" "release/$(basename "$new_name")"
             fi
           done
+
+    - name: List Files in release
+      run: ls -al release
 
     - name: Create Manual Release
       uses: softprops/action-gh-release@v2
