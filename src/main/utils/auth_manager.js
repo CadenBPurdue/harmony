@@ -16,11 +16,11 @@ import {
   clearGoogleToken,
 } from "./safe_storage.js";
 
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = process.env.NODE_ENV === "development";
 
 const envPath = isDev
-  ? path.join(__dirname, '.env')                // In development, .env is at your project root
-  : path.join(process.resourcesPath, '.env');     // In production, .env is in the resources folder
+  ? path.join(__dirname, ".env") // In development, .env is at your project root
+  : path.join(process.resourcesPath, ".env"); // In production, .env is in the resources folder
 
 dotenv.config({ path: envPath });
 
