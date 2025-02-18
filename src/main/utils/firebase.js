@@ -1,3 +1,4 @@
+import dotenv from "dotenv";
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -11,7 +12,6 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
-import dotenv from "dotenv";
 
 dotenv.config();
 
