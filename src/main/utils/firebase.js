@@ -28,10 +28,36 @@ async function authenticateWithFirebase() {
   const tokenData = getGoogleToken();
   if (!tokenData || !tokenData.idToken) {
     console.error("[Firebase] No authentication token found.");
-    return;
+    // Initiate Google authentication
+    return await initiateGoogleAuth();
   }
 
-  const idToken = tokenData.idToken;
+  return await signInWithToken(tokenData.idToken);
+}
+
+async function reauthenticateWithFirebase() {
+  try {
+    // Clear the existing Google token
+    clearGoogleToken();
+
+    // Reinitiate Google authentication
+    const newTokenData = await initiateGoogleAuth();
+    if (newTokenData && newTokenData.idToken) {
+      // Store the new token
+      await setGoogleToken(newTokenData);
+
+      // Retry Firebase authentication with the new token
+      return await signInWithToken(newTokenData.idToken);
+    } else {
+      throw new Error("Failed to obtain new Google token");
+    }
+  } catch (reinitiateError) {
+    console.error("[Firebase] Reinitiation failed:", reinitiateError);
+    throw reinitiateError;
+  }
+}
+
+async function signInWithToken(idToken) {
   const credential = GoogleAuthProvider.credential(idToken);
 
   try {
@@ -48,42 +74,7 @@ async function authenticateWithFirebase() {
       console.log(
         "[Firebase] Token expired or invalid, reinitiating authentication...",
       );
-      try {
-        // Clear the existing Google token
-        clearGoogleToken();
-
-        // Reinitiate Google authentication
-        const newTokenData = await initiateGoogleAuth();
-        if (newTokenData && newTokenData.idToken) {
-          // Store the new token
-          await setGoogleToken(newTokenData);
-
-          // Retry Firebase authentication with the new token
-          const newCredential = GoogleAuthProvider.credential(
-            newTokenData.idToken,
-          );
-
-          // Re-initialize Firebase with the new token
-          const firebaseApp = initializeApp(firebaseConfig);
-          const auth = getAuth(firebaseApp);
-          const db = getFirestore(firebaseApp);
-
-          const userCredential = await signInWithCredential(
-            auth,
-            newCredential,
-          );
-          console.log(
-            "[Firebase] successfully authenticated after reinitiation:",
-            userCredential.user,
-          );
-          return userCredential;
-        } else {
-          throw new Error("Failed to obtain new Google token");
-        }
-      } catch (reinitiateError) {
-        console.error("[Firebase] Reinitiation failed:", reinitiateError);
-        throw reinitiateError;
-      }
+      return reauthenticateWithFirebase();
     } else {
       console.error("[Firebase] authentication failed:", error);
       throw error;
