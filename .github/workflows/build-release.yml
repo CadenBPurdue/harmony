@@ -38,31 +38,25 @@ jobs:
     - name: Download Build Artifacts
       uses: actions/download-artifact@v4
       with:
-        path: dist_electron
-
-    - name: List Files in dist_electron
-      run: ls -al dist_electron
+        path: .
 
     - name: Rename Files (Remove Version Numbers) and Move to Release Directory
       run: |
           mkdir -p release  # Ensure the release directory exists
-          for file in dist_electron/*; do
-            if [ "$file" != "dist_electron/release" ]; then
-              # Remove the version number and create the new filename
-              new_name=$(echo "$file" | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+//')
-              # Move the renamed file to the release directory
-              mv "$file" "release/$(basename "$new_name")"
-            fi
+          for file in *; do
+          if [ -f "$file" ]; then
+            # Remove the version number and create the new filename
+            new_name=$(echo "$file" | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+//')
+            # Move the renamed file to the release directory
+            mv "$file" "release/$(basename "$new_name")"
+          fi
           done
-
-    - name: List Files in release
-      run: ls -al release
 
     - name: Create Manual Release
       uses: softprops/action-gh-release@v2
       with:
         draft: true
         name: manual-release
-        files: release/*
+        files: ./*
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
