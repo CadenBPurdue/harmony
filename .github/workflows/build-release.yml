@@ -82,11 +82,24 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Release
+      - name: Create Tagged Release (draft)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           draft: true  # or false, depending on your needs
+          files: |
+            dist_electron/*.dmg
+            dist_electron/*.deb
+            dist_electron/*.exe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create manual release (draft)
+        if: github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true  # or false, depending on your needs
+          name: manual-release
           files: |
             dist_electron/*.dmg
             dist_electron/*.deb
