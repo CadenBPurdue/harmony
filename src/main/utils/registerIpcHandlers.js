@@ -2,7 +2,6 @@ import { ipcMain, shell } from "electron";
 import {
   initiateSpotifyAuth,
   initiateAppleMusicAuth,
-  initiateGoogleAuth,
   getAuthStatus,
 } from "./auth_manager.js";
 import { configManager } from "./config.js";
