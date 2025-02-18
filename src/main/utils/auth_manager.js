@@ -600,7 +600,7 @@ function createGoogleAuthWindow(authUrl, state, resolve, reject) {
   });
 }
 
-function initiateGoogleAuth() {
+async function initiateGoogleAuth() {
   return new Promise((resolve, reject) => {
     // Check if we have a valid token
     if (googleToken && googleToken.timestamp) {
