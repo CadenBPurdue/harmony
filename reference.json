@@ -1,8 +1,8 @@
 {
+    "id": "playlist id",
+    "name": "playlist name",
     "user": "user id of the playlist owner",
     "origin": "spotify or apple music",
-    "name": "playlist name",
-    "playlist_id": "playlist id",
     "number_of_tracks": "number of tracks in the playlist",
     "duration": "duration of the playlist",
     "description": "playlist description",

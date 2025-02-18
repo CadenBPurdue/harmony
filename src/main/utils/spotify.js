@@ -18,9 +18,9 @@ class SpotifyApi {
     this.refresh_token = process.env.SPOTIFY_REFRESH_TOKEN; // change this to use safe storage
     this.client_id = process.env.SPOTIFY_CLIENT_ID; // change this to use safe storage
     this.client_secret = process.env.SPOTIFY_CLIENT_SECRET; // change this to use safe storage
+    this.user_id = await this.getUserId();
     await this.refreshToken();
     this.tokenHandler(); // token will refresh every 55 minutes
-    this.user_id = await this.getUserId();
   }
 
   tokenHandler() {
@@ -46,8 +46,6 @@ class SpotifyApi {
       );
 
       this.auth_token = response.data.access_token;
-      console.log("\n\n" + this.auth_token);
-      this.refresh_token = response.data.refresh_token;
     } catch (error) {
       console.log(error);
       throw new Error("Failed to refresh token");
@@ -75,6 +73,8 @@ class SpotifyApi {
       await this.initialize();
     }
 
+    console.log(this.user_id);
+
     try {
       const response = await axios.get(
         `https://api.spotify.com/v1/users/${this.user_id}/playlists`,
@@ -97,24 +97,27 @@ class SpotifyApi {
     }
   }
 
-  async storePlaylisLocally(playlist_ufs) {
-    // store the playlist to the local database `playlists.db`
+  storePlaylisLocally(playlist_ufs) {
     try {
-      const db = new sqlite3.Database("playlists.db");
+      const db = new sqlite3.Database("src/main/db/playlists.db");
       db.serialize(() => {
         db.run(
-          "CREATE TABLE IF NOT EXISTS playlists (name TEXT PRIMARY KEY, origin TEXT, songs TEXT)",
-        );
-
-        const stmt = db.prepare(
-          "INSERT INTO playlists (name, origin, songs) VALUES (?, ?, ?)",
+          "CREATE TABLE IF NOT EXISTS playlists (id TEXT PRIMARY KEY, name TEXT, user TEXT, origin TEXT, number_of_tracks INTEGER, tracks TEXT)",
         );
         playlist_ufs.forEach((playlist_uf) => {
-          stmt.run(playlist_uf.name, playlist_uf.origin);
+          db.run(
+            "INSERT INTO playlists (id, name, user, origin, number_of_tracks, tracks) VALUES (?, ?, ?, ?, ?, ?)",
+            [
+              playlist_uf.id,
+              playlist_uf.name,
+              playlist_uf.user,
+              playlist_uf.origin,
+              playlist_uf.number_of_tracks,
+              JSON.stringify(playlist_uf.tracks),
+            ],
+          );
         });
-        stmt.finalize();
       });
-      db.close();
     } catch (error) {
       console.error("Error storing playlists locally:", error);
     }
@@ -242,9 +245,10 @@ class SpotifyApi {
 
   static async convertToUniversalFormat(data) {
     var playlist = {
+      id: data.id,
+      name: data.name,
       user: data.owner.display_name,
       origin: "Spotify",
-      name: data.name,
       number_of_tracks: data.tracks.total,
       duration: data.duration_ms,
       description: data.description,
@@ -265,8 +269,5 @@ class SpotifyApi {
     return playlist;
   }
 }
-
-const spotify = new SpotifyApi();
-spotify.initialize();
 
 export { SpotifyApi };
