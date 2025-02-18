@@ -60,4 +60,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: build-${{ inputs.os }}-${{ inputs.arch }}
-        path: dist_electron/*.msi
+        path: dist_electron/*.exe
