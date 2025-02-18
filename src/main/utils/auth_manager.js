@@ -611,8 +611,14 @@ function initiateGoogleAuth() {
     }
 
     if (process.env.NODE_ENV === "production") {
-      const clientId = Buffer.from(process.env.GOOGLE_CLIENT_ID, "base64").toString("utf-8");
-      const redirectUri = Buffer.from(process.env.GOOGLE_REDIRECT_URI, "base64").toString("utf-8");
+      const clientId = Buffer.from(
+        process.env.GOOGLE_CLIENT_ID,
+        "base64",
+      ).toString("utf-8");
+      const redirectUri = Buffer.from(
+        process.env.GOOGLE_REDIRECT_URI,
+        "base64",
+      ).toString("utf-8");
     } else {
       const clientId = process.env.GOOGLE_CLIENT_ID;
       const redirectUri = process.env.GOOGLE_REDIRECT_URI;
