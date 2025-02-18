@@ -39,30 +39,23 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: .
+        merge-multiple: true  # Merge files into the root
 
-    - name: List files in root
-      run: ls -la
-
-    - name: Rename Files (Remove Version Numbers) and Move to Release Directory
+    - name: Rename Files and Move to Release
       run: |
-          mkdir -p release  # Ensure the release directory exists
-          for file in *; do
+        mkdir -p release
+        for file in *; do
           if [ -f "$file" ]; then
-            # Log the filename
-            echo "Processing file: $file"
-            # Remove the version number and create the new filename
             new_name=$(echo "$file" | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+//')
-            # Move the renamed file to the release directory
-            mv "$file" "$new_name"
-            echo "Renamed to: $new_name"
+            mv "$file" "release/$new_name"
           fi
-          done
+        done
 
     - name: Create Manual Release
       uses: softprops/action-gh-release@v2
       with:
         draft: true
         name: manual-release
-        files: ./*
+        files: release/*  # Correct path to the renamed files
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
