@@ -462,9 +462,15 @@ function closeGoogleAuthWindow() {
 }
 
 async function exchangeGoogleCodeForToken(code) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  if (process.env.NODE_ENV === "production") {
+    clientId = Buffer.from(clientId, "base64").toString("utf-8");
+    clientSecret = Buffer.from(clientSecret, "base64").toString("utf-8");
+    redirectUri = Buffer.from(redirectUri, "base64").toString("utf-8");
+  } else {
+    clientId = process.env.GOOGLE_CLIENT_ID;
+    clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  }
   const tokenUrl = "https://oauth2.googleapis.com/token";
 
   const params = new URLSearchParams();
@@ -604,8 +610,13 @@ function initiateGoogleAuth() {
       }
     }
 
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+    if (process.env.NODE_ENV === "production") {
+      const clientId = Buffer.from(process.env.GOOGLE_CLIENT_ID, "base64").toString("utf-8");
+      const redirectUri = Buffer.from(process.env.GOOGLE_REDIRECT_URI, "base64").toString("utf-8");
+    } else {
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+    }
     const scope = "openid email profile";
     const state = generateState();
 
