@@ -462,6 +462,7 @@ function closeGoogleAuthWindow() {
 }
 
 async function exchangeGoogleCodeForToken(code) {
+  let clientId, clientSecret, redirectUri;
   if (process.env.NODE_ENV === "production") {
     clientId = Buffer.from(clientId, "base64").toString("utf-8");
     clientSecret = Buffer.from(clientSecret, "base64").toString("utf-8");
@@ -610,19 +611,17 @@ function initiateGoogleAuth() {
       }
     }
 
+    let clientId, clientSecret, redirectUri;
     if (process.env.NODE_ENV === "production") {
-      const clientId = Buffer.from(
-        process.env.GOOGLE_CLIENT_ID,
-        "base64",
-      ).toString("utf-8");
-      const redirectUri = Buffer.from(
-        process.env.GOOGLE_REDIRECT_URI,
-        "base64",
-      ).toString("utf-8");
+      clientId = Buffer.from(process.env.GOOGLE_CLIENT_ID, "base64").toString("utf-8");
+      clientSecret = Buffer.from(process.env.GOOGLE_CLIENT_SECRET, "base64").toString("utf-8");
+      redirectUri = Buffer.from(process.env.GOOGLE_REDIRECT_URI, "base64").toString("utf-8");
     } else {
-      const clientId = process.env.GOOGLE_CLIENT_ID;
-      const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+      clientId = process.env.GOOGLE_CLIENT_ID;
+      clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+      redirectUri = process.env.GOOGLE_REDIRECT_URI;
     }
+
     const scope = "openid email profile";
     const state = generateState();
 
