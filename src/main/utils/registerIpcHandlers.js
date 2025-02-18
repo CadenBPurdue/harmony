@@ -77,20 +77,6 @@ export function registerIpcHandlers() {
     }
   });
 
-  ipcMain.handle("auth:google", async () => {
-    try {
-      return await initiateGoogleAuth();
-    } catch (error) {
-      if (error.message === "Authentication window was closed by the user.") {
-        // Handle user cancellation gracefully
-        console.warn("User cancelled Google authentication.");
-        return { cancelled: true };
-      }
-      console.error("Google auth failed:", error);
-      throw error;
-    }
-  });
-
   ipcMain.handle("auth:firebase", async () => {
     try {
       await authenticateWithFirebase();

@@ -13,12 +13,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("auth:appleMusic");
   },
 
-  // Google authentication
-  connectGoogle: () => {
-    console.log("Calling connectGoogle from preload");
-    return ipcRenderer.invoke("auth:google");
-  },
-
   // Firebase authentication
   connectFirebase: () => {
     console.log("Calling connectFirebase from preload");
