@@ -42,7 +42,7 @@ jobs:
 
     - name: Rename Files (Remove Version Numbers) and Move to Release Directory
       run: |
-          mkdir -p dist_electron/release  # Ensure the release directory exists
+          mkdir -p release  # Ensure the release directory exists
           for file in dist_electron/*; do
             if [ "$file" != "dist_electron/release" ]; then
               # Remove the version number and create the new filename
