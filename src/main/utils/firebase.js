@@ -12,6 +12,8 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
+import { app } from "electron";
+import path from "path";
 
 dotenv.config({
   path: app.isPackaged
@@ -19,17 +21,19 @@ dotenv.config({
     : path.resolve(process.cwd(), ".env"),
 });
 
-// Your Firebase config from Firebase Console
-const decodeIfProduction = (value) =>
-  process.env.NODE_ENV === "production"
-    ? Buffer.from(value, "base64").toString("utf8")
-    : value;
+function base64decode(base64) {
+  if (process.env.NODE_ENV === "development") {
+    return base64;
+  }
+  return Buffer.from(base64, "base64").toString("utf-8");
+}
 
+// Your Firebase config from Firebase Console
 const firebaseConfig = {
-  apiKey: decodeIfProduction(process.env.FIREBASE_API_KEY),
-  authDomain: decodeIfProduction(process.env.FIREBASE_AUTH_DOMAIN),
-  projectId: decodeIfProduction(process.env.FIREBASE_PROJECT_ID),
-  storageBucket: decodeIfProduction(process.env.FIREBASE_STORAGE_BUCKET),
+  apiKey: base64decode(process.env.FIREBASE_API_KEY),
+  authDomain: base64decode(process.env.FIREBASE_AUTH_DOMAIN),
+  projectId: base64decode(process.env.FIREBASE_PROJECT_ID),
+  storageBucket: base64decode(process.env.FIREBASE_STORAGE_BUCKET),
 };
 
 // Function to sign in to firebase using the Google token

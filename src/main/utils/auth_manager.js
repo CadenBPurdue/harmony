@@ -2,7 +2,7 @@
 import { clear } from "console";
 import fs from "fs";
 import dotenv from "dotenv";
-import { BrowserWindow, session } from "electron";
+import { app, BrowserWindow, session } from "electron";
 import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
 import {
@@ -14,12 +14,21 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
+import path from "path";
 
 dotenv.config({
   path: app.isPackaged
     ? path.join(process.resourcesPath, ".env")
     : path.resolve(process.cwd(), ".env"),
 });
+
+function base64decode(base64) {
+  if (process.env.NODE_ENV === "development") {
+    return base64;
+  }
+  
+  return Buffer.from(base64, "base64").toString("utf-8");
+}
 
 console.log("[AuthManager] Initializing tokens...");
 let spotifyToken = null;
@@ -466,16 +475,11 @@ function closeGoogleAuthWindow() {
 }
 
 async function exchangeGoogleCodeForToken(code) {
-  let clientId, clientSecret, redirectUri;
-  if (process.env.NODE_ENV === "production") {
-    clientId = Buffer.from(clientId, "base64").toString("utf-8");
-    clientSecret = Buffer.from(clientSecret, "base64").toString("utf-8");
-    redirectUri = Buffer.from(redirectUri, "base64").toString("utf-8");
-  } else {
-    clientId = process.env.GOOGLE_CLIENT_ID;
-    clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    redirectUri = process.env.GOOGLE_REDIRECT_URI;
-  }
+
+  let clientId = base64decode(process.env.GOOGLE_CLIENT_ID);
+  let clientSecret = base64decode(process.env.GOOGLE_CLIENT_SECRET);
+  let redirectUri = base64decode(process.env.GOOGLE_REDIRECT_URI);
+
   const tokenUrl = "https://oauth2.googleapis.com/token";
 
   const params = new URLSearchParams();
@@ -513,7 +517,7 @@ async function exchangeGoogleCodeForToken(code) {
 }
 
 function handleGoogleNavigation(url, expectedState, resolve, reject) {
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  const redirectUri = base64decode(process.env.GOOGLE_REDIRECT_URI);
   if (!url.startsWith(redirectUri)) {
     return;
   }
@@ -615,24 +619,10 @@ async function initiateGoogleAuth() {
       }
     }
 
-    let clientId, clientSecret, redirectUri;
-    if (process.env.NODE_ENV === "production") {
-      clientId = Buffer.from(process.env.GOOGLE_CLIENT_ID, "base64").toString(
-        "utf-8",
-      );
-      clientSecret = Buffer.from(
-        process.env.GOOGLE_CLIENT_SECRET,
-        "base64",
-      ).toString("utf-8");
-      redirectUri = Buffer.from(
-        process.env.GOOGLE_REDIRECT_URI,
-        "base64",
-      ).toString("utf-8");
-    } else {
-      clientId = process.env.GOOGLE_CLIENT_ID;
-      clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-      redirectUri = process.env.GOOGLE_REDIRECT_URI;
-    }
+    let clientId = base64decode(process.env.GOOGLE_CLIENT_ID);
+    let clientSecret = base64decode(process.env.GOOGLE_CLIENT_SECRET);
+    let redirectUri = base64decode(process.env.GOOGLE_REDIRECT_URI);
+
 
     const scope = "openid email profile";
     const state = generateState();
