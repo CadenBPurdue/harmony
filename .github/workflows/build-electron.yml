@@ -48,11 +48,16 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Upload Artifacts
+    - name: Upload Artifacts MacOS
+      if: inputs.os == 'macos-latest'
       uses: actions/upload-artifact@v4
       with:
         name: build-${{ inputs.os }}-${{ inputs.arch }}
-        path: |
-          dist_electron/*.dmg
-          dist_electron/*.msi
-          dist_electron/*.deb
+        path: dist_electron/*.dmg
+
+    - name: Upload Artifacts Windows
+      if: inputs.os == 'windows-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ inputs.os }}-${{ inputs.arch }}
+        path: dist_electron/*.msi
