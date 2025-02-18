@@ -8,11 +8,13 @@ import { app } from "electron";
 const storagePath = path.join(app.getPath("userData"), "secure");
 const spotifyPath = path.join(storagePath, "spotify.enc");
 const appleMusicPath = path.join(storagePath, "applemusic.enc");
+const googlePath = path.join(storagePath, "google.enc");
 
 console.log("[SafeStorage] Storage paths:", {
   storagePath,
   spotifyPath,
   appleMusicPath,
+  googlePath,
 });
 
 // Create storage directory if it doesn't exist

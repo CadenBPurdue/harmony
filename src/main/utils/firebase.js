@@ -22,11 +22,12 @@ const db = getFirestore(firebaseApp);
 
 // Sign in using the google
 async function authenticateWithFirebase() {
-  const idToken = getGoogleToken().idToken;
-  if (!idToken) {
+  const tokenData = getGoogleToken();
+  if (!tokenData || !tokenData.idToken) {
     console.error("[Firebase] No authentication token found.");
     return;
   }
+  const idToken = tokenData.idToken;
 
   const credential = GoogleAuthProvider.credential(idToken);
 
