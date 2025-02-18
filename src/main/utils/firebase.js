@@ -15,14 +15,13 @@ import {
   clearGoogleToken,
 } from "./safe_storage.js";
 
-const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
 
 const envPath = isDev
   ? path.join(__dirname, '.env')                // In development, .env is at your project root
   : path.join(process.resourcesPath, '.env');     // In production, .env is in the resources folder
 
-require('dotenv').config({ path: envPath });
+dotenv.config({ path: envPath });
 
 function base64decode(base64) {
   if (process.env.NODE_ENV === "development") {
