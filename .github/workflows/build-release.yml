@@ -1,15 +1,12 @@
-name: Build and Release
+name: Manual Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
   workflow_dispatch:
     inputs:
       os:
-        description: 'Operating Systems to build (comma separated, e.g. macos-latest,ubuntu-latest,windows-latest)'
+        description: 'Operating Systems (comma-separated, no spaces)'
         required: false
-        default: 'macos-latest,ubuntu-latest,windows-latest'
+        default: 'ubuntu-latest,macos-latest,windows-latest'
 
 jobs:
   generate-matrix:
@@ -17,16 +14,11 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - id: set-matrix
-        run: |
-          # Read the input and remove any whitespace
-          INPUT_OS="${{ github.event.inputs.os }}"
-          echo "Received OS input: '$INPUT_OS'"
-          # Convert the comma-separated list into a JSON array.
-          MATRIX=$(echo "[\"$(echo ${INPUT_OS} | sed 's/,/","/g')\"]")
-          echo "Generated matrix: $MATRIX"
-          # New recommended way to set output:
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+    - id: set-matrix
+      run: |
+        INPUT_OS="${{ github.event.inputs.os }}"
+        MATRIX=$(echo "[\"$(echo ${INPUT_OS} | sed 's/,/","/g')\"]")
+        echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   build:
     needs: generate-matrix
@@ -34,55 +26,37 @@ jobs:
       matrix:
         os: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
         arch: [x64, arm64]
-    runs-on: ${{ matrix.os }}
+    uses: ./.github/workflows/build-electron.yml
+    with:
+      os: ${{ matrix.os }}
+      arch: ${{ matrix.arch }}
+    secrets: inherit
 
+  release:
+    needs: build
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Download Build Artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: .
+        merge-multiple: true  # Merge files into the root
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Verify tag matches version
-        id: verify_version
-        run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            TAG_VERSION=${GITHUB_REF#refs/tags/v}
-            PACKAGE_VERSION=$(node -p "require('./package.json').version")
-            if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
-              echo "Tag version ($TAG_VERSION) does not match package.json version ($PACKAGE_VERSION)"
-              exit 1
-            fi
+    - name: Rename Files and Move to Release
+      run: |
+        mkdir -p release
+        for file in *; do
+          if [ -f "$file" ]; then
+            new_name=$(echo "$file" | sed -E 's/-[0-9]+\.[0-9]+\.[0-9]+//')
+            mv "$file" "release/$new_name"
           fi
-        shell: bash
+        done
 
-      - name: Build app
-        run: npm run build
-
-      - if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y snapd
-          sudo snap install snapcraft --classic
-
-      - name: Package app
-        run: npm run electron:build:${{ matrix.arch }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: true  # or false, depending on your needs
-          files: |
-            dist_electron/*.dmg
-            dist_electron/*.deb
-            dist_electron/*.exe
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create Manual Release
+      uses: softprops/action-gh-release@v2
+      with:
+        draft: true
+        name: manual-release
+        files: release/*  # Correct path to the renamed files
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

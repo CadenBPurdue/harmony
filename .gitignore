@@ -4,6 +4,11 @@ dist
 dist_electron
 .vscode
 .DS_Store
+<<<<<<< HEAD
 .env
 .p8
 .db
+=======
+*.env
+*.p8
+>>>>>>> origin
