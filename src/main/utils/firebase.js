@@ -1,6 +1,5 @@
 // src/main/utils/firebase.js
 import path from "path";
-import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 import dotenv from "dotenv";
 import { initializeApp } from "firebase/app";
 import {
