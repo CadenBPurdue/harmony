@@ -81,8 +81,8 @@ function closeSpotifyAuthWindow() {
 }
 
 async function exchangeSpotifyCodeForToken(code) {
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  const clientId = base64decode(process.env.SPOTIFY_CLIENT_ID);
+  const clientSecret = base64decode(process.env.SPOTIFY_CLIENT_SECRET);
   const redirectUri = "http://localhost:8888/callback";
 
   try {
@@ -220,8 +220,8 @@ function createSpotifyAuthWindow(authUrl, state, resolve, reject) {
 }
 
 function initiateSpotifyAuth() {
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  const clientId = base64decode(process.env.SPOTIFY_CLIENT_ID);
+  const clientSecret = base64decode(process.env.SPOTIFY_CLIENT_SECRET);
 
   if (!validateCredentials(clientId, clientSecret)) {
     throw new Error("Invalid Spotify credentials");
@@ -252,15 +252,13 @@ function initiateSpotifyAuth() {
 // Apple Music Auth Functions
 function generateAppleMusicToken() {
   try {
-    const teamId = process.env.APPLE_TEAM_ID;
-    const keyId = process.env.APPLE_KEY_ID;
-    const privateKeyPath = process.env.APPLE_PRIVATE_KEY;
+    const teamId = base64decode(process.env.APPLE_TEAM_ID);
+    const keyId = base64decode(process.env.APPLE_KEY_ID);
+    const privateKey = base64decode(process.env.APPLE_PRIVATE_KEY);
 
-    if (!teamId || !keyId || !privateKeyPath) {
+    if (!teamId || !keyId || !privateKey) {
       throw new Error("Missing required environment variables");
     }
-
-    const privateKey = fs.readFileSync(privateKeyPath, "utf8");
 
     const token = jwt.sign({}, privateKey, {
       algorithm: "ES256",
