@@ -30,7 +30,7 @@ function createWindow() {
           "style-src 'self' 'unsafe-inline' https://*.spotify.com https://*.scdn.co https://*.apple.com;",
           "font-src 'self' data: https://*.scdn.co https://*.apple.com;",
           "img-src 'self' https://*.spotify.com https://*.scdn.co https://www.google.com https://www.gstatic.com data: https://*.apple.com;",
-          "connect-src 'self' https://*.spotify.com https://*.scdn.co https://*.ingest.sentry.io https://api.spotify.com https://www.google.com https://*.apple.com https://api.music.apple.com;",
+          "connect-src 'self' http://localhost:5001 https://*.spotify.com https://*.scdn.co https://*.ingest.sentry.io https://api.spotify.com https://www.google.com https://*.apple.com https://api.music.apple.com;",
           "frame-src 'self' https://accounts.spotify.com https://www.google.com https://recaptcha.google.com https://*.apple.com;",
           "media-src 'self' https://*.scdn.co https://*.apple.com;",
         ].join(" "),
