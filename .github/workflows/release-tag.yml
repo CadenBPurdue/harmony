@@ -45,12 +45,13 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v4
         with:
-          path: dist_electron
+          path: .
+          merge-multiple: true  # Merge files into the root
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           draft: true
-          files: dist_electron/*
+          files: ./*  # Correct path to the renamed files
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
