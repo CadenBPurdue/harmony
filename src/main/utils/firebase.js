@@ -43,13 +43,15 @@ async function authenticateWithFirebase() {
   try {
     // Get the Google token and check if it's valid
     let tokenData = getGoogleToken();
-    
+
     if (!tokenData || !tokenData.idToken) {
-      console.log("[Firebase] No authentication token found, initiating Google auth...");
+      console.log(
+        "[Firebase] No authentication token found, initiating Google auth...",
+      );
       // Initiate Google authentication
       const authResult = await initiateGoogleAuth();
       tokenData = getGoogleToken();
-      
+
       if (!tokenData || !tokenData.idToken) {
         throw new Error("Failed to obtain Google token");
       }
@@ -61,22 +63,24 @@ async function authenticateWithFirebase() {
     } catch (error) {
       // If token is too old or invalid, reinitiate Google auth
       if (error.code === "auth/invalid-credential") {
-        console.log("[Firebase] Token expired or invalid, reinitiating authentication...");
-        
+        console.log(
+          "[Firebase] Token expired or invalid, reinitiating authentication...",
+        );
+
         // Clear the existing Google token
         clearGoogleToken();
 
         // Get new token
         await initiateGoogleAuth();
         const newTokenData = getGoogleToken();
-        
+
         if (!newTokenData || !newTokenData.idToken) {
           throw new Error("Failed to obtain new Google token");
         }
-        
+
         return await signInWithToken(newTokenData.idToken);
       }
-      
+
       console.error("[Firebase] Failed to authenticate with token:", error);
       throw error;
     }
