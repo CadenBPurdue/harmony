@@ -18,9 +18,9 @@ class SpotifyApi {
     this.refresh_token = process.env.SPOTIFY_REFRESH_TOKEN; // change this to use safe storage
     this.client_id = process.env.SPOTIFY_CLIENT_ID; // change this to use safe storage
     this.client_secret = process.env.SPOTIFY_CLIENT_SECRET; // change this to use safe storage
-    this.user_id = await this.getUserId();
     await this.refreshToken();
     this.tokenHandler(); // token will refresh every 55 minutes
+    this.user_id = await this.getUserId();
   }
 
   tokenHandler() {
@@ -31,7 +31,6 @@ class SpotifyApi {
 
   async refreshToken() {
     try {
-      console.log(this.auth_token);
       const response = await axios.post(
         "https://accounts.spotify.com/api/token",
         `grant_type=refresh_token&refresh_token=${this.refresh_token}`,
@@ -72,8 +71,6 @@ class SpotifyApi {
     if (!this.auth_token) {
       await this.initialize();
     }
-
-    console.log(this.user_id);
 
     try {
       const response = await axios.get(
