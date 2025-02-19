@@ -123,6 +123,7 @@ const styles = {
     flex: 1,
     py: 1.5,
 <<<<<<< HEAD
+<<<<<<< HEAD
     maxWidth: '100%',
     backgroundColor: isConnected 
       ? (service === 'spotify' ? colors.amethyst : colors.lavenderFloral)
@@ -143,6 +144,19 @@ const styles = {
         ? service === "spotify"
           ? "#1aa34a"
           : "#e0363e"
+=======
+    maxWidth: "100%",
+    backgroundColor: isConnected
+      ? service === "spotify"
+        ? colors.amethyst
+        : colors.lavenderFloral
+      : darkColor,
+    "&:hover": {
+      backgroundColor: isConnected
+        ? service === "spotify"
+          ? colors.lavenderFloral
+          : colors.lavenderFloral
+>>>>>>> d8ac56b (Auto-format code using ESlint)
         : "#333333",
     },
     "&:disabled": {
