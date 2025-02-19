@@ -14,6 +14,7 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
+import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 
 const isDev = process.env.NODE_ENV === "development";
 

@@ -254,13 +254,11 @@ function generateAppleMusicToken() {
   try {
     const teamId = process.env.APPLE_TEAM_ID;
     const keyId = process.env.APPLE_KEY_ID;
-    const privateKeyPath = process.env.APPLE_PRIVATE_KEY;
+    const privateKey = process.env.APPLE_PRIVATE_KEY;
 
-    if (!teamId || !keyId || !privateKeyPath) {
+    if (!teamId || !keyId || !privateKey) {
       throw new Error("Missing required environment variables");
     }
-
-    const privateKey = fs.readFileSync(privateKeyPath, "utf8");
 
     const token = jwt.sign({}, privateKey, {
       algorithm: "ES256",
