@@ -1,9 +1,13 @@
 // src/renderer/main.jsx
-import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
-import App from './App';
-import CreateAccount from './CreateAccount';
+import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom/client";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+} from "react-router-dom";
+import App from "./App";
+import CreateAccount from "./CreateAccount";
 
 const Router = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -17,12 +21,18 @@ const Router = () => {
     console.log("[Router] Checking auth status...");
     try {
       const status = await window.electronAPI.getAuthStatus();
-      console.log("[Router] Auth status details:", JSON.stringify(status, null, 2));
-      
+      console.log(
+        "[Router] Auth status details:",
+        JSON.stringify(status, null, 2),
+      );
+
       setIsAuthenticated(status.isGoogleAuthenticated);
       setIsLoading(false);
-      
-      console.log("[Router] Updated authentication state to:", status.isGoogleAuthenticated);
+
+      console.log(
+        "[Router] Updated authentication state to:",
+        status.isGoogleAuthenticated,
+      );
     } catch (err) {
       console.error("[Router] Failed to check auth status:", err);
       setIsLoading(false);
@@ -53,9 +63,9 @@ const Router = () => {
 };
 
 // Create root and render
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
     <Router />
-  </React.StrictMode>
+  </React.StrictMode>,
 );
