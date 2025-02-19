@@ -69,3 +69,10 @@ jobs:
       with:
         name: build-${{ inputs.os }}-${{ inputs.arch }}
         path: dist_electron/*.exe
+
+    - name: Upload Artifacts Linux
+      if: inputs.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ inputs.os }}-${{ inputs.arch }}
+        path: dist_electron/*.deb
