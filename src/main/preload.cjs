@@ -1,3 +1,4 @@
+// src/main/preload.cjs
 const { contextBridge, ipcRenderer, shell } = require("electron");
 
 contextBridge.exposeInMainWorld("electronAPI", {
