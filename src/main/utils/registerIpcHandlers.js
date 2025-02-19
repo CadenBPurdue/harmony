@@ -1,3 +1,4 @@
+// src/main/utils/registerIpcHandlers.js
 import { ipcMain, shell } from "electron";
 import {
   initiateSpotifyAuth,
