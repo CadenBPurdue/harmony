@@ -1,5 +1,6 @@
 // src/main/utils/firebase.js
 import path from "path";
+import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 import dotenv from "dotenv";
 import { initializeApp } from "firebase/app";
 import {
@@ -14,7 +15,6 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
-import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 
 const isDev = process.env.NODE_ENV === "development";
 
