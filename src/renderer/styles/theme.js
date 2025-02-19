@@ -124,11 +124,11 @@ const styles = {
     py: 1.5,
     maxWidth: '100%',
     backgroundColor: isConnected 
-      ? (service === 'spotify' ? '#1db954' : '#fc3c44')
+      ? (service === 'spotify' ? colors.amethyst : colors.lavenderFloral)
       : darkColor,
     '&:hover': {
       backgroundColor: isConnected 
-        ? (service === 'spotify' ? '#1aa34a' : '#e0363e')
+        ? (service === 'spotify' ? colors.lavenderFloral : colors.lavenderFloral)
         : '#333333',
     },
     '&:disabled': {
