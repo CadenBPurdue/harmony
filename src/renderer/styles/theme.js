@@ -122,14 +122,18 @@ const styles = {
   musicServiceButton: (isConnected, darkColor, service) => ({
     flex: 1,
     py: 1.5,
-    maxWidth: '100%',
-    backgroundColor: isConnected 
-      ? (service === 'spotify' ? colors.amethyst : colors.lavenderFloral)
+    maxWidth: "100%",
+    backgroundColor: isConnected
+      ? service === "spotify"
+        ? colors.amethyst
+        : colors.lavenderFloral
       : darkColor,
-    '&:hover': {
-      backgroundColor: isConnected 
-        ? (service === 'spotify' ? colors.lavenderFloral : colors.lavenderFloral)
-        : '#333333',
+    "&:hover": {
+      backgroundColor: isConnected
+        ? service === "spotify"
+          ? colors.lavenderFloral
+          : colors.lavenderFloral
+        : "#333333",
     },
     "&:disabled": {
       backgroundColor: `rgba(${darkColor === "#000000" ? "0, 0, 0" : "25, 20, 20"}, 0.5)`,
