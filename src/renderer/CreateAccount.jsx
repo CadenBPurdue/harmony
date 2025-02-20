@@ -9,6 +9,7 @@ import {
   CircularProgress,
   Divider,
   ThemeProvider,
+  CssBaseline,
 } from "@mui/material";
 import { Music2Icon, AppleIcon, ArrowRightIcon } from "lucide-react";
 import React, { useState, useEffect } from "react";
@@ -144,8 +145,25 @@ const CreateAccount = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={styles.pageContainer}>
-        <Box sx={styles.contentContainer}>
+      <CssBaseline />
+      <Box
+        sx={{
+          width: "100vw",
+          height: "100vh",
+          overflow: "hidden", // This prevents scrolling
+          ...styles.pageContainer,
+          padding: 0, // Override any padding from pageContainer
+        }}
+      >
+        <Box
+          sx={{
+            ...styles.contentContainer,
+            overflowY: "auto", // Allow scrolling only within the content if needed
+            height: "100%",
+            maxHeight: "680px", // Match your window height
+            paddingTop: "40px",
+          }}
+        >
           <Box sx={styles.headerContainer}>
             <Typography variant="h3" sx={{ color: "primary.main", mb: 1 }}>
               Welcome to Harmony

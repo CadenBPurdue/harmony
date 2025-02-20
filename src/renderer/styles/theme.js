@@ -86,16 +86,20 @@ const styles = {
     minHeight: "100vh",
     backgroundColor: colors.magnolia,
     display: "flex",
-    flexDirection: "column",
-    padding: { xs: 2, sm: 4 },
+    justifyContent: "center",
+    alignItems: "center",
+    padding: { xs: 2, sm: 3 },
   },
   contentContainer: {
-    maxWidth: "1200px",
-    width: "100%",
-    marginLeft: "auto",
-    marginRight: "auto",
+    width: "450px",
+    maxWidth: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
   },
   headerContainer: {
+    width: "100%",
+    textAlign: "center",
     marginBottom: 4,
   },
   paper: {
@@ -119,17 +123,13 @@ const styles = {
       backgroundColor: "rgba(134, 97, 193, 0.5)",
     },
   }),
-  musicServiceButton: (isConnected, darkColor, service) => ({
+  musicServiceButton: (isConnected, darkColor) => ({
     flex: 1,
     py: 1.5,
-    maxWidth: '100%',
-    backgroundColor: isConnected 
-      ? (service === 'spotify' ? colors.amethyst : colors.lavenderFloral)
-      : darkColor,
-    '&:hover': {
-      backgroundColor: isConnected 
-        ? (service === 'spotify' ? colors.lavenderFloral : colors.lavenderFloral)
-        : '#333333',
+    maxWidth: "100%",
+    backgroundColor: isConnected ? colors.amethyst : darkColor,
+    "&:hover": {
+      backgroundColor: isConnected ? "#7252b2" : "#333333",
     },
     "&:disabled": {
       backgroundColor: `rgba(${darkColor === "#000000" ? "0, 0, 0" : "25, 20, 20"}, 0.5)`,

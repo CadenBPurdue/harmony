@@ -18,21 +18,15 @@ const Router = () => {
   }, []);
 
   const checkAuthStatus = async () => {
-    console.log("[Router] Checking auth status...");
     try {
       const status = await window.electronAPI.getAuthStatus();
-      console.log(
-        "[Router] Auth status details:",
-        JSON.stringify(status, null, 2),
-      );
-
       setIsAuthenticated(status.isGoogleAuthenticated);
       setIsLoading(false);
 
-      console.log(
-        "[Router] Updated authentication state to:",
-        status.isGoogleAuthenticated,
-      );
+      // Set window mode based on authentication
+      if (window.electronAPI.setWindowMode) {
+        window.electronAPI.setWindowMode(!status.isGoogleAuthenticated);
+      }
     } catch (err) {
       console.error("[Router] Failed to check auth status:", err);
       setIsLoading(false);
@@ -58,7 +52,6 @@ const Router = () => {
     },
   ];
 
-  console.log("[Router] Creating routes with auth state:", isAuthenticated);
   return <RouterProvider router={createBrowserRouter(routes)} />;
 };
 
