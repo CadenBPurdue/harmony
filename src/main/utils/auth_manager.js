@@ -252,15 +252,27 @@ function initiateSpotifyAuth() {
 // Apple Music Auth Functions
 function generateAppleMusicToken() {
   try {
-    const teamId = base64decode(process.env.APPLE_TEAM_ID);
-    const keyId = base64decode(process.env.APPLE_KEY_ID);
-    const privateKey = base64decode(process.env.APPLE_PRIVATE_KEY);
+    const teamId = process.env.APPLE_TEAM_ID;
+    const keyId = process.env.APPLE_KEY_ID;
+    const privateKeyString = process.env.APPLE_PRIVATE_KEY;
 
-    if (!teamId || !keyId || !privateKey) {
+    if (!teamId || !keyId || !privateKeyString) {
       throw new Error("Missing required environment variables");
     }
 
-    const token = jwt.sign({}, privateKey, {
+    // Ensure the private key is in the correct format with headers
+    let formattedKey = privateKeyString;
+    if (!privateKeyString.includes("-----BEGIN PRIVATE KEY-----")) {
+      formattedKey =
+        "-----BEGIN PRIVATE KEY-----\n" +
+        privateKeyString
+          .replace(/\s+/g, "")
+          .match(/.{1,64}/g)
+          .join("\n") +
+        "\n-----END PRIVATE KEY-----";
+    }
+
+    const token = jwt.sign({}, formattedKey, {
       algorithm: "ES256",
       expiresIn: "180d",
       issuer: teamId,

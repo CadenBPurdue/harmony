@@ -1,8 +1,9 @@
 // src/main/main.js
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { app, BrowserWindow, protocol, session } from "electron";
+import { app, BrowserWindow, protocol, session, ipcMain } from "electron";
 import { registerIpcHandlers } from "./utils/registerIpcHandlers.js";
 
 // Load environment variables
@@ -14,7 +15,21 @@ const __dirname = path.dirname(__filename);
 let mainWindow = null;
 
 function createWindow() {
-  // Set CSP headers for main window
+  // Set initial size and properties
+  const window = new BrowserWindow({
+    width: 500,
+    height: 680,
+    resizable: false,
+    maximizable: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.cjs"),
+      webSecurity: true,
+    },
+  });
+
+  // Apply CSP headers
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
@@ -33,32 +48,38 @@ function createWindow() {
     });
   });
 
-  const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, "preload.cjs"),
-      webSecurity: true,
-    },
-  });
-
-  mainWindow.webContents.on("did-finish-load", () => {
-    console.log("Window loaded");
-  });
-
-  mainWindow.webContents.on("console-message", (event, level, message) => {
-    console.log("Renderer Console:", message);
-  });
-
+  // Load the URL
   if (process.env.NODE_ENV === "development") {
-    mainWindow.loadURL("http://localhost:5173");
+    window.loadURL("http://localhost:5173").catch((err) => {
+      console.error("[Window] Error loading development URL:", err);
+    });
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../../dist/index.html"));
+    const indexPath = path.join(__dirname, "../../dist/index.html");
+    if (fs.existsSync(indexPath)) {
+      window.loadFile(indexPath).catch((err) => {
+        console.error("[Window] Error loading index file:", err);
+      });
+    } else {
+      console.error("[Window] Index file does not exist at path:", indexPath);
+    }
   }
 
-  return mainWindow;
+  // Add IPC handler for route changes
+  ipcMain.handle("window:setAppMode", async (event, isLoginPage) => {
+    if (isLoginPage) {
+      window.setResizable(false);
+      window.setMaximizable(false);
+      window.setSize(500, 680);
+    } else {
+      window.setResizable(true);
+      window.setMaximizable(true);
+      window.setSize(800, 600);
+    }
+
+    return { success: true, mode: isLoginPage ? "login" : "app" };
+  });
+
+  return window;
 }
 
 app.whenReady().then(() => {

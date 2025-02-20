@@ -37,6 +37,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("Opening external URL:", url);
     shell.openExternal(url);
   },
+
+  setWindowMode: (isLoginPage) => {
+    return ipcRenderer.invoke("window:setAppMode", isLoginPage);
+  },
 });
 
 console.log("Preload script loaded and APIs exposed.");
