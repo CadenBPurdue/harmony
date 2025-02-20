@@ -36,6 +36,11 @@ jobs:
         echo "FIREBASE_AUTH_DOMAIN=${{ secrets.FIREBASE_AUTH_DOMAIN }}" >> .env
         echo "FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}" >> .env
         echo "FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}" >> .env
+        echo "SPOTIFY_CLIENT_ID=${{ secrets.SPOTIFY_CLIENT_ID }}" >> .env
+        echo "SPOTIFY_CLIENT_SECRET=${{ secrets.SPOTIFY_CLIENT_SECRET }}" >> .env
+        echo "APPLE_TEAM_ID=${{ secrets.APPLE_TEAM_ID }}" >> .env
+        echo "APPLE_KEY_ID=${{ secrets.APPLE_KEY_ID }}" >> .env
+        echo "APPLE_PRIVATE_KEY=${{ secrets.APPLE_PRIVATE_KEY }}" >> .env
 
     - name: Build app
       run: npm run build
@@ -64,3 +69,10 @@ jobs:
       with:
         name: build-${{ inputs.os }}-${{ inputs.arch }}
         path: dist_electron/*.exe
+
+    - name: Upload Artifacts Linux
+      if: inputs.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ inputs.os }}-${{ inputs.arch }}
+        path: dist_electron/*.deb

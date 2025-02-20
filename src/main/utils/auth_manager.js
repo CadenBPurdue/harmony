@@ -81,8 +81,8 @@ function closeSpotifyAuthWindow() {
 }
 
 async function exchangeSpotifyCodeForToken(code) {
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  const clientId = base64decode(process.env.SPOTIFY_CLIENT_ID);
+  const clientSecret = base64decode(process.env.SPOTIFY_CLIENT_SECRET);
   const redirectUri = "http://localhost:8888/callback";
 
   try {
@@ -220,8 +220,8 @@ function createSpotifyAuthWindow(authUrl, state, resolve, reject) {
 }
 
 function initiateSpotifyAuth() {
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  const clientId = base64decode(process.env.SPOTIFY_CLIENT_ID);
+  const clientSecret = base64decode(process.env.SPOTIFY_CLIENT_SECRET);
 
   if (!validateCredentials(clientId, clientSecret)) {
     throw new Error("Invalid Spotify credentials");
