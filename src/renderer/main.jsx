@@ -1,13 +1,10 @@
 // src/renderer/main.jsx
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  Navigate,
-} from "react-router-dom";
+import { createHashRouter, RouterProvider, Navigate } from "react-router-dom";
 import App from "./App";
 import CreateAccount from "./CreateAccount";
+import ErrorBoundary from "./ErrorBoundary";
 
 const Router = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -45,14 +42,20 @@ const Router = () => {
     {
       path: "/",
       element: isAuthenticated ? <App /> : <Navigate to="/create-account" />,
+      errorElement: <ErrorBoundary />,
     },
     {
       path: "/create-account",
       element: <CreateAccount />,
+      errorElement: <ErrorBoundary />,
+    },
+    {
+      path: "*", // Catch all for non-matching routes
+      element: <ErrorBoundary />,
     },
   ];
 
-  return <RouterProvider router={createBrowserRouter(routes)} />;
+  return <RouterProvider router={createHashRouter(routes)} />;
 };
 
 // Create root and render
