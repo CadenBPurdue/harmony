@@ -54,13 +54,27 @@ function createWindow() {
       console.error("[Window] Error loading development URL:", err);
     });
   } else {
+    // Adjust the path to make sure it correctly points to the built files
     const indexPath = path.join(__dirname, "../../dist/index.html");
+    console.log("[Window] Loading production index from:", indexPath);
+
     if (fs.existsSync(indexPath)) {
       window.loadFile(indexPath).catch((err) => {
         console.error("[Window] Error loading index file:", err);
       });
     } else {
       console.error("[Window] Index file does not exist at path:", indexPath);
+      // Try alternate path as fallback
+      const altPath = path.join(app.getAppPath(), "dist/index.html");
+      console.log("[Window] Trying alternate path:", altPath);
+
+      if (fs.existsSync(altPath)) {
+        window.loadFile(altPath).catch((err) => {
+          console.error("[Window] Error loading alternate index file:", err);
+        });
+      } else {
+        console.error("[Window] Alternate index file does not exist");
+      }
     }
   }
 

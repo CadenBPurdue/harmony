@@ -1,5 +1,4 @@
 // src/main/utils/auth_manager.js
-import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { BrowserWindow } from "electron";
