@@ -87,18 +87,49 @@ const CreateAccount = () => {
   };
 
   const handleNext = () => {
-    console.log(
-      "[CreateAccount] Next button clicked, current auth status:",
-      JSON.stringify(authStatus, null, 2),
-    );
     if (authStatus.isGoogleConnected) {
       console.log("[CreateAccount] Google is connected, navigating to /");
-      // Use window.location for a full page refresh to avoid potential state issues
-      window.location.href = "/";
+
+      setLoading(true);
+
+      // Update window mode first
+      window.electronAPI
+        .setWindowMode(false)
+        .then(() => {
+          console.log("[CreateAccount] Window mode set, now navigating");
+
+          // Use a combination of approaches for maximum compatibility
+          try {
+            // Try hash-based navigation first
+            window.location.hash = "#/";
+
+            // Set a timeout to check if navigation worked
+            setTimeout(() => {
+              if (
+                window.location.hash !== "#/" &&
+                window.location.hash !== "#"
+              ) {
+                console.log(
+                  "[CreateAccount] Hash navigation might have failed, trying alternate method",
+                );
+                window.location.href = "./index.html#/"; // Try with relative path
+              }
+            }, 300);
+          } catch (error) {
+            console.error("[CreateAccount] Navigation error:", error);
+            // Last resort
+            window.location.replace("#/");
+          }
+        })
+        .catch((err) => {
+          console.error("[CreateAccount] Error setting window mode:", err);
+          // Try to navigate anyway
+          window.location.hash = "#/";
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     } else {
-      console.error(
-        "[CreateAccount] Attempted to navigate without Google connection",
-      );
       setError("Please connect with Google before continuing");
     }
   };

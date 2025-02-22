@@ -251,9 +251,9 @@ function initiateSpotifyAuth() {
 // Apple Music Auth Functions
 function generateAppleMusicToken() {
   try {
-    const teamId = process.env.APPLE_TEAM_ID;
-    const keyId = process.env.APPLE_KEY_ID;
-    const privateKeyString = process.env.APPLE_PRIVATE_KEY;
+    const teamId = base64decode(process.env.APPLE_TEAM_ID);
+    const keyId = base64decode(process.env.APPLE_KEY_ID);
+    const privateKeyString = base64decode(process.env.APPLE_PRIVATE_KEY);
 
     if (!teamId || !keyId || !privateKeyString) {
       throw new Error("Missing required environment variables");
