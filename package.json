@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "cross-env NODE_ENV=development vite & cross-env NODE_ENV=development electron .",
     "build": "vite build",
-    "start": "electron .",
+    "start": "cross-env NODE_ENV=test_build electron .",
     "test": "vitest",
     "electron:build:arm64": "electron-builder --arm64",
     "electron:build:x64": "electron-builder --x64",
