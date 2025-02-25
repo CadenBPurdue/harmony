@@ -99,7 +99,7 @@ function App() {
         name: "app-test1",
         user: "ebtuhr",
         origin: "Spotfiy",
-        number_of_tracks: 4,
+        numberOfTracks: 4,
         duration: 12000,
         description: "",
         sharedWith: ["demo_user_id"],

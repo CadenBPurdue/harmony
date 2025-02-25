@@ -17,7 +17,7 @@ function validatePlaylist(playlist) {
     name: "string",
     user: "string",
     origin: "string",
-    number_of_tracks: "number",
+    numberOfTracks: "number",
     duration: "number",
     description: "string",
     image: "string",
