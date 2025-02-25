@@ -7,19 +7,46 @@ import {
   Alert,
   Snackbar,
   Chip,
+  CircularProgress,
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
 
+// Main App component with optimized load time
 function App() {
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
   const [isAppleMusicConnected, setIsAppleMusicConnected] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
 
-  // Check auth status on component mount
+  console.log("[App] Component rendered");
+
   useEffect(() => {
-    checkAuthStatus();
-    window.electronAPI.connectFirebase();
+    console.log("[App] Running useEffect");
+    const checkAuth = async () => {
+      try {
+        console.log("[App] Checking auth status");
+        const status = await window.electronAPI.getAuthStatus();
+        console.log("[App] Auth status received:", status);
+        
+        setIsSpotifyConnected(status.isSpotifyAuthenticated);
+        setIsAppleMusicConnected(status.isAppleMusicAuthenticated);
+        setIsGoogleConnected(status.isGoogleAuthenticated);
+        
+        if (!status.isGoogleAuthenticated) {
+          console.warn("[App] User not authenticated with Google, should not be here");
+        }
+        
+        setIsLoading(false);
+        window.electronAPI.connectFirebase();
+      } catch (err) {
+        console.error("[App] Failed to check auth status:", err);
+        setError("Failed to initialize application");
+        setIsLoading(false);
+      }
+    };
+    
+    checkAuth();
   }, []);
 
   const checkAuthStatus = async () => {
@@ -73,6 +100,17 @@ function App() {
       setIsAppleMusicConnected(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
+        <Typography variant="h5" sx={{ mb: 2 }}>
+          Loading Harmony...
+        </Typography>
+        <CircularProgress />
+      </Container>
+    );
+  }
 
   return (
     <Container>

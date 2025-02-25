@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { Music2Icon, AppleIcon, ArrowRightIcon } from "lucide-react";
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { theme, styles } from "./styles/theme";
 
 const CreateAccount = () => {
@@ -24,43 +25,55 @@ const CreateAccount = () => {
     isAppleMusicConnected: false,
   });
 
+  console.log("[CreateAccount] Component rendered");
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
   const checkAuthStatus = async () => {
     console.log("[CreateAccount] Checking auth status...");
     try {
       const status = await window.electronAPI.getAuthStatus();
-      console.log(
-        "[CreateAccount] Auth status details:",
-        JSON.stringify(status, null, 2),
-      );
+      console.log("[CreateAccount] Auth status received:", status);
+      
       setAuthStatus({
         isGoogleConnected: status.isGoogleAuthenticated,
         isSpotifyConnected: status.isSpotifyAuthenticated,
         isAppleMusicConnected: status.isAppleMusicAuthenticated,
       });
-
-      // Log the updated state
-      console.log(
-        "[CreateAccount] Updated component state:",
-        JSON.stringify(
-          {
-            isGoogleConnected: status.isGoogleAuthenticated,
-            isSpotifyConnected: status.isSpotifyAuthenticated,
-            isAppleMusicConnected: status.isAppleMusicAuthenticated,
-          },
-          null,
-          2,
-        ),
-      );
     } catch (err) {
       console.error("[CreateAccount] Failed to check auth status:", err);
       setError("Failed to check authentication status");
     }
   };
 
-  useEffect(() => {
-    console.log("[CreateAccount] Component mounted");
-    checkAuthStatus();
-  }, []);
+  const handleNext = async () => {
+    console.log("[CreateAccount] Next button clicked, auth status:", authStatus.isGoogleConnected);
+    
+    if (!authStatus.isGoogleConnected) {
+      setError("Please connect with Google before continuing");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Resize window first
+      console.log("[CreateAccount] Resizing window...");
+      await window.electronAPI.setWindowMode(false);
+      console.log("[CreateAccount] Window resized successfully");
+      
+      // Use direct navigation with a small delay
+      console.log("[CreateAccount] Reloading application...");
+      setTimeout(() => {
+        window.location.href = './index.html';
+      }, 500);
+    } catch (err) {
+      console.error("[CreateAccount] Error during transition:", err);
+      setError("Failed to navigate to main app");
+      setLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     console.log("[CreateAccount] Starting Google sign in...");
@@ -83,54 +96,6 @@ const CreateAccount = () => {
       setError("Failed to connect with Google. Please try again.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleNext = () => {
-    if (authStatus.isGoogleConnected) {
-      console.log("[CreateAccount] Google is connected, navigating to /");
-
-      setLoading(true);
-
-      // Update window mode first
-      window.electronAPI
-        .setWindowMode(false)
-        .then(() => {
-          console.log("[CreateAccount] Window mode set, now navigating");
-
-          // Use a combination of approaches for maximum compatibility
-          try {
-            // Try hash-based navigation first
-            window.location.hash = "#/";
-
-            // Set a timeout to check if navigation worked
-            setTimeout(() => {
-              if (
-                window.location.hash !== "#/" &&
-                window.location.hash !== "#"
-              ) {
-                console.log(
-                  "[CreateAccount] Hash navigation might have failed, trying alternate method",
-                );
-                window.location.href = "./index.html#/"; // Try with relative path
-              }
-            }, 300);
-          } catch (error) {
-            console.error("[CreateAccount] Navigation error:", error);
-            // Last resort
-            window.location.replace("#/");
-          }
-        })
-        .catch((err) => {
-          console.error("[CreateAccount] Error setting window mode:", err);
-          // Try to navigate anyway
-          window.location.hash = "#/";
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      setError("Please connect with Google before continuing");
     }
   };
 

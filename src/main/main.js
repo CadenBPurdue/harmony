@@ -48,49 +48,76 @@ function createWindow() {
     });
   });
 
-  // Load the URL
+  window.webContents.on('did-start-loading', () => {
+    console.log("[Window] Started loading page");
+  });
+
+  window.webContents.on('did-finish-load', () => {
+    console.log("[Window] Finished loading page");
+  });
+
+  window.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error("[Window] Failed to load:", errorCode, errorDescription);
+  });
+
+  window.webContents.on('crashed', () => {
+    console.error("[Window] Renderer process crashed");
+  });
+
+  // Improved window mode handler
+  ipcMain.handle("window:setAppMode", async (event, isLoginPage) => {
+    try {
+      console.log(`[Window] Setting mode to ${isLoginPage ? 'login' : 'app'}`);
+      
+      if (isLoginPage) {
+        window.setSize(500, 680);
+        window.setResizable(false);
+        window.setMaximizable(false);
+      } else {
+        window.setSize(800, 600);
+        window.setResizable(true);
+        window.setMaximizable(true);
+      }
+      
+      return { success: true, mode: isLoginPage ? "login" : "app" };
+    } catch (error) {
+      console.error("[Window] Error setting app mode:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
   if (process.env.NODE_ENV === "development") {
-    window.loadURL("http://localhost:5173").catch((err) => {
-      console.error("[Window] Error loading development URL:", err);
+    window.loadURL("http://localhost:5173").catch(err => {
+      console.error('[Window] Error loading development URL:', err);
     });
   } else {
     // Adjust the path to make sure it correctly points to the built files
     const indexPath = path.join(__dirname, "../../dist/index.html");
-    console.log("[Window] Loading production index from:", indexPath);
+    console.log('[Window] Loading production index from:', indexPath);
 
     if (fs.existsSync(indexPath)) {
-      window.loadFile(indexPath).catch((err) => {
-        console.error("[Window] Error loading index file:", err);
+      window.loadFile(indexPath).catch(err => {
+        console.error('[Window] Error loading index file:', err);
       });
     } else {
-      console.error("[Window] Index file does not exist at path:", indexPath);
+      console.error('[Window] Index file does not exist at path:', indexPath);
       // Try alternate path as fallback
       const altPath = path.join(app.getAppPath(), "dist/index.html");
-      console.log("[Window] Trying alternate path:", altPath);
+      console.log('[Window] Trying alternate path:', altPath);
 
       if (fs.existsSync(altPath)) {
-        window.loadFile(altPath).catch((err) => {
-          console.error("[Window] Error loading alternate index file:", err);
+        window.loadFile(altPath).catch(err => {
+          console.error('[Window] Error loading alternate index file:', err);
         });
       } else {
-        console.error("[Window] Alternate index file does not exist");
+        console.error('[Window] Alternate index file does not exist');
       }
     }
   }
 
-  // Add IPC handler for route changes
-  ipcMain.handle("window:setAppMode", async (event, isLoginPage) => {
-    if (isLoginPage) {
-      window.setResizable(false);
-      window.setMaximizable(false);
-      window.setSize(500, 680);
-    } else {
-      window.setResizable(true);
-      window.setMaximizable(true);
-      window.setSize(800, 600);
-    }
-
-    return { success: true, mode: isLoginPage ? "login" : "app" };
+  // Add error handling
+  window.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('[Window] Failed to load:', errorCode, errorDescription);
   });
 
   return window;
