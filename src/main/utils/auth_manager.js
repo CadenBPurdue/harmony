@@ -630,7 +630,6 @@ async function initiateGoogleAuth() {
     }
 
     const clientId = base64decode(process.env.GOOGLE_CLIENT_ID);
-    const clientSecret = base64decode(process.env.GOOGLE_CLIENT_SECRET);
     const redirectUri = base64decode(process.env.GOOGLE_REDIRECT_URI);
 
     const scope = "openid email profile";
