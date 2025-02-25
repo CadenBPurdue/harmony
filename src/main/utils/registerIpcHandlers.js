@@ -6,7 +6,7 @@ import {
   getAuthStatus,
 } from "./auth_manager.js";
 import { configManager } from "./config.js";
-import { authenticateWithFirebase, } from "./firebase.js";
+import { authenticateWithFirebase } from "./firebase.js";
 import { writePlaylistToFirestore } from "./firebaseHelper.js";
 
 export function registerIpcHandlers() {
