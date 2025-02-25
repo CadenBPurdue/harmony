@@ -207,7 +207,10 @@ async function getPlaylistFromFirestore(playlistId) {
       const playlist = { id: docSnap.id, ...docSnap.data() };
 
       // Verify the playlist belongs to the current user or is shared with them
-      if (playlist.userId !== auth.currentUser.uid && !playlist.sharedWith.includes(auth.currentUser.uid)) {
+      if (
+        playlist.userId !== auth.currentUser.uid &&
+        !playlist.sharedWith.includes(auth.currentUser.uid)
+      ) {
         throw new Error(
           "Access denied: You don't have permission to view this playlist",
         );
