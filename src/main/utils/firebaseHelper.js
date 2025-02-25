@@ -7,6 +7,7 @@ import {
   collection,
   query,
   where,
+  Timestamp,
 } from "firebase/firestore";
 import { getDbInstance, getAuthInstance } from "./firebase.js";
 
@@ -21,6 +22,7 @@ function validatePlaylist(playlist) {
     description: "string",
     image: "string",
     tracks: "array",
+    sharedWith: "array",
   };
 
   const trackSchema = {
@@ -67,6 +69,43 @@ function validatePlaylist(playlist) {
   return true;
 }
 
+function validateUser(user) {
+  const userSchema = {
+    userId: "string",
+    displayName: "string",
+    email: "string",
+    createdAt: "timestamp",
+    lastLoginAt: "timestamp",
+  };
+
+  function validateObject(obj, schema) {
+    for (const key in schema) {
+      if (schema[key] === "array") {
+        if (!Array.isArray(obj[key])) {
+          throw new Error(
+            `Invalid type for ${key}. Expected array, but got ${typeof obj[key]}`,
+          );
+        }
+      } else if (schema[key] === "timestamp" && obj[key] instanceof Timestamp) {
+        // Check if the object is a Firestore Timestamp
+        continue;
+      } else if (typeof obj[key] !== schema[key]) {
+        throw new Error(
+          `Invalid type for ${key}. Expected ${schema[key]}, but got ${typeof obj[key]}`,
+        );
+      }
+    }
+    return true;
+  }
+
+  try {
+    return validateObject(user, userSchema);
+  } catch (error) {
+    console.error("User validation error:", error.message);
+    return false;
+  }
+}
+
 async function writePlaylistToFirestore(playlist) {
   const db = getDbInstance();
   const collection = "playlists";
@@ -82,7 +121,7 @@ async function writePlaylistToFirestore(playlist) {
     };
     const docRef = doc(db, collection, playlist.id);
     await setDoc(docRef, playlistWithUserId, { merge: true });
-    console.log(`Playlist written to ${collection}/${playlist.id}`);
+    console.log(`[Firebase Helper] Playlist written to ${collection}/${playlist.id}`);
     return { success: true };
   } catch (error) {
     console.error("Error writing playlist to Firestore:", error);
@@ -153,9 +192,69 @@ async function getPlaylistFromFirestore(playlistId) {
   }
 }
 
+async function writeUserToFirestore(user) {
+  const db = getDbInstance();
+  const collectionName = "users";
+  if (!validateUser(user)) {
+    throw new Error("Invalid user format");
+  }
+
+  try {
+    const docRef = doc(db, collectionName, user.userId);
+    await setDoc(docRef, user, { merge: true });
+    console.log(`[Firebase Helper] User written to ${collectionName}/${user.userId}`);
+    return { success: true };
+  } catch (error) {
+    console.error("Error writing user to Firestore:", error);
+    throw error;
+  }
+}
+
+async function getUsersFromFirestore() {
+  const db = getDbInstance();
+  const collectionName = "users";
+  const users = [];
+
+  try {
+    const querySnapshot = await getDocs(collection(db, collectionName));
+    querySnapshot.forEach((doc) => {
+      users.push({ id: doc.id, ...doc.data() });
+    });
+    return users;
+  } catch (error) {
+    console.error("Error fetching users from Firestore:", error);
+    throw error;
+  }
+}
+
+async function getUserFromFirestore(userId) {
+  const db = getDbInstance();
+  const collectionName = "users";
+
+  try {
+
+    const docRef = doc(db, collectionName, userId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() };
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Error getting user from Firestore:", error);
+    throw error;
+  }
+}
+
+
+
 export {
   validatePlaylist,
   writePlaylistToFirestore,
   getPlaylistsFromFirestore,
   getPlaylistFromFirestore,
+  writeUserToFirestore,
+  getUsersFromFirestore,
+  getUserFromFirestore,
 };

@@ -102,6 +102,7 @@ function App() {
         number_of_tracks: 4,
         duration: 12000,
         description: "",
+        sharedWith: ["demo_user_id"],
         image:
           "https://i.scdn.co/image/ab67616d00001e02124e9249fada4ff3c3a0739c",
         tracks: [

@@ -7,13 +7,13 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, Timestamp } from "firebase/firestore";
 import { initiateGoogleAuth } from "./auth_manager.js";
 import {
   getGoogleToken,
-  setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
+import { getUserFromFirestore, writeUserToFirestore } from "./firebaseHelper.js";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -81,11 +81,11 @@ async function authenticateWithFirebase() {
         return await signInWithToken(newTokenData.idToken);
       }
 
-      console.error("[Firebase] Failed to authenticate with token:", error);
+      console.error("[Firebase] Failed to authenticate with token");
       throw error;
     }
   } catch (error) {
-    console.error("[Firebase] Authentication failed:", error);
+    console.error("[Firebase] Authentication failed");
     throw error;
   }
 }
@@ -100,10 +100,49 @@ async function signInWithToken(idToken) {
     const db = getFirestore(firebaseApp);
 
     const userCredential = await signInWithCredential(auth, credential);
-    console.log("[Firebase] successfully authenticated:", userCredential.user);
+    // console.log("[Firebase] successfully authenticated:", userCredential.user);
+    console.log("[Firebase] successfully authenticated");
+
+    // Update user data in Firestore
+    await updateUserInFirestore(userCredential.user);
+
     return userCredential;
   } catch (error) {
-    console.error("[Firebase] Sign in with token failed:", error);
+    console.log("[Firebase] Sign in with token failed");
+    throw error;
+  }
+}
+
+async function updateUserInFirestore(user) {
+  try {
+    const existingUser = await getUserFromFirestore(user.uid);
+
+    if (existingUser) {
+      // User exists, update the last logged in timestamp
+      const updatedUser = {
+        ...existingUser,
+        lastLoginAt: Timestamp.fromDate(new Date()),
+      };
+      await writeUserToFirestore(updatedUser);
+      console.log(`[Firebase] Updated last login timestamp for user ${user.uid}`);
+    } else {
+      // User does not exist, create the user
+      const newUser = {
+        userId: user.uid,
+        displayName: user.displayName || "",
+        email: user.email || "",
+        profilePictureUrl: user.photoURL || "",
+        createdAt: Timestamp.fromDate(new Date()),
+        lastLoginAt: Timestamp.fromDate(new Date()),
+        playlists: [],
+        sharedPlaylists: [],
+      };
+
+      await writeUserToFirestore(newUser); // Pass the newUser object correctly
+      console.log(`[Firebase] Created new user ${user.uid}`);
+    }
+  } catch (error) {
+    console.error("[Firebase] Error updating user in Firestore:", error);
     throw error;
   }
 }
