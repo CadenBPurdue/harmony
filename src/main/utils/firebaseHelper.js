@@ -27,10 +27,14 @@ function validatePlaylist(playlist) {
     for (const key in schema) {
       if (schema[key] === "array") {
         if (!Array.isArray(obj[key])) {
-          throw new Error(`Invalid type for ${key}. Expected array, but got ${typeof obj[key]}`);
+          throw new Error(
+            `Invalid type for ${key}. Expected array, but got ${typeof obj[key]}`,
+          );
         }
       } else if (typeof obj[key] !== schema[key]) {
-        throw new Error(`Invalid type for ${key}. Expected ${schema[key]}, but got ${typeof obj[key]}`);
+        throw new Error(
+          `Invalid type for ${key}. Expected ${schema[key]}, but got ${typeof obj[key]}`,
+        );
       }
     }
     return true;
