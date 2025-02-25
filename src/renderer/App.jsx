@@ -100,7 +100,7 @@ function App() {
         user: "ebtuhr",
         origin: "Spotfiy",
         number_of_tracks: 3,
-        duration: undefined,
+        duration: 10000,
         description: "",
         image:
           "https://i.scdn.co/image/ab67616d00001e02124e9249fada4ff3c3a0739c",

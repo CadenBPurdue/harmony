@@ -1,6 +1,6 @@
 // src/main/utils/firebaseHelper.js
-import { doc, setDoc } from "firebase/firestore";
-import { getDb } from "./firebase";
+import { doc, setDoc, getDoc, getDocs, collection } from "firebase/firestore";
+import { getDb } from "./firebase.js";
 
 function validatePlaylist(playlist) {
   const playlistSchema = {
@@ -9,7 +9,7 @@ function validatePlaylist(playlist) {
     user: "string",
     origin: "string",
     number_of_tracks: "number",
-    duration: "undefined",
+    duration: "number",
     description: "string",
     image: "string",
     tracks: "array",
@@ -25,23 +25,29 @@ function validatePlaylist(playlist) {
 
   function validateObject(obj, schema) {
     for (const key in schema) {
-      if (typeof obj[key] !== schema[key]) {
-        return false;
+      if (schema[key] === "array") {
+        if (!Array.isArray(obj[key])) {
+          throw new Error(`Invalid type for ${key}. Expected array, but got ${typeof obj[key]}`);
+        }
+      } else if (typeof obj[key] !== schema[key]) {
+        throw new Error(`Invalid type for ${key}. Expected ${schema[key]}, but got ${typeof obj[key]}`);
       }
     }
     return true;
   }
 
-  if (!validateObject(playlist, playlistSchema)) {
-    return false;
-  }
-
-  if (!Array.isArray(playlist.tracks)) {
+  try {
+    validateObject(playlist, playlistSchema);
+  } catch (error) {
+    console.error("Playlist validation error:", error.message);
     return false;
   }
 
   for (const track of playlist.tracks) {
-    if (!validateObject(track, trackSchema)) {
+    try {
+      validateObject(track, trackSchema);
+    } catch (error) {
+      console.error("Track validation error:", error.message);
       return false;
     }
   }
@@ -103,7 +109,7 @@ async function getPlaylistFromFirestore(playlistId) {
   }
 }
 
-export default {
+export {
   validatePlaylist,
   writePlaylistToFirestore,
   getPlaylistsFromFirestore,
