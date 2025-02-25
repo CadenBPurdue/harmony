@@ -160,6 +160,35 @@ async function getPlaylistsFromFirestore() {
   }
 }
 
+async function getSharedPlaylistsFromFirestore() {
+  const db = getDbInstance();
+  const auth = getAuthInstance();
+  const collectionName = "playlists";
+  const sharedPlaylists = [];
+
+  // Check if user is authenticated
+  if (!auth.currentUser) {
+    throw new Error("User must be authenticated to fetch shared playlists");
+  }
+
+  try {
+    // Create a query to filter playlists by the current user's ID in the sharedWith array
+    const sharedPlaylistsQuery = query(
+      collection(db, collectionName),
+      where("sharedWith", "array-contains", auth.currentUser.uid),
+    );
+
+    const querySnapshot = await getDocs(sharedPlaylistsQuery);
+    querySnapshot.forEach((doc) => {
+      sharedPlaylists.push(doc.id);
+    });
+    return sharedPlaylists;
+  } catch (error) {
+    console.error("Error fetching shared playlists from Firestore:", error);
+    throw error;
+  }
+}
+
 async function getPlaylistFromFirestore(playlistId) {
   const db = getDbInstance();
   const auth = getAuthInstance();
@@ -177,8 +206,8 @@ async function getPlaylistFromFirestore(playlistId) {
     if (docSnap.exists()) {
       const playlist = { id: docSnap.id, ...docSnap.data() };
 
-      // Verify the playlist belongs to the current user
-      if (playlist.userId !== auth.currentUser.uid) {
+      // Verify the playlist belongs to the current user or is shared with them
+      if (playlist.userId !== auth.currentUser.uid && !playlist.sharedWith.includes(auth.currentUser.uid)) {
         throw new Error(
           "Access denied: You don't have permission to view this playlist",
         );
@@ -254,6 +283,7 @@ export {
   validatePlaylist,
   writePlaylistToFirestore,
   getPlaylistsFromFirestore,
+  getSharedPlaylistsFromFirestore,
   getPlaylistFromFirestore,
   writeUserToFirestore,
   getUsersFromFirestore,

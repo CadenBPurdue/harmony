@@ -10,6 +10,7 @@ import { authenticateWithFirebase } from "./firebase.js";
 import {
   writePlaylistToFirestore,
   getPlaylistsFromFirestore,
+  getSharedPlaylistsFromFirestore,
   getPlaylistFromFirestore,
 } from "./firebaseHelper.js";
 
@@ -32,6 +33,15 @@ export function registerIpcHandlers() {
     await getPlaylistsFromFirestore().then((playlists) => {
       console.log("Fetched playlists:", playlists);
       playlists.forEach(async (playlistId) => {
+        const playlist = await getPlaylistFromFirestore(playlistId);
+        console.log("Fetched playlist:", playlist);
+      });
+    });
+
+    // Fetch shared playlists from Firestore
+    await getSharedPlaylistsFromFirestore().then((sharedPlaylists) => {
+      console.log("Fetched shared playlists:", sharedPlaylists);
+      sharedPlaylists.forEach(async (playlistId) => {
         const playlist = await getPlaylistFromFirestore(playlistId);
         console.log("Fetched playlist:", playlist);
       });
