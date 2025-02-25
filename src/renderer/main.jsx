@@ -9,7 +9,7 @@ import ErrorBoundary from "./ErrorBoundary";
 const Router = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [authStatus, setAuthStatus] = useState({
-    isGoogleAuthenticated: false
+    isGoogleAuthenticated: false,
   });
 
   useEffect(() => {
@@ -18,14 +18,17 @@ const Router = () => {
       try {
         const status = await window.electronAPI.getAuthStatus();
         console.log("[Router] Auth status received:", status);
-        
+
         setAuthStatus(status);
         setIsLoading(false);
-        
+
         // Set window size based on authentication
         if (window.electronAPI.setWindowMode) {
           await window.electronAPI.setWindowMode(!status.isGoogleAuthenticated);
-          console.log("[Router] Window mode set:", !status.isGoogleAuthenticated ? "login" : "app");
+          console.log(
+            "[Router] Window mode set:",
+            !status.isGoogleAuthenticated ? "login" : "app",
+          );
         }
       } catch (err) {
         console.error("[Router] Failed to check auth status:", err);
@@ -45,11 +48,18 @@ const Router = () => {
     );
   }
 
-  console.log("[Router] Creating routes with auth status:", authStatus.isGoogleAuthenticated);
+  console.log(
+    "[Router] Creating routes with auth status:",
+    authStatus.isGoogleAuthenticated,
+  );
   const router = createHashRouter([
     {
       path: "/",
-      element: authStatus.isGoogleAuthenticated ? <App /> : <Navigate to="/create-account" />,
+      element: authStatus.isGoogleAuthenticated ? (
+        <App />
+      ) : (
+        <Navigate to="/create-account" />
+      ),
       errorElement: <ErrorBoundary />,
     },
     {
@@ -60,7 +70,7 @@ const Router = () => {
     {
       path: "*",
       element: <Navigate to="/" />,
-    }
+    },
   ]);
 
   return <RouterProvider router={router} />;
