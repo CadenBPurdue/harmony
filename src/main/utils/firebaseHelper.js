@@ -1,5 +1,13 @@
 // src/main/utils/firebaseHelper.js
-import { doc, setDoc, getDoc, getDocs, collection, query, where } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+} from "firebase/firestore";
 import { getDbInstance, getAuthInstance } from "./firebase.js";
 
 function validatePlaylist(playlist) {
@@ -71,7 +79,7 @@ async function writePlaylistToFirestore(playlist) {
     const playlistWithUserId = {
       ...playlist,
       userId: getAuthInstance().currentUser.uid,
-    }
+    };
     const docRef = doc(db, collection, playlist.id);
     await setDoc(docRef, playlistWithUserId, { merge: true });
     console.log(`Playlist written to ${collection}/${playlist.id}`);
@@ -87,19 +95,19 @@ async function getPlaylistsFromFirestore() {
   const auth = getAuthInstance();
   const collectionName = "playlists";
   const playlistIds = [];
-  
+
   // Check if user is authenticated
   if (!auth.currentUser) {
     throw new Error("User must be authenticated to fetch playlists");
   }
-  
+
   try {
     // Create a query to filter playlists by the current user's ID
     const playlistsQuery = query(
       collection(db, collectionName),
-      where("userId", "==", auth.currentUser.uid)
+      where("userId", "==", auth.currentUser.uid),
     );
-    
+
     const querySnapshot = await getDocs(playlistsQuery);
     querySnapshot.forEach((doc) => {
       playlistIds.push(doc.id);
@@ -127,12 +135,14 @@ async function getPlaylistFromFirestore(playlistId) {
 
     if (docSnap.exists()) {
       const playlist = { id: docSnap.id, ...docSnap.data() };
-      
+
       // Verify the playlist belongs to the current user
       if (playlist.userId !== auth.currentUser.uid) {
-        throw new Error("Access denied: You don't have permission to view this playlist");
+        throw new Error(
+          "Access denied: You don't have permission to view this playlist",
+        );
       }
-      
+
       return playlist;
     } else {
       throw new Error("No such playlist!");

@@ -7,7 +7,11 @@ import {
 } from "./auth_manager.js";
 import { configManager } from "./config.js";
 import { authenticateWithFirebase } from "./firebase.js";
-import { writePlaylistToFirestore, getPlaylistsFromFirestore, getPlaylistFromFirestore } from "./firebaseHelper.js";
+import {
+  writePlaylistToFirestore,
+  getPlaylistsFromFirestore,
+  getPlaylistFromFirestore,
+} from "./firebaseHelper.js";
 
 export function registerIpcHandlers() {
   ipcMain.on("open-external", (event, url) => {
