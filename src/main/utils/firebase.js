@@ -49,7 +49,7 @@ async function authenticateWithFirebase() {
         "[Firebase] No authentication token found, initiating Google auth...",
       );
       // Initiate Google authentication
-      const authResult = await initiateGoogleAuth();
+      await initiateGoogleAuth();
       tokenData = getGoogleToken();
 
       if (!tokenData || !tokenData.idToken) {
@@ -97,7 +97,6 @@ async function signInWithToken(idToken) {
     // Initialize Firebase
     const firebaseApp = initializeApp(firebaseConfig);
     const auth = getAuth(firebaseApp);
-    const db = getFirestore(firebaseApp);
 
     const userCredential = await signInWithCredential(auth, credential);
     // console.log("[Firebase] successfully authenticated:", userCredential.user);
