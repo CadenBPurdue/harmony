@@ -24,7 +24,7 @@ const envPath = isDev
 dotenv.config({ path: envPath });
 
 function base64decode(base64) {
-  if (process.env.NODE_ENV === "development") {
+  if (isDev) {
     return base64;
   }
   return Buffer.from(base64, "base64").toString("utf-8");
