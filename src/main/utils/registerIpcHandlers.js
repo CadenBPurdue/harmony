@@ -6,7 +6,8 @@ import {
   getAuthStatus,
 } from "./auth_manager.js";
 import { configManager } from "./config.js";
-import { authenticateWithFirebase } from "./firebase.js";
+import { authenticateWithFirebase, } from "./firebase.js";
+import { writePlaylistToFirestore } from "./firebaseHelper.js";
 
 export function registerIpcHandlers() {
   ipcMain.on("open-external", (event, url) => {
@@ -20,6 +21,10 @@ export function registerIpcHandlers() {
 
   ipcMain.handle("auth:status", () => {
     return getAuthStatus();
+  });
+
+  ipcMain.handle("firebase:writePlaylist", async (event, playlist) => {
+    return await writePlaylistToFirestore(playlist);
   });
 
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
