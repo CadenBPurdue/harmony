@@ -121,7 +121,9 @@ async function writePlaylistToFirestore(playlist) {
     };
     const docRef = doc(db, collection, playlist.id);
     await setDoc(docRef, playlistWithUserId, { merge: true });
-    console.log(`[Firebase Helper] Playlist written to ${collection}/${playlist.id}`);
+    console.log(
+      `[Firebase Helper] Playlist written to ${collection}/${playlist.id}`,
+    );
     return { success: true };
   } catch (error) {
     console.error("Error writing playlist to Firestore:", error);
@@ -202,7 +204,9 @@ async function writeUserToFirestore(user) {
   try {
     const docRef = doc(db, collectionName, user.userId);
     await setDoc(docRef, user, { merge: true });
-    console.log(`[Firebase Helper] User written to ${collectionName}/${user.userId}`);
+    console.log(
+      `[Firebase Helper] User written to ${collectionName}/${user.userId}`,
+    );
     return { success: true };
   } catch (error) {
     console.error("Error writing user to Firestore:", error);
@@ -232,7 +236,6 @@ async function getUserFromFirestore(userId) {
   const collectionName = "users";
 
   try {
-
     const docRef = doc(db, collectionName, userId);
     const docSnap = await getDoc(docRef);
 
@@ -246,8 +249,6 @@ async function getUserFromFirestore(userId) {
     throw error;
   }
 }
-
-
 
 export {
   validatePlaylist,

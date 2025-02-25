@@ -10,10 +10,10 @@ import {
 import { getFirestore, Timestamp } from "firebase/firestore";
 import { initiateGoogleAuth } from "./auth_manager.js";
 import {
-  getGoogleToken,
-  clearGoogleToken,
-} from "./safe_storage.js";
-import { getUserFromFirestore, writeUserToFirestore } from "./firebaseHelper.js";
+  getUserFromFirestore,
+  writeUserToFirestore,
+} from "./firebaseHelper.js";
+import { getGoogleToken, clearGoogleToken } from "./safe_storage.js";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -124,7 +124,9 @@ async function updateUserInFirestore(user) {
         lastLoginAt: Timestamp.fromDate(new Date()),
       };
       await writeUserToFirestore(updatedUser);
-      console.log(`[Firebase] Updated last login timestamp for user ${user.uid}`);
+      console.log(
+        `[Firebase] Updated last login timestamp for user ${user.uid}`,
+      );
     } else {
       // User does not exist, create the user
       const newUser = {
