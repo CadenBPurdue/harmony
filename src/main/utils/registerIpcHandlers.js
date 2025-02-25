@@ -7,6 +7,12 @@ import {
 } from "./auth_manager.js";
 import { configManager } from "./config.js";
 import { authenticateWithFirebase } from "./firebase.js";
+import {
+  writePlaylistToFirestore,
+  getPlaylistsFromFirestore,
+  getSharedPlaylistsFromFirestore,
+  getPlaylistFromFirestore,
+} from "./firebaseHelper.js";
 
 export function registerIpcHandlers() {
   ipcMain.on("open-external", (event, url) => {
@@ -20,6 +26,28 @@ export function registerIpcHandlers() {
 
   ipcMain.handle("auth:status", () => {
     return getAuthStatus();
+  });
+
+  ipcMain.handle("firebase:writePlaylist", async (event, playlist) => {
+    // Fetch all playlists from Firestore
+    await getPlaylistsFromFirestore().then((playlists) => {
+      console.log("Fetched playlists:", playlists);
+      playlists.forEach(async (playlistId) => {
+        const playlist = await getPlaylistFromFirestore(playlistId);
+        console.log("Fetched playlist:", playlist);
+      });
+    });
+
+    // Fetch shared playlists from Firestore
+    await getSharedPlaylistsFromFirestore().then((sharedPlaylists) => {
+      console.log("Fetched shared playlists:", sharedPlaylists);
+      sharedPlaylists.forEach(async (playlistId) => {
+        const playlist = await getPlaylistFromFirestore(playlistId);
+        console.log("Fetched playlist:", playlist);
+      });
+    });
+
+    return await writePlaylistToFirestore(playlist);
   });
 
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {

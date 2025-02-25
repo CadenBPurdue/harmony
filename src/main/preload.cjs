@@ -20,6 +20,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("auth:firebase");
   },
 
+  writePlaylistToFirestore: (playlist) => {
+    console.log("Calling writePlaylistToFirestore from preload");
+    return ipcRenderer.invoke("firebase:writePlaylist", playlist);
+  },
+
   // Check authentication status
   getAuthStatus: () => {
     console.log("Calling getAuthStatus from preload");
