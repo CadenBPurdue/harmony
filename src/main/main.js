@@ -48,7 +48,28 @@ function createWindow() {
     });
   });
 
-  // Load the URL
+  // Window mode handler
+  ipcMain.handle("window:setAppMode", async (event, isLoginPage) => {
+    try {
+      console.log(`[Window] Setting mode to ${isLoginPage ? "login" : "app"}`);
+
+      if (isLoginPage) {
+        window.setSize(500, 680);
+        window.setResizable(false);
+        window.setMaximizable(false);
+      } else {
+        window.setSize(800, 600);
+        window.setResizable(true);
+        window.setMaximizable(true);
+      }
+
+      return { success: true, mode: isLoginPage ? "login" : "app" };
+    } catch (error) {
+      console.error("[Window] Error setting app mode:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
   if (process.env.NODE_ENV === "development") {
     window.loadURL("http://localhost:5173").catch((err) => {
       console.error("[Window] Error loading development URL:", err);
@@ -78,20 +99,13 @@ function createWindow() {
     }
   }
 
-  // Add IPC handler for route changes
-  ipcMain.handle("window:setAppMode", async (event, isLoginPage) => {
-    if (isLoginPage) {
-      window.setResizable(false);
-      window.setMaximizable(false);
-      window.setSize(500, 680);
-    } else {
-      window.setResizable(true);
-      window.setMaximizable(true);
-      window.setSize(800, 600);
-    }
-
-    return { success: true, mode: isLoginPage ? "login" : "app" };
-  });
+  // Add error handling
+  window.webContents.on(
+    "did-fail-load",
+    (event, errorCode, errorDescription) => {
+      console.error("[Window] Failed to load:", errorCode, errorDescription);
+    },
+  );
 
   return window;
 }

@@ -41,6 +41,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
   setWindowMode: (isLoginPage) => {
     return ipcRenderer.invoke("window:setAppMode", isLoginPage);
   },
+  onResizingStart: (callback) => {
+    ipcRenderer.on("window:resizing-start", callback);
+  },
+
+  onResizingComplete: (callback) => {
+    ipcRenderer.on("window:resizing-complete", callback);
+  },
 });
 
 console.log("Preload script loaded and APIs exposed.");
