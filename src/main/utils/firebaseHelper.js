@@ -1,6 +1,6 @@
 // src/main/utils/firebaseHelper.js
-import { doc, setDoc, getDoc, getDocs, collection } from "firebase/firestore";
-import { getDb } from "./firebase.js";
+import { doc, setDoc, getDoc, getDocs, collection, query, where } from "firebase/firestore";
+import { getDbInstance, getAuthInstance } from "./firebase.js";
 
 function validatePlaylist(playlist) {
   const playlistSchema = {
@@ -60,15 +60,20 @@ function validatePlaylist(playlist) {
 }
 
 async function writePlaylistToFirestore(playlist) {
-  const db = getDb();
+  const db = getDbInstance();
   const collection = "playlists";
   if (!validatePlaylist(playlist)) {
     throw new Error("Invalid playlist format");
   }
 
   try {
+    // Make sure the playlist has a user ID
+    const playlistWithUserId = {
+      ...playlist,
+      userId: getAuthInstance().currentUser.uid,
+    }
     const docRef = doc(db, collection, playlist.id);
-    await setDoc(docRef, playlist, { merge: true });
+    await setDoc(docRef, playlistWithUserId, { merge: true });
     console.log(`Playlist written to ${collection}/${playlist.id}`);
     return { success: true };
   } catch (error) {
@@ -78,16 +83,28 @@ async function writePlaylistToFirestore(playlist) {
 }
 
 async function getPlaylistsFromFirestore() {
-  const db = getDb();
-  const collection = "playlists";
-  const playlists = [];
-
+  const db = getDbInstance();
+  const auth = getAuthInstance();
+  const collectionName = "playlists";
+  const playlistIds = [];
+  
+  // Check if user is authenticated
+  if (!auth.currentUser) {
+    throw new Error("User must be authenticated to fetch playlists");
+  }
+  
   try {
-    const querySnapshot = await getDocs(collection(db, collection));
+    // Create a query to filter playlists by the current user's ID
+    const playlistsQuery = query(
+      collection(db, collectionName),
+      where("userId", "==", auth.currentUser.uid)
+    );
+    
+    const querySnapshot = await getDocs(playlistsQuery);
     querySnapshot.forEach((doc) => {
-      playlists.push({ id: doc.id, ...doc.data() });
+      playlistIds.push(doc.id);
     });
-    return playlists;
+    return playlistIds;
   } catch (error) {
     console.error("Error fetching playlists from Firestore:", error);
     throw error;
@@ -95,15 +112,28 @@ async function getPlaylistsFromFirestore() {
 }
 
 async function getPlaylistFromFirestore(playlistId) {
-  const db = getDb();
-  const collection = "playlists";
+  const db = getDbInstance();
+  const auth = getAuthInstance();
+  const collectionName = "playlists";
+
+  // Check if user is authenticated
+  if (!auth.currentUser) {
+    throw new Error("User must be authenticated to fetch playlists");
+  }
 
   try {
-    const docRef = doc(db, collection, playlistId);
+    const docRef = doc(db, collectionName, playlistId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() };
+      const playlist = { id: docSnap.id, ...docSnap.data() };
+      
+      // Verify the playlist belongs to the current user
+      if (playlist.userId !== auth.currentUser.uid) {
+        throw new Error("Access denied: You don't have permission to view this playlist");
+      }
+      
+      return playlist;
     } else {
       throw new Error("No such playlist!");
     }

@@ -108,8 +108,12 @@ async function signInWithToken(idToken) {
   }
 }
 
-function getDb() {
+function getDbInstance() {
   return getFirestore();
 }
 
-export { authenticateWithFirebase, getDb };
+function getAuthInstance() {
+  return getAuth();
+}
+
+export { authenticateWithFirebase, getDbInstance, getAuthInstance };

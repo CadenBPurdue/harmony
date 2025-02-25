@@ -7,7 +7,7 @@ import {
 } from "./auth_manager.js";
 import { configManager } from "./config.js";
 import { authenticateWithFirebase } from "./firebase.js";
-import { writePlaylistToFirestore } from "./firebaseHelper.js";
+import { writePlaylistToFirestore, getPlaylistsFromFirestore, getPlaylistFromFirestore } from "./firebaseHelper.js";
 
 export function registerIpcHandlers() {
   ipcMain.on("open-external", (event, url) => {
@@ -24,6 +24,15 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("firebase:writePlaylist", async (event, playlist) => {
+    // Fetch all playlists from Firestore
+    await getPlaylistsFromFirestore().then((playlists) => {
+      console.log("Fetched playlists:", playlists);
+      playlists.forEach(async (playlistId) => {
+        const playlist = await getPlaylistFromFirestore(playlistId);
+        console.log("Fetched playlist:", playlist);
+      });
+    });
+
     return await writePlaylistToFirestore(playlist);
   });
 
