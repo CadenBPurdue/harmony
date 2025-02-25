@@ -1,45 +1,46 @@
 // src/renderer/main.jsx
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  Navigate,
-} from "react-router-dom";
+import { createHashRouter, RouterProvider, Navigate } from "react-router-dom";
 import App from "./App";
 import CreateAccount from "./CreateAccount";
+import ErrorBoundary from "./ErrorBoundary";
 
 const Router = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authStatus, setAuthStatus] = useState({
+    isGoogleAuthenticated: false,
+  });
 
   useEffect(() => {
+    console.log("[Router] Initializing...");
+    const checkAuthStatus = async () => {
+      try {
+        const status = await window.electronAPI.getAuthStatus();
+        console.log("[Router] Auth status received:", status);
+
+        setAuthStatus(status);
+        setIsLoading(false);
+
+        // Set window size based on authentication
+        if (window.electronAPI.setWindowMode) {
+          await window.electronAPI.setWindowMode(!status.isGoogleAuthenticated);
+          console.log(
+            "[Router] Window mode set:",
+            !status.isGoogleAuthenticated ? "login" : "app",
+          );
+        }
+      } catch (err) {
+        console.error("[Router] Failed to check auth status:", err);
+        setIsLoading(false);
+      }
+    };
+
     checkAuthStatus();
   }, []);
 
-  const checkAuthStatus = async () => {
-    console.log("[Router] Checking auth status...");
-    try {
-      const status = await window.electronAPI.getAuthStatus();
-      console.log(
-        "[Router] Auth status details:",
-        JSON.stringify(status, null, 2),
-      );
-
-      setIsAuthenticated(status.isGoogleAuthenticated);
-      setIsLoading(false);
-
-      console.log(
-        "[Router] Updated authentication state to:",
-        status.isGoogleAuthenticated,
-      );
-    } catch (err) {
-      console.error("[Router] Failed to check auth status:", err);
-      setIsLoading(false);
-    }
-  };
-
   if (isLoading) {
+    console.log("[Router] Rendering loading screen");
     return (
       <div className="h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
@@ -47,19 +48,32 @@ const Router = () => {
     );
   }
 
-  const routes = [
+  console.log(
+    "[Router] Creating routes with auth status:",
+    authStatus.isGoogleAuthenticated,
+  );
+  const router = createHashRouter([
     {
       path: "/",
-      element: isAuthenticated ? <App /> : <Navigate to="/create-account" />,
+      element: authStatus.isGoogleAuthenticated ? (
+        <App />
+      ) : (
+        <Navigate to="/create-account" />
+      ),
+      errorElement: <ErrorBoundary />,
     },
     {
       path: "/create-account",
       element: <CreateAccount />,
+      errorElement: <ErrorBoundary />,
     },
-  ];
+    {
+      path: "*",
+      element: <Navigate to="/" />,
+    },
+  ]);
 
-  console.log("[Router] Creating routes with auth state:", isAuthenticated);
-  return <RouterProvider router={createBrowserRouter(routes)} />;
+  return <RouterProvider router={router} />;
 };
 
 // Create root and render

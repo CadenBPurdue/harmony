@@ -1,5 +1,4 @@
 // src/main/utils/auth_manager.js
-import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
 import { BrowserWindow } from "electron";
@@ -254,13 +253,25 @@ function generateAppleMusicToken() {
   try {
     const teamId = base64decode(process.env.APPLE_TEAM_ID);
     const keyId = base64decode(process.env.APPLE_KEY_ID);
-    const privateKey = base64decode(process.env.APPLE_PRIVATE_KEY);
+    const privateKeyString = base64decode(process.env.APPLE_PRIVATE_KEY);
 
-    if (!teamId || !keyId || !privateKey) {
+    if (!teamId || !keyId || !privateKeyString) {
       throw new Error("Missing required environment variables");
     }
 
-    const token = jwt.sign({}, privateKey, {
+    // Ensure the private key is in the correct format with headers
+    let formattedKey = privateKeyString;
+    if (!privateKeyString.includes("-----BEGIN PRIVATE KEY-----")) {
+      formattedKey =
+        "-----BEGIN PRIVATE KEY-----\n" +
+        privateKeyString
+          .replace(/\s+/g, "")
+          .match(/.{1,64}/g)
+          .join("\n") +
+        "\n-----END PRIVATE KEY-----";
+    }
+
+    const token = jwt.sign({}, formattedKey, {
       algorithm: "ES256",
       expiresIn: "180d",
       issuer: teamId,
@@ -644,7 +655,9 @@ function clearAuthData() {
 }
 
 function getAuthStatus() {
-  return {
+  console.log("[AuthManager] Auth status check requested");
+
+  const authStatus = {
     isSpotifyAuthenticated: !!spotifyToken?.accessToken,
     isAppleMusicAuthenticated: !!appleMusicToken?.userToken,
     isGoogleAuthenticated: !!googleToken?.accessToken,
@@ -671,6 +684,9 @@ function getAuthStatus() {
         )
       : null,
   };
+
+  console.log("[AuthManager] Auth status result:", authStatus);
+  return authStatus;
 }
 
 export {

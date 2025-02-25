@@ -9,6 +9,7 @@ import {
   CircularProgress,
   Divider,
   ThemeProvider,
+  CssBaseline,
 } from "@mui/material";
 import { Music2Icon, AppleIcon, ArrowRightIcon } from "lucide-react";
 import React, { useState, useEffect } from "react";
@@ -23,43 +24,58 @@ const CreateAccount = () => {
     isAppleMusicConnected: false,
   });
 
+  console.log("[CreateAccount] Component rendered");
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
   const checkAuthStatus = async () => {
     console.log("[CreateAccount] Checking auth status...");
     try {
       const status = await window.electronAPI.getAuthStatus();
-      console.log(
-        "[CreateAccount] Auth status details:",
-        JSON.stringify(status, null, 2),
-      );
+      console.log("[CreateAccount] Auth status received:", status);
+
       setAuthStatus({
         isGoogleConnected: status.isGoogleAuthenticated,
         isSpotifyConnected: status.isSpotifyAuthenticated,
         isAppleMusicConnected: status.isAppleMusicAuthenticated,
       });
-
-      // Log the updated state
-      console.log(
-        "[CreateAccount] Updated component state:",
-        JSON.stringify(
-          {
-            isGoogleConnected: status.isGoogleAuthenticated,
-            isSpotifyConnected: status.isSpotifyAuthenticated,
-            isAppleMusicConnected: status.isAppleMusicAuthenticated,
-          },
-          null,
-          2,
-        ),
-      );
     } catch (err) {
       console.error("[CreateAccount] Failed to check auth status:", err);
       setError("Failed to check authentication status");
     }
   };
 
-  useEffect(() => {
-    console.log("[CreateAccount] Component mounted");
-    checkAuthStatus();
-  }, []);
+  const handleNext = async () => {
+    console.log(
+      "[CreateAccount] Next button clicked, auth status:",
+      authStatus.isGoogleConnected,
+    );
+
+    if (!authStatus.isGoogleConnected) {
+      setError("Please connect with Google before continuing");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Resize window first
+      console.log("[CreateAccount] Resizing window...");
+      await window.electronAPI.setWindowMode(false);
+      console.log("[CreateAccount] Window resized successfully");
+
+      // Use direct navigation with a small delay
+      console.log("[CreateAccount] Reloading application...");
+      setTimeout(() => {
+        window.location.href = "./index.html";
+      }, 500);
+    } catch (err) {
+      console.error("[CreateAccount] Error during transition:", err);
+      setError("Failed to navigate to main app");
+      setLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     console.log("[CreateAccount] Starting Google sign in...");
@@ -82,23 +98,6 @@ const CreateAccount = () => {
       setError("Failed to connect with Google. Please try again.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleNext = () => {
-    console.log(
-      "[CreateAccount] Next button clicked, current auth status:",
-      JSON.stringify(authStatus, null, 2),
-    );
-    if (authStatus.isGoogleConnected) {
-      console.log("[CreateAccount] Google is connected, navigating to /");
-      // Use window.location for a full page refresh to avoid potential state issues
-      window.location.href = "/";
-    } else {
-      console.error(
-        "[CreateAccount] Attempted to navigate without Google connection",
-      );
-      setError("Please connect with Google before continuing");
     }
   };
 
@@ -144,8 +143,25 @@ const CreateAccount = () => {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={styles.pageContainer}>
-        <Box sx={styles.contentContainer}>
+      <CssBaseline />
+      <Box
+        sx={{
+          width: "100vw",
+          height: "100vh",
+          overflow: "hidden", // This prevents scrolling
+          ...styles.pageContainer,
+          padding: 0, // Override any padding from pageContainer
+        }}
+      >
+        <Box
+          sx={{
+            ...styles.contentContainer,
+            overflowY: "auto", // Allow scrolling only within the content if needed
+            height: "100%",
+            maxHeight: "680px", // Match your window height
+            paddingTop: "40px",
+          }}
+        >
           <Box sx={styles.headerContainer}>
             <Typography variant="h3" sx={{ color: "primary.main", mb: 1 }}>
               Welcome to Harmony

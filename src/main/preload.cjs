@@ -37,6 +37,17 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("Opening external URL:", url);
     shell.openExternal(url);
   },
+
+  setWindowMode: (isLoginPage) => {
+    return ipcRenderer.invoke("window:setAppMode", isLoginPage);
+  },
+  onResizingStart: (callback) => {
+    ipcRenderer.on("window:resizing-start", callback);
+  },
+
+  onResizingComplete: (callback) => {
+    ipcRenderer.on("window:resizing-complete", callback);
+  },
 });
 
 console.log("Preload script loaded and APIs exposed.");

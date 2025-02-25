@@ -1,8 +1,9 @@
 // src/main/main.js
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { app, BrowserWindow, protocol, session } from "electron";
+import { app, BrowserWindow, protocol, session, ipcMain } from "electron";
 import { registerIpcHandlers } from "./utils/registerIpcHandlers.js";
 
 // Load environment variables
@@ -14,7 +15,21 @@ const __dirname = path.dirname(__filename);
 let mainWindow = null;
 
 function createWindow() {
-  // Set CSP headers for main window
+  // Set initial size and properties
+  const window = new BrowserWindow({
+    width: 500,
+    height: 680,
+    resizable: false,
+    maximizable: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.cjs"),
+      webSecurity: true,
+    },
+  });
+
+  // Apply CSP headers
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
@@ -33,32 +48,66 @@ function createWindow() {
     });
   });
 
-  const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, "preload.cjs"),
-      webSecurity: true,
-    },
-  });
+  // Window mode handler
+  ipcMain.handle("window:setAppMode", async (event, isLoginPage) => {
+    try {
+      console.log(`[Window] Setting mode to ${isLoginPage ? "login" : "app"}`);
 
-  mainWindow.webContents.on("did-finish-load", () => {
-    console.log("Window loaded");
-  });
+      if (isLoginPage) {
+        window.setSize(500, 680);
+        window.setResizable(false);
+        window.setMaximizable(false);
+      } else {
+        window.setSize(800, 600);
+        window.setResizable(true);
+        window.setMaximizable(true);
+      }
 
-  mainWindow.webContents.on("console-message", (event, level, message) => {
-    console.log("Renderer Console:", message);
+      return { success: true, mode: isLoginPage ? "login" : "app" };
+    } catch (error) {
+      console.error("[Window] Error setting app mode:", error);
+      return { success: false, error: error.message };
+    }
   });
 
   if (process.env.NODE_ENV === "development") {
-    mainWindow.loadURL("http://localhost:5173");
+    window.loadURL("http://localhost:5173").catch((err) => {
+      console.error("[Window] Error loading development URL:", err);
+    });
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../../dist/index.html"));
+    // Adjust the path to make sure it correctly points to the built files
+    const indexPath = path.join(__dirname, "../../dist/index.html");
+    console.log("[Window] Loading production index from:", indexPath);
+
+    if (fs.existsSync(indexPath)) {
+      window.loadFile(indexPath).catch((err) => {
+        console.error("[Window] Error loading index file:", err);
+      });
+    } else {
+      console.error("[Window] Index file does not exist at path:", indexPath);
+      // Try alternate path as fallback
+      const altPath = path.join(app.getAppPath(), "dist/index.html");
+      console.log("[Window] Trying alternate path:", altPath);
+
+      if (fs.existsSync(altPath)) {
+        window.loadFile(altPath).catch((err) => {
+          console.error("[Window] Error loading alternate index file:", err);
+        });
+      } else {
+        console.error("[Window] Alternate index file does not exist");
+      }
+    }
   }
 
-  return mainWindow;
+  // Add error handling
+  window.webContents.on(
+    "did-fail-load",
+    (event, errorCode, errorDescription) => {
+      console.error("[Window] Failed to load:", errorCode, errorDescription);
+    },
+  );
+
+  return window;
 }
 
 app.whenReady().then(() => {
