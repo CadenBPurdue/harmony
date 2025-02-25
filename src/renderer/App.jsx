@@ -28,15 +28,17 @@ function App() {
         console.log("[App] Checking auth status");
         const status = await window.electronAPI.getAuthStatus();
         console.log("[App] Auth status received:", status);
-        
+
         setIsSpotifyConnected(status.isSpotifyAuthenticated);
         setIsAppleMusicConnected(status.isAppleMusicAuthenticated);
         setIsGoogleConnected(status.isGoogleAuthenticated);
-        
+
         if (!status.isGoogleAuthenticated) {
-          console.warn("[App] User not authenticated with Google, should not be here");
+          console.warn(
+            "[App] User not authenticated with Google, should not be here",
+          );
         }
-        
+
         setIsLoading(false);
         window.electronAPI.connectFirebase();
       } catch (err) {
@@ -45,20 +47,9 @@ function App() {
         setIsLoading(false);
       }
     };
-    
+
     checkAuth();
   }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const status = await window.electronAPI.getAuthStatus();
-      setIsSpotifyConnected(status.isSpotifyAuthenticated);
-      setIsAppleMusicConnected(status.isAppleMusicAuthenticated);
-      setIsGoogleConnected(status.isGoogleAuthenticated);
-    } catch (err) {
-      console.error("Failed to check auth status:", err);
-    }
-  };
 
   const handleSpotifyLogin = async () => {
     try {

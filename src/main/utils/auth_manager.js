@@ -656,7 +656,7 @@ function clearAuthData() {
 
 function getAuthStatus() {
   console.log("[AuthManager] Auth status check requested");
-  
+
   const authStatus = {
     isSpotifyAuthenticated: !!spotifyToken?.accessToken,
     isAppleMusicAuthenticated: !!appleMusicToken?.userToken,
@@ -684,7 +684,7 @@ function getAuthStatus() {
         )
       : null,
   };
-  
+
   console.log("[AuthManager] Auth status result:", authStatus);
   return authStatus;
 }

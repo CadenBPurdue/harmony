@@ -13,7 +13,6 @@ import {
 } from "@mui/material";
 import { Music2Icon, AppleIcon, ArrowRightIcon } from "lucide-react";
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { theme, styles } from "./styles/theme";
 
 const CreateAccount = () => {
@@ -36,7 +35,7 @@ const CreateAccount = () => {
     try {
       const status = await window.electronAPI.getAuthStatus();
       console.log("[CreateAccount] Auth status received:", status);
-      
+
       setAuthStatus({
         isGoogleConnected: status.isGoogleAuthenticated,
         isSpotifyConnected: status.isSpotifyAuthenticated,
@@ -49,8 +48,11 @@ const CreateAccount = () => {
   };
 
   const handleNext = async () => {
-    console.log("[CreateAccount] Next button clicked, auth status:", authStatus.isGoogleConnected);
-    
+    console.log(
+      "[CreateAccount] Next button clicked, auth status:",
+      authStatus.isGoogleConnected,
+    );
+
     if (!authStatus.isGoogleConnected) {
       setError("Please connect with Google before continuing");
       return;
@@ -62,11 +64,11 @@ const CreateAccount = () => {
       console.log("[CreateAccount] Resizing window...");
       await window.electronAPI.setWindowMode(false);
       console.log("[CreateAccount] Window resized successfully");
-      
+
       // Use direct navigation with a small delay
       console.log("[CreateAccount] Reloading application...");
       setTimeout(() => {
-        window.location.href = './index.html';
+        window.location.href = "./index.html";
       }, 500);
     } catch (err) {
       console.error("[CreateAccount] Error during transition:", err);
