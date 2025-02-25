@@ -18,7 +18,7 @@ import {
 const isDev = process.env.NODE_ENV === "development";
 
 const envPath = isDev
-  ? ".env" // In development, .env is at your project root
+  ? ".dev.env" // In development, .env is at your project root
   : path.join(process.resourcesPath, ".env"); // In production, .env is in the resources folder
 
 dotenv.config({ path: envPath });
