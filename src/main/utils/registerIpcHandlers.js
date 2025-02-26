@@ -104,4 +104,33 @@ export function registerIpcHandlers() {
     await appleMusicApi.initialize();
     return appleMusicApi.getPlaylistLibrary();
   });
+
+  ipcMain.handle("transfer:spotify", async (event, playlist) => {
+    try {
+      const spotifyApi = new SpotifyApi();
+      await spotifyApi.initialize();
+      console.log(`Transferring "${playlist.name}" to Spotify`);
+      const playlistId = await spotifyApi.createEmptyPlaylist(
+        playlist.name,
+        playlist.description,
+      );
+      await spotifyApi.populatePlaylist(playlistId, playlist);
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to transfer playlist:", error);
+      throw error;
+    }
+  });
+
+  ipcMain.handle("transfer:appleMusic", async (event, playlist) => {
+    const appleMusicApi = new AppleMusicApi();
+    await appleMusicApi.initialize();
+    console.log(`Transferring "${playlist.name}" to Apple Music`);
+    const playlistId = await appleMusicApi.createEmptyPlaylist(
+      playlist.name, 
+      playlist.description
+    );
+    await appleMusicApi.populatePlaylist(playlistId, playlist);
+    return { success: true };
+  });
 }

@@ -42,6 +42,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("library:appleMusic");
   },
 
+  transferToSpotify: (playlist) => {
+    console.log("Calling transferToSpotify from preload");
+    return ipcRenderer.invoke("transfer:spotify", playlist);
+  },
+
+  transferToAppleMusic: (playlist) => {
+    console.log("Calling transferToAppleMusic from preload");
+    return ipcRenderer.invoke("transfer:appleMusic", playlist);
+  },
+
   // Open external links in the default browser
   openExternal: (url) => {
     console.log("Opening external URL:", url);

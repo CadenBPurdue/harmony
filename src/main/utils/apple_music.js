@@ -51,13 +51,13 @@ class AppleMusicApi {
     }
 
     try {
-      console.log("[AppleMusicApi] Fetching playlist library...");
+      // console.log("[AppleMusicApi] Fetching playlist library...");
       const response = await this.api.get("/v1/me/library/playlists");
       const playlists = response.data.data;
 
-      console.log(
-        `[AppleMusicApi] Found ${playlists.length} playlists. Processing in batches...`,
-      );
+      // console.log(
+      //   `[AppleMusicApi] Found ${playlists.length} playlists. Processing in batches...`,
+      // );
 
       // Process playlists in batches of 2 with a 1-second delay between batches
       const processedPlaylists = await processBatch(
@@ -66,9 +66,9 @@ class AppleMusicApi {
         1000, // 1 second delay between batches
         async (playlist) => {
           try {
-            console.log(
-              `[AppleMusicApi] Fetching tracks for playlist: ${playlist.attributes?.name}`,
-            );
+            // console.log(
+            //   `[AppleMusicApi] Fetching tracks for playlist: ${playlist.attributes?.name}`,
+            // );
             const tracksResponse = await this.api.get(
               `/v1/me/library/playlists/${playlist.id}/tracks`,
             );
@@ -91,7 +91,7 @@ class AppleMusicApi {
 
             return {
               user: "", // update this
-              origin: "apple music",
+              origin: "Apple Music",
               name: playlist.attributes?.name || "",
               playlist_id: playlist.id,
               number_of_tracks: Object.keys(tracks).length,
@@ -131,7 +131,7 @@ class AppleMusicApi {
     }
 
     try {
-      console.log("[AppleMusicApi] Getting playlist details for:", input);
+      // console.log("[AppleMusicApi] Getting playlist details for:", input);
 
       // Extract playlist ID from input
       let playlistId = input;
@@ -139,15 +139,15 @@ class AppleMusicApi {
       if (input.includes("music.apple.com")) {
         const urlParts = input.split("/");
         playlistId = urlParts[urlParts.length - 1];
-        console.log("[AppleMusicApi] Extracted ID from URL:", playlistId);
+        // console.log("[AppleMusicApi] Extracted ID from URL:", playlistId);
       }
 
       if (input.startsWith("apple:playlist:")) {
         playlistId = input.split(":")[2];
-        console.log("[AppleMusicApi] Extracted ID from URI:", playlistId);
+        // console.log("[AppleMusicApi] Extracted ID from URI:", playlistId);
       }
 
-      console.log("[AppleMusicApi] Fetching playlist metadata...");
+      // console.log("[AppleMusicApi] Fetching playlist metadata...");
       const playlistResponse = await this.api.get(
         `/v1/me/library/playlists/${playlistId}`,
       );
@@ -156,7 +156,7 @@ class AppleMusicApi {
       const tracks = {};
 
       try {
-        console.log("[AppleMusicApi] Fetching playlist tracks...");
+        // console.log("[AppleMusicApi] Fetching playlist tracks...");
         const tracksResponse = await this.api.get(
           `/v1/me/library/playlists/${playlistId}/tracks`,
         );
@@ -188,7 +188,7 @@ class AppleMusicApi {
 
       const response = {
         user: this.userToken,
-        origin: "apple music",
+        origin: "Apple Music",
         name: playlist.attributes?.name || "",
         playlist_id: playlist.id,
         number_of_tracks: Object.keys(tracks).length,
@@ -237,17 +237,17 @@ class AppleMusicApi {
     }
 
     try {
-      console.log(
-        "[AppleMusicApi] Searching for song:",
-        JSON.stringify(songUF, null, 2),
-      );
+      // console.log(
+      //   "[AppleMusicApi] Searching for song:",
+      //   JSON.stringify(songUF, null, 2),
+      // );
 
       if (!songUF.name || !songUF.artist) {
         throw new Error("Song name and artist are required");
       }
 
       const searchQuery = `${songUF.name} ${songUF.artist}`;
-      console.log("[AppleMusicApi] Search query:", searchQuery);
+      // console.log("[AppleMusicApi] Search query:", searchQuery);
 
       const response = await this.api.get(
         `/v1/catalog/${this.storefront}/search`,
@@ -261,12 +261,12 @@ class AppleMusicApi {
       );
 
       if (!response.data.results.songs) {
-        console.log("[AppleMusicApi] No songs found");
+        // console.log("[AppleMusicApi] No songs found");
         return null;
       }
 
       const songs = response.data.results.songs.data;
-      console.log(`[AppleMusicApi] Found ${songs.length} potential matches`);
+      // console.log(`[AppleMusicApi] Found ${songs.length} potential matches`);
 
       const scoredResults = songs.map((song) => {
         const nameExactMatch =
@@ -379,7 +379,7 @@ class AppleMusicApi {
     }
   }
 
-  async createEmptyPlaylist(unifiedFormat) {
+  async createEmptyPlaylist(playlistName, playlistDescription = "") { 
     if (!this.api) {
       await this.initialize();
     }
@@ -389,17 +389,18 @@ class AppleMusicApi {
         throw new Error("User must be authenticated");
       }
 
-      if (!unifiedFormat || !unifiedFormat.name) {
+      if (!playlistName) {
         throw new Error("Invalid unified format: missing name");
       }
 
-      console.log(
-        `[createEmptyPlaylist] Creating playlist with name: ${unifiedFormat.name}`,
-      );
+      // console.log(
+      //   `[createEmptyPlaylist] Creating playlist with name: ${playlistName}`,
+      // );
+      
       const requestPayload = {
         attributes: {
-          name: unifiedFormat.name,
-          description: unifiedFormat.description || "",
+          name: playlistName,
+          description: playlistDescription || "",
         },
         relationships: {
           tracks: {
@@ -408,10 +409,10 @@ class AppleMusicApi {
         },
       };
 
-      console.log(
-        "[createEmptyPlaylist] Request payload:",
-        JSON.stringify(requestPayload, null, 2),
-      );
+      // console.log(
+      //   "[createEmptyPlaylist] Request payload:",
+      //   JSON.stringify(requestPayload, null, 2),
+      // );
 
       const response = await this.api.post(
         "/v1/me/library/playlists",
