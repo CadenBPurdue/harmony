@@ -7,6 +7,8 @@ import {
 } from "./auth_manager.js";
 import { configManager } from "./config.js";
 import { authenticateWithFirebase } from "./firebase.js";
+import { SpotifyApi } from "./spotify.js";
+import { AppleMusicApi } from "./apple_music.js";
 
 export function registerIpcHandlers() {
   ipcMain.on("open-external", (event, url) => {
@@ -89,5 +91,17 @@ export function registerIpcHandlers() {
       console.error("Firebase auth failed:", error);
       throw error;
     }
+  });
+
+  ipcMain.handle("library:spotify", async () => {
+    const spotifyApi = new SpotifyApi();
+    await spotifyApi.initialize();
+    return spotifyApi.getPlaylistLibrary();
+  });
+
+  ipcMain.handle("library:appleMusic", async () => {
+    const appleMusicApi = new AppleMusicApi();
+    await appleMusicApi.initialize();
+    return appleMusicApi.getPlaylistLibrary();
   });
 }

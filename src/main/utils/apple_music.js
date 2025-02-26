@@ -73,20 +73,18 @@ class AppleMusicApi {
               `/v1/me/library/playlists/${playlist.id}/tracks`,
             );
 
-            const tracks = {};
-            tracksResponse.data.data.forEach((track) => {
-              tracks[track.id] = {
-                name: track.attributes?.name || "",
-                artist: track.attributes?.artistName || "",
-                album: track.attributes?.albumName || "",
-                duration: track.attributes?.durationInMillis || 0,
-                image:
-                  track.attributes?.artwork?.url?.replace(
-                    "{w}x{h}",
-                    "300x300",
-                  ) || "",
-              };
-            });
+            const tracks = tracksResponse.data.data.map((track) => ({
+              id: track.id,
+              name: track.attributes?.name || "",
+              artist: track.attributes?.artistName || "",
+              album: track.attributes?.albumName || "",
+              duration: track.attributes?.durationInMillis || 0,
+              image:
+                track.attributes?.artwork?.url?.replace(
+                  "{w}x{h}",
+                  "300x300",
+                ) || "",
+            }));
 
             const totalDuration = Object.values(tracks).reduce(
               (sum, track) => sum + (track.duration || 0),
@@ -536,5 +534,4 @@ class AppleMusicApi {
   }
 }
 
-const appleMusicApi = new AppleMusicApi();
-export { appleMusicApi };
+export { AppleMusicApi };

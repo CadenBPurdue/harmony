@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { createHashRouter, RouterProvider, Navigate } from "react-router-dom";
-import App from "./App";
+import Homepage from "./Homepage";
 import CreateAccount from "./CreateAccount";
 import ErrorBoundary from "./ErrorBoundary";
 
@@ -56,7 +56,7 @@ const Router = () => {
     {
       path: "/",
       element: authStatus.isGoogleAuthenticated ? (
-        <App />
+        <Homepage />
       ) : (
         <Navigate to="/create-account" />
       ),
