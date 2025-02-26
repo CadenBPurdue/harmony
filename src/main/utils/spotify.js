@@ -1,7 +1,7 @@
 // src/main/utils/spotify.js
 import axios from "axios";
 import dotenv from "dotenv";
-// import { getSpotifyToken } from "./safe_storage";
+import { getSpotifyToken } from "./safe_storage.js";
 
 class SpotifyApi {
   constructor() {
@@ -14,10 +14,11 @@ class SpotifyApi {
 
   async initialize() {
     dotenv.config();
-    this.auth_token = process.env.SPOTIFY_AUTH_TOKEN; // change this to use safe storage
-    this.refresh_token = process.env.SPOTIFY_REFRESH_TOKEN; // change this to use safe storage
-    this.client_id = process.env.SPOTIFY_CLIENT_ID; // change this to use safe storage
-    this.client_secret = process.env.SPOTIFY_CLIENT_SECRET; // change this to use safe storage
+    const token = getSpotifyToken();
+    this.auth_token = token.accessToken;
+    this.refresh_token = token.refreshToken;
+    this.client_id = process.env.SPOTIFY_CLIENT_ID;
+    this.client_secret = process.env.SPOTIFY_CLIENT_SECRET;
     await this.refreshToken();
     this.tokenHandler(); // token will refresh every 55 minutes
     this.user_id = await this.getUserId();
@@ -31,7 +32,6 @@ class SpotifyApi {
 
   async refreshToken() {
     try {
-      console.log(this.auth_token);
       const response = await axios.post(
         "https://accounts.spotify.com/api/token",
         `grant_type=refresh_token&refresh_token=${this.refresh_token}`,
@@ -46,8 +46,6 @@ class SpotifyApi {
       );
 
       this.auth_token = response.data.access_token;
-      console.log("\n\n" + this.auth_token);
-      this.refresh_token = response.data.refresh_token;
     } catch (error) {
       console.log(error);
       throw new Error("Failed to refresh token");
@@ -242,8 +240,5 @@ class SpotifyApi {
     return playlist;
   }
 }
-
-const spotify = new SpotifyApi();
-spotify.initialize();
 
 export { SpotifyApi };
