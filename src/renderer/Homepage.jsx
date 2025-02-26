@@ -82,6 +82,8 @@ function Homepage() {
             onClick={() => setSpotifyOpen(!spotifyOpen)}
             style={{
               width: "100%",
+              fontSize: "16px",
+              fontWeight: "bold",
               backgroundColor: "#28242E",
               color: "white",
               border: "none",
@@ -96,14 +98,12 @@ function Homepage() {
             <ul style={{ listStyleType: "none", padding: "0", margin: "0" }}>
               {loadingSpotify ? (
                 <li
-                  style={{
+                    style={{
                     padding: "10px",
-                    backgroundColor: "#fff",
                     margin: "5px 0",
                     borderRadius: "5px",
-                    textAlign: "center",
                     color: "#666",
-                  }}
+                    }}
                 >
                   Loading...
                 </li>
@@ -113,9 +113,9 @@ function Homepage() {
                     key={index}
                     style={{
                       padding: "10px",
-                      backgroundColor: "#fff",
+                      color: "#fff",
+                      backgroundColor: "#28242E",
                       margin: "5px 0",
-                      borderRadius: "5px",
                       cursor: "pointer",
                     }}
                     onClick={() => handlePlaylistClick(playlist)} // Handle playlist click
@@ -134,6 +134,8 @@ function Homepage() {
             onClick={() => setAppleMusicOpen(!appleMusicOpen)}
             style={{
               width: "100%",
+              fontSize: "16px",
+              fontWeight: "bold",
               backgroundColor: "#28242E",
               color: "white",
               border: "none",
@@ -150,10 +152,8 @@ function Homepage() {
                 <li
                   style={{
                     padding: "10px",
-                    backgroundColor: "#fff",
                     margin: "5px 0",
                     borderRadius: "5px",
-                    textAlign: "center",
                     color: "#666",
                   }}
                 >
@@ -161,13 +161,13 @@ function Homepage() {
                 </li>
               ) : (
                 appleMusicPlaylists.map((playlist, index) => (
-                  <li
+                    <li
                     key={index}
                     style={{
                       padding: "10px",
-                      backgroundColor: "#fff",
+                      color: "#fff",
+                      backgroundColor: "#28242E",
                       margin: "5px 0",
-                      borderRadius: "5px",
                       cursor: "pointer",
                     }}
                     onClick={() => handlePlaylistClick(playlist)} // Handle playlist click
