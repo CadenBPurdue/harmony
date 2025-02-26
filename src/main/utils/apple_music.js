@@ -91,8 +91,8 @@ class AppleMusicApi {
               0,
             );
 
-            return {
-              user: this.userToken,
+            return { 
+              user: "", // update this
               origin: "apple music",
               name: playlist.attributes?.name || "",
               playlist_id: playlist.id,
