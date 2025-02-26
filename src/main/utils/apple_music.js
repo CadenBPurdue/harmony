@@ -80,10 +80,8 @@ class AppleMusicApi {
               album: track.attributes?.albumName || "",
               duration: track.attributes?.durationInMillis || 0,
               image:
-                track.attributes?.artwork?.url?.replace(
-                  "{w}x{h}",
-                  "300x300",
-                ) || "",
+                track.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") ||
+                "",
             }));
 
             const totalDuration = Object.values(tracks).reduce(

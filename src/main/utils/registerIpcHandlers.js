@@ -1,5 +1,6 @@
 // src/main/utils/registerIpcHandlers.js
 import { ipcMain, shell } from "electron";
+import { AppleMusicApi } from "./apple_music.js";
 import {
   initiateSpotifyAuth,
   initiateAppleMusicAuth,
@@ -8,7 +9,6 @@ import {
 import { configManager } from "./config.js";
 import { authenticateWithFirebase } from "./firebase.js";
 import { SpotifyApi } from "./spotify.js";
-import { AppleMusicApi } from "./apple_music.js";
 
 export function registerIpcHandlers() {
   ipcMain.on("open-external", (event, url) => {
