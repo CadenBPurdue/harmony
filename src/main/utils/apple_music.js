@@ -89,7 +89,7 @@ class AppleMusicApi {
               0,
             );
 
-            return { 
+            return {
               user: "", // update this
               origin: "apple music",
               name: playlist.attributes?.name || "",

@@ -3,12 +3,12 @@ import React, { useState, useEffect } from "react";
 // Function to format duration from milliseconds to MM:SS format
 const formatDuration = (milliseconds) => {
   if (!milliseconds) return "--:--";
-  
+
   const totalSeconds = Math.floor(milliseconds / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
 function Homepage() {
@@ -17,7 +17,7 @@ function Homepage() {
   const [spotifyPlaylists, setSpotifyPlaylists] = useState([]);
   const [appleMusicPlaylists, setAppleMusicPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null); // Track the selected playlist
-  
+
   // Loading state for both services
   const [loadingSpotify, setLoadingSpotify] = useState(false);
   const [loadingAppleMusic, setLoadingAppleMusic] = useState(false);
@@ -26,8 +26,9 @@ function Homepage() {
   useEffect(() => {
     console.log("Fetching Spotify playlists..."); // Debug log
     setLoadingSpotify(true); // Set loading state to true before fetching
-    
-    window.electronAPI.getSpotifyLibrary()
+
+    window.electronAPI
+      .getSpotifyLibrary()
       .then((playlists) => {
         console.log("Received Spotify playlists:", playlists); // Debug log
         setSpotifyPlaylists(playlists);
@@ -44,8 +45,9 @@ function Homepage() {
   useEffect(() => {
     console.log("Fetching Apple Music playlists..."); // Debug log
     setLoadingAppleMusic(true); // Set loading state to true before fetching
-    
-    window.electronAPI.getAppleMusicLibrary()
+
+    window.electronAPI
+      .getAppleMusicLibrary()
       .then((playlists) => {
         console.log("Received Apple Music playlists:", playlists); // Debug log
         setAppleMusicPlaylists(playlists);
@@ -182,22 +184,28 @@ function Homepage() {
       </div>
 
       {/* Main Content - Made scrollable */}
-      <div style={{ 
-        flex: 1, 
-        backgroundColor: "#3E3847",
-        height: "100vh",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column"
-      }}>
-        <h1 style={{ color: "white", padding: "0 20px", margin: "20px 0" }}>Harmony</h1>
-        
+      <div
+        style={{
+          flex: 1,
+          backgroundColor: "#3E3847",
+          height: "100vh",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <h1 style={{ color: "white", padding: "0 20px", margin: "20px 0" }}>
+          Harmony
+        </h1>
+
         {/* Scrollable content area */}
-        <div style={{ 
-          padding: "0 20px 20px 20px", 
-          overflowY: "auto",
-          flex: 1
-        }}>
+        <div
+          style={{
+            padding: "0 20px 20px 20px",
+            overflowY: "auto",
+            flex: 1,
+          }}
+        >
           {selectedPlaylist ? (
             <div>
               <h2 style={{ color: "white" }}>{selectedPlaylist.name}</h2>
@@ -206,19 +214,64 @@ function Homepage() {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr>
-                      <th style={{ padding: "8px 16px", color: "white", position: "sticky", top: 0, backgroundColor: "#3E3847", textAlign: "left" }}>
+                      <th
+                        style={{
+                          padding: "8px 16px",
+                          color: "white",
+                          position: "sticky",
+                          top: 0,
+                          backgroundColor: "#3E3847",
+                          textAlign: "left",
+                        }}
+                      >
                         #
                       </th>
-                      <th style={{ padding: "8px 16px", color: "white", position: "sticky", top: 0, backgroundColor: "#3E3847", textAlign: "left" }}>
+                      <th
+                        style={{
+                          padding: "8px 16px",
+                          color: "white",
+                          position: "sticky",
+                          top: 0,
+                          backgroundColor: "#3E3847",
+                          textAlign: "left",
+                        }}
+                      >
                         Song
                       </th>
-                      <th style={{ padding: "8px 16px", color: "white", position: "sticky", top: 0, backgroundColor: "#3E3847", textAlign: "left" }}>
+                      <th
+                        style={{
+                          padding: "8px 16px",
+                          color: "white",
+                          position: "sticky",
+                          top: 0,
+                          backgroundColor: "#3E3847",
+                          textAlign: "left",
+                        }}
+                      >
                         Artist
                       </th>
-                      <th style={{ padding: "8px 16px", color: "white", position: "sticky", top: 0, backgroundColor: "#3E3847", textAlign: "left" }}>
+                      <th
+                        style={{
+                          padding: "8px 16px",
+                          color: "white",
+                          position: "sticky",
+                          top: 0,
+                          backgroundColor: "#3E3847",
+                          textAlign: "left",
+                        }}
+                      >
                         Album
                       </th>
-                      <th style={{ padding: "8px 16px", color: "white", position: "sticky", top: 0, backgroundColor: "#3E3847", textAlign: "right" }}>
+                      <th
+                        style={{
+                          padding: "8px 16px",
+                          color: "white",
+                          position: "sticky",
+                          top: 0,
+                          backgroundColor: "#3E3847",
+                          textAlign: "right",
+                        }}
+                      >
                         Duration
                       </th>
                     </tr>
@@ -226,30 +279,71 @@ function Homepage() {
                   <tbody>
                     {Array.isArray(selectedPlaylist.tracks) ? (
                       selectedPlaylist.tracks.map((track, index) => (
-                        <tr key={index} style={{ 
-                          backgroundColor: index % 2 === 0 ? "#36323A" : "transparent",
-                          transition: "background-color 0.2s"
-                        }}>
-                          <td style={{ padding: "8px 16px", color: "#aaa", textAlign: "left" }}>
+                        <tr
+                          key={index}
+                          style={{
+                            backgroundColor:
+                              index % 2 === 0 ? "#36323A" : "transparent",
+                            transition: "background-color 0.2s",
+                          }}
+                        >
+                          <td
+                            style={{
+                              padding: "8px 16px",
+                              color: "#aaa",
+                              textAlign: "left",
+                            }}
+                          >
                             {index + 1}
                           </td>
-                          <td style={{ padding: "8px 16px", color: "white", textAlign: "left" }}>
+                          <td
+                            style={{
+                              padding: "8px 16px",
+                              color: "white",
+                              textAlign: "left",
+                            }}
+                          >
                             {track.name}
                           </td>
-                          <td style={{ padding: "8px 16px", color: "#aaa", textAlign: "left" }}>
+                          <td
+                            style={{
+                              padding: "8px 16px",
+                              color: "#aaa",
+                              textAlign: "left",
+                            }}
+                          >
                             {track.artist}
                           </td>
-                          <td style={{ padding: "8px 16px", color: "#aaa", textAlign: "left" }}>
+                          <td
+                            style={{
+                              padding: "8px 16px",
+                              color: "#aaa",
+                              textAlign: "left",
+                            }}
+                          >
                             {track.album}
                           </td>
-                          <td style={{ padding: "8px 16px", color: "#aaa", textAlign: "right" }}>
+                          <td
+                            style={{
+                              padding: "8px 16px",
+                              color: "#aaa",
+                              textAlign: "right",
+                            }}
+                          >
                             {formatDuration(track.duration)}
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={5} style={{ padding: "16px", color: "white", textAlign: "center" }}>
+                        <td
+                          colSpan={5}
+                          style={{
+                            padding: "16px",
+                            color: "white",
+                            textAlign: "center",
+                          }}
+                        >
                           No tracks available
                         </td>
                       </tr>
@@ -259,7 +353,9 @@ function Homepage() {
               </div>
             </div>
           ) : (
-            <p style={{ color: "white" }}>Select a playlist to view its tracks</p>
+            <p style={{ color: "white" }}>
+              Select a playlist to view its tracks
+            </p>
           )}
         </div>
       </div>
