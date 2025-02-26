@@ -186,12 +186,12 @@ function Homepage() {
             <ul style={{ listStyleType: "none", padding: "0", margin: "0" }}>
               {loadingSpotify ? (
                 <li
-                    style={{
+                  style={{
                     padding: "10px",
                     margin: "5px 0",
                     borderRadius: "5px",
                     color: "#666",
-                    }}
+                  }}
                 >
                   Loading...
                 </li>
@@ -249,7 +249,7 @@ function Homepage() {
                 </li>
               ) : (
                 appleMusicPlaylists.map((playlist, index) => (
-                    <li
+                  <li
                     key={index}
                     style={{
                       padding: "10px",
