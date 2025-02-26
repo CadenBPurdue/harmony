@@ -127,8 +127,8 @@ export function registerIpcHandlers() {
     await appleMusicApi.initialize();
     console.log(`Transferring "${playlist.name}" to Apple Music`);
     const playlistId = await appleMusicApi.createEmptyPlaylist(
-      playlist.name, 
-      playlist.description
+      playlist.name,
+      playlist.description,
     );
     await appleMusicApi.populatePlaylist(playlistId, playlist);
     return { success: true };

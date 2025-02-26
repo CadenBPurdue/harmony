@@ -379,7 +379,7 @@ class AppleMusicApi {
     }
   }
 
-  async createEmptyPlaylist(playlistName, playlistDescription = "") { 
+  async createEmptyPlaylist(playlistName, playlistDescription = "") {
     if (!this.api) {
       await this.initialize();
     }
@@ -396,7 +396,7 @@ class AppleMusicApi {
       // console.log(
       //   `[createEmptyPlaylist] Creating playlist with name: ${playlistName}`,
       // );
-      
+
       const requestPayload = {
         attributes: {
           name: playlistName,
