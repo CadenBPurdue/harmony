@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import { createHashRouter, RouterProvider, Navigate } from "react-router-dom";
-import Homepage from "./Homepage";
 import CreateAccount from "./CreateAccount";
 import ErrorBoundary from "./ErrorBoundary";
+import Homepage from "./Homepage";
 
 const Router = () => {
   const [isLoading, setIsLoading] = useState(true);
