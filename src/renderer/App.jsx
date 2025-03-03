@@ -92,60 +92,60 @@ function App() {
     }
   };
 
-  const testFirebaseStorage = async () => {
-    try {
-      const playlist = {
-        id: "7dNySe6is1ETaEBmDD5TPp",
-        name: "app-test1",
-        user: "ebtuhr",
-        origin: "Spotfiy",
-        numberOfTracks: 4,
-        duration: 12000,
-        description: "",
-        sharedWith: ["demo_user_id"],
-        image:
-          "https://i.scdn.co/image/ab67616d00001e02124e9249fada4ff3c3a0739c",
-        tracks: [
-          {
-            name: "St. Chroma (feat. Daniel Caesar)",
-            artist: "Tyler, The Creator",
-            album: "CHROMAKOPIA",
-            duration: 197019,
-            image:
-              "https://i.scdn.co/image/ab67616d0000b273124e9249fada4ff3c3a0739c",
-          },
-          {
-            name: "squabble up",
-            artist: "Kendrick Lamar",
-            album: "GNX",
-            duration: 157992,
-            image:
-              "https://i.scdn.co/image/ab67616d0000b273d9985092cd88bffd97653b58",
-          },
-          {
-            name: "BIRDS OF A FEATHER",
-            artist: "Billie Eilish",
-            album: "HIT ME HARD AND SOFT",
-            duration: 210373,
-            image:
-              "https://i.scdn.co/image/ab67616d0000b27371d62ea7ea8a5be92d3c1f62",
-          },
-          {
-            name: "New Track",
-            artist: "New Artist",
-            album: "New Album",
-            duration: 200000,
-            image: "https://i.scdn.co/image/ab67616d0000b273newtrackimage",
-          },
-        ],
-      };
-      const result =
-        await window.electronAPI.writePlaylistToFirestore(playlist);
-      console.log(result);
-    } catch (err) {
-      console.error("Failed to test Firebase Storage:", err);
-    }
-  };
+  // const testFirebaseStorage = async () => {
+  //   try {
+  //     const playlist = {
+  //       id: "7dNySe6is1ETaEBmDD5TPp",
+  //       name: "app-test1",
+  //       user: "ebtuhr",
+  //       origin: "Spotfiy",
+  //       numberOfTracks: 4,
+  //       duration: 12000,
+  //       description: "",
+  //       sharedWith: ["demo_user_id"],
+  //       image:
+  //         "https://i.scdn.co/image/ab67616d00001e02124e9249fada4ff3c3a0739c",
+  //       tracks: [
+  //         {
+  //           name: "St. Chroma (feat. Daniel Caesar)",
+  //           artist: "Tyler, The Creator",
+  //           album: "CHROMAKOPIA",
+  //           duration: 197019,
+  //           image:
+  //             "https://i.scdn.co/image/ab67616d0000b273124e9249fada4ff3c3a0739c",
+  //         },
+  //         {
+  //           name: "squabble up",
+  //           artist: "Kendrick Lamar",
+  //           album: "GNX",
+  //           duration: 157992,
+  //           image:
+  //             "https://i.scdn.co/image/ab67616d0000b273d9985092cd88bffd97653b58",
+  //         },
+  //         {
+  //           name: "BIRDS OF A FEATHER",
+  //           artist: "Billie Eilish",
+  //           album: "HIT ME HARD AND SOFT",
+  //           duration: 210373,
+  //           image:
+  //             "https://i.scdn.co/image/ab67616d0000b27371d62ea7ea8a5be92d3c1f62",
+  //         },
+  //         {
+  //           name: "New Track",
+  //           artist: "New Artist",
+  //           album: "New Album",
+  //           duration: 200000,
+  //           image: "https://i.scdn.co/image/ab67616d0000b273newtrackimage",
+  //         },
+  //       ],
+  //     };
+  //     const result =
+  //       await window.electronAPI.writePlaylistToFirestore(playlist);
+  //     console.log(result);
+  //   } catch (err) {
+  //     console.error("Failed to test Firebase Storage:", err);
+  //   }
+  // };
 
   if (isLoading) {
     return (
