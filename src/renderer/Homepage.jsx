@@ -1,4 +1,41 @@
+// src/renderer/Homepage.jsx
+import {
+  Box,
+  Typography,
+  Button,
+  Paper,
+  List,
+  ListItem,
+  ListItemText,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  MenuItem,
+  Select,
+  FormControl,
+  CircularProgress,
+  Collapse,
+  Snackbar,
+  Alert,
+  ListItemButton,
+  Drawer,
+  IconButton,
+  Stack,
+  ThemeProvider,
+  CssBaseline,
+} from "@mui/material";
+import { useMediaQuery } from "@mui/material";
+import { ChevronDown, ChevronUp, Menu as MenuIcon } from "lucide-react";
 import React, { useState, useEffect } from "react";
+import { theme, styles, colors } from "./styles/theme";
 
 // Function to format duration from milliseconds to MM:SS format
 const formatDuration = (milliseconds) => {
@@ -11,39 +48,49 @@ const formatDuration = (milliseconds) => {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
+const normalizeTrackData = (trackItem, isArrayFormat) => {
+  // If the tracks are in array format (like Spotify)
+  if (isArrayFormat) {
+    return trackItem;
+  }
+  
+  // If the tracks are in object format (like Apple Music)
+  // trackItem will be [id, trackData]
+  return trackItem[1];
+};
+
 function Homepage() {
-  const [spotifyOpen, setSpotifyOpen] = useState(false);
-  const [appleMusicOpen, setAppleMusicOpen] = useState(false);
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  
+  const [spotifyOpen, setSpotifyOpen] = useState(true);
+  const [appleMusicOpen, setAppleMusicOpen] = useState(true);
   const [spotifyPlaylists, setSpotifyPlaylists] = useState([]);
   const [appleMusicPlaylists, setAppleMusicPlaylists] = useState([]);
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null); // Track the selected playlist
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  // Transfer popup state
-  const [showTransferPopup, setShowTransferPopup] = useState(false);
+  // Transfer dialog state
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [transferDestination, setTransferDestination] = useState("");
-  const [destinationDropdownOpen, setDestinationDropdownOpen] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
-  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   // Loading state for both services
   const [loadingSpotify, setLoadingSpotify] = useState(false);
   const [loadingAppleMusic, setLoadingAppleMusic] = useState(false);
 
-  // Open transfer popup
-  const openTransferPopup = () => {
+  // Open transfer dialog
+  const openTransferDialog = () => {
     // Set destination to the opposite of current playlist source
     const destination =
       selectedPlaylist?.origin === "Spotify" ? "Apple Music" : "Spotify";
     setTransferDestination(destination);
-
-    // Show the popup
-    setShowTransferPopup(true);
+    setShowTransferDialog(true);
   };
 
-  // Close transfer popup
-  const closeTransferPopup = () => {
-    setShowTransferPopup(false);
-    setDestinationDropdownOpen(false);
+  // Close transfer dialog
+  const closeTransferDialog = () => {
+    setShowTransferDialog(false);
   };
 
   // Handle transfer function
@@ -51,700 +98,584 @@ function Homepage() {
     setIsTransferring(true);
 
     try {
-      var result = null;
-      if (transferDestination == "Spotify") {
+      let result = null;
+      if (transferDestination === "Spotify") {
         result = await window.electronAPI.transferToSpotify(selectedPlaylist);
-      } else if (transferDestination == "Apple Music") {
-        result =
-          await window.electronAPI.transferToAppleMusic(selectedPlaylist);
+      } else if (transferDestination === "Apple Music") {
+        result = await window.electronAPI.transferToAppleMusic(selectedPlaylist);
       }
 
       if (result && result.success) {
         // reload playlists from destination
         if (transferDestination === "Spotify") {
-          setLoadingSpotify(true);
-          window.electronAPI
-            .getSpotifyLibrary()
-            .then((playlists) => {
-              setSpotifyPlaylists(playlists);
-            })
-            .catch((error) => {
-              console.error("Error fetching Spotify playlists:", error);
-            })
-            .finally(() => {
-              setLoadingSpotify(false);
-            });
+          refreshSpotifyPlaylists();
         } else if (transferDestination === "Apple Music") {
-          setLoadingAppleMusic(true);
-          window.electronAPI
-            .getAppleMusicLibrary()
-            .then((playlists) => {
-              setAppleMusicPlaylists(playlists);
-            })
-            .catch((error) => {
-              console.error("Error fetching Apple Music playlists:", error);
-            })
-            .finally(() => {
-              setLoadingAppleMusic(false);
-            });
+          refreshAppleMusicPlaylists();
         }
-        setShowTransferPopup(false);
-        setShowSuccessPopup(true);
+        
+        setShowTransferDialog(false);
+        setShowSuccessAlert(true);
         setTimeout(() => {
-          setShowSuccessPopup(false);
-        }, 1500);
+          setShowSuccessAlert(false);
+        }, 3000);
       } else {
-        alert("Transfer failed inside: " + (result?.error || "Unknown error"));
+        alert("Transfer failed: " + (result?.error || "Unknown error"));
       }
     } catch (error) {
-      alert("Transfer error outside: " + (error.message || "Unknown error"));
+      alert("Transfer error: " + (error.message || "Unknown error"));
     } finally {
       setIsTransferring(false);
     }
   };
 
-  // Fetch Spotify playlists from the backend
-  useEffect(() => {
-    console.log("Fetching Spotify playlists..."); // Debug log
-    setLoadingSpotify(true); // Set loading state to true before fetching
-
-    window.electronAPI
-      .getSpotifyLibrary()
+  const refreshSpotifyPlaylists = () => {
+    setLoadingSpotify(true);
+    window.electronAPI.getSpotifyLibrary()
       .then((playlists) => {
-        console.log("Received Spotify playlists:", playlists); // Debug log
         setSpotifyPlaylists(playlists);
       })
       .catch((error) => {
         console.error("Error fetching Spotify playlists:", error);
       })
       .finally(() => {
-        setLoadingSpotify(false); // Set loading state to false after fetching
+        setLoadingSpotify(false);
       });
-  }, []);
+  };
 
-  // Fetch Apple Music playlists from the backend
-  useEffect(() => {
-    console.log("Fetching Apple Music playlists..."); // Debug log
-    setLoadingAppleMusic(true); // Set loading state to true before fetching
-
-    window.electronAPI
-      .getAppleMusicLibrary()
+  const refreshAppleMusicPlaylists = () => {
+    setLoadingAppleMusic(true);
+    window.electronAPI.getAppleMusicLibrary()
       .then((playlists) => {
-        console.log("Received Apple Music playlists:", playlists); // Debug log
         setAppleMusicPlaylists(playlists);
       })
       .catch((error) => {
         console.error("Error fetching Apple Music playlists:", error);
       })
       .finally(() => {
-        setLoadingAppleMusic(false); // Set loading state to false after fetching
+        setLoadingAppleMusic(false);
       });
+  };
+
+  // Fetch Spotify playlists from the backend
+  useEffect(() => {
+    refreshSpotifyPlaylists();
   }, []);
+
+  // Fetch Apple Music playlists from the backend
+  useEffect(() => {
+    refreshAppleMusicPlaylists();
+  }, []);
+
+  // Helper function to check if playlist is selected
+  const isPlaylistSelected = (playlist) => {
+    if (!selectedPlaylist) return false;
+    
+    // Check if this is an Apple Music playlist (has different structure)
+    if (playlist.origin === "apple music" && selectedPlaylist.origin === "apple music") {
+      return selectedPlaylist.playlist_id === playlist.playlist_id;
+    }
+    
+    // For other cases, use the existing comparison logic
+    if (selectedPlaylist.playlist_id && playlist.playlist_id) {
+      return selectedPlaylist.playlist_id === playlist.playlist_id;
+    }
+    
+    return selectedPlaylist.name === playlist.name && 
+           selectedPlaylist.origin === playlist.origin;
+  };
 
   // Handle playlist click
   const handlePlaylistClick = (playlist) => {
-    setSelectedPlaylist(playlist); // Set the selected playlist
+    setSelectedPlaylist(playlist);
+    if (isMobile) {
+      setMobileDrawerOpen(false);
+    }
   };
 
-  // Get available playlists based on the source
-  const getAvailablePlaylists = () => {
-    return selectedPlaylist?.origin === "Spotify"
-      ? spotifyPlaylists
-      : appleMusicPlaylists;
+  const toggleDrawer = (open) => (event) => {
+    if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
+      return;
+    }
+    setMobileDrawerOpen(open);
   };
 
-  return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-      {/* Sidebar */}
-      <div
-        style={{
-          width: "250px",
-          backgroundColor: "#28242E",
-          padding: "10px",
-          boxShadow: "2px 0 5px rgba(0, 0, 0, 0.1)",
-          height: "100%",
-          overflowY: "auto",
+  // Common style for playlist items
+  const playlistItemStyle = (isSelected) => ({
+    pl: 2,
+    borderRadius: 1,
+    mb: 0.5,
+    '&:hover': { bgcolor: 'rgba(134, 97, 193, 0.1)' },
+    bgcolor: isSelected ? 'rgba(134, 97, 193, 0.2)' : 'transparent'
+  });
+
+  const renderPlaylistItem = (playlist, index) => (
+    <ListItemButton
+      key={index}
+      onClick={() => handlePlaylistClick(playlist)}
+      sx={playlistItemStyle(isPlaylistSelected(playlist))}
+    >
+      <ListItemText
+        primary={playlist.name}
+        primaryTypographyProps={{
+          color: "text.primary",
+          noWrap: true,
+          fontSize: 14,
         }}
-      >
+      />
+      {playlist.isLoading && (
+        <CircularProgress size={16} sx={{ ml: 1, color: "primary.light" }} />
+      )}
+    </ListItemButton>
+  );
+
+  const sidebarContent = (
+    <Box sx={{ width: 250, bgcolor: theme.palette.background.paper, height: "100%" }}>
+      <List component="nav" sx={{ p: 2 }}>
         {/* Spotify Dropdown */}
-        <div style={{ marginBottom: "20px" }}>
-          <button
-            onClick={() => setSpotifyOpen(!spotifyOpen)}
-            style={{
-              width: "100%",
-              fontSize: "16px",
-              fontWeight: "bold",
-              backgroundColor: "#28242E",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              textAlign: "left",
-            }}
-          >
-            Spotify
-          </button>
-          {spotifyOpen && (
-            <ul style={{ listStyleType: "none", padding: "0", margin: "0" }}>
-              {loadingSpotify ? (
-                <li
-                  style={{
-                    padding: "10px",
-                    margin: "5px 0",
-                    borderRadius: "5px",
-                    color: "#666",
-                  }}
-                >
-                  Loading...
-                </li>
-              ) : (
-                spotifyPlaylists.map((playlist, index) => (
-                  <li
-                    key={index}
-                    style={{
-                      padding: "10px",
-                      color: "#fff",
-                      backgroundColor: "#28242E",
-                      margin: "5px 0",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => handlePlaylistClick(playlist)} // Handle playlist click
-                  >
-                    {playlist.name}
-                  </li>
-                ))
-              )}
-            </ul>
-          )}
-        </div>
+        <ListItem
+          button
+          onClick={() => setSpotifyOpen(!spotifyOpen)}
+          sx={{ 
+            borderRadius: 1, 
+            mb: 1, 
+            '&:hover': { bgcolor: 'rgba(134, 97, 193, 0.1)' }
+          }}
+        >
+          <ListItemText 
+            primary="Spotify" 
+            primaryTypographyProps={{ 
+              fontWeight: "bold", 
+              color: "text.primary" 
+            }} 
+          />
+          {spotifyOpen ? 
+            <ChevronUp color={theme.palette.text.primary} size={18} /> : 
+            <ChevronDown color={theme.palette.text.primary} size={18} />
+          }
+        </ListItem>
+        
+        <Collapse in={spotifyOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            {loadingSpotify ? (
+              <ListItem sx={{ pl: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', py: 1 }}>
+                  <CircularProgress size={24} sx={{ color: "primary.main" }} />
+                </Box>
+              </ListItem>
+            ) : (
+              spotifyPlaylists.map((playlist, index) => renderPlaylistItem(playlist, index))
+            )}
+          </List>
+        </Collapse>
 
         {/* Apple Music Dropdown */}
-        <div>
-          <button
-            onClick={() => setAppleMusicOpen(!appleMusicOpen)}
-            style={{
-              width: "100%",
-              fontSize: "16px",
-              fontWeight: "bold",
-              backgroundColor: "#28242E",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              textAlign: "left",
-            }}
-          >
-            Apple Music
-          </button>
-          {appleMusicOpen && (
-            <ul style={{ listStyleType: "none", padding: "0", margin: "0" }}>
-              {loadingAppleMusic ? (
-                <li
-                  style={{
-                    padding: "10px",
-                    margin: "5px 0",
-                    borderRadius: "5px",
-                    color: "#666",
-                  }}
-                >
-                  Loading...
-                </li>
-              ) : (
-                appleMusicPlaylists.map((playlist, index) => (
-                  <li
-                    key={index}
-                    style={{
-                      padding: "10px",
-                      color: "#fff",
-                      backgroundColor: "#28242E",
-                      margin: "5px 0",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => handlePlaylistClick(playlist)} // Handle playlist click
-                  >
-                    {playlist.name}
-                  </li>
-                ))
-              )}
-            </ul>
-          )}
-        </div>
-      </div>
+        <ListItem
+          button
+          onClick={() => setAppleMusicOpen(!appleMusicOpen)}
+          sx={{ 
+            borderRadius: 1, 
+            mb: 1, 
+            '&:hover': { bgcolor: 'rgba(134, 97, 193, 0.1)' }
+          }}
+        >
+          <ListItemText 
+            primary="Apple Music" 
+            primaryTypographyProps={{ 
+              fontWeight: "bold", 
+              color: "text.primary" 
+            }} 
+          />
+          {appleMusicOpen ? 
+            <ChevronUp color={theme.palette.text.primary} size={18} /> : 
+            <ChevronDown color={theme.palette.text.primary} size={18} />
+          }
+        </ListItem>
+        
+        <Collapse in={appleMusicOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            {loadingAppleMusic ? (
+              <ListItem sx={{ pl: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', py: 1 }}>
+                  <CircularProgress size={24} sx={{ color: "primary.main" }} />
+                </Box>
+              </ListItem>
+            ) : (
+              appleMusicPlaylists.map((playlist, index) => renderPlaylistItem(playlist, index))
+            )}
+          </List>
+        </Collapse>
+      </List>
+    </Box>
+  );
 
-      {/* Main Content - Made scrollable */}
-      <div
-        style={{
-          flex: 1,
-          backgroundColor: "#3E3847",
-          height: "100vh",
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box
+        sx={{
+          ...styles.pageContainer,
+          minHeight: '100vh',
+          width: '100%',
+          display: 'flex',
+          padding: 0,
+          backgroundColor: theme.palette.background.default
         }}
       >
-        <h1 style={{ color: "white", padding: "0 20px", margin: "20px 0" }}>
-          Harmony
-        </h1>
-
-        {/* Scrollable content area */}
-        <div
-          style={{
-            padding: "0 20px 20px 20px",
-            overflowY: "auto",
-            flex: 1,
+        <Box
+          sx={{
+            display: 'flex',
+            width: '100%',
+            height: '100vh',
+            overflow: 'hidden',
           }}
         >
-          {selectedPlaylist ? (
-            <div>
-              {/* Header with playlist info and transfer button */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <div>
-                  <h2 style={{ color: "white", marginBottom: "5px" }}>
-                    {selectedPlaylist.name}
-                  </h2>
-                  <p style={{ color: "white", margin: "0" }}>
-                    User: {selectedPlaylist.user}
-                  </p>
-                </div>
-                {isTransferring ? (
-                  <div
-                    style={{
-                      color: "white",
-                      backgroundColor: "#C391F5",
-                      padding: "8px 16px",
-                      borderRadius: "4px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Transferring...
-                  </div>
-                ) : (
-                  <button
-                    onClick={openTransferPopup}
-                    style={{
-                      backgroundColor: "#C391F5",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      padding: "8px 16px",
-                      fontSize: "14px",
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                      transition: "background-color 0.3s",
-                    }}
-                  >
-                    Transfer
-                  </button>
-                )}
-              </div>
-
-              <div style={{ overflowX: "auto", marginTop: "20px" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr>
-                      <th
-                        style={{
-                          padding: "8px 16px",
-                          color: "white",
-                          position: "sticky",
-                          top: 0,
-                          backgroundColor: "#3E3847",
-                          textAlign: "left",
-                        }}
-                      >
-                        #
-                      </th>
-                      <th
-                        style={{
-                          padding: "8px 16px",
-                          color: "white",
-                          position: "sticky",
-                          top: 0,
-                          backgroundColor: "#3E3847",
-                          textAlign: "left",
-                        }}
-                      >
-                        Song
-                      </th>
-                      <th
-                        style={{
-                          padding: "8px 16px",
-                          color: "white",
-                          position: "sticky",
-                          top: 0,
-                          backgroundColor: "#3E3847",
-                          textAlign: "left",
-                        }}
-                      >
-                        Artist
-                      </th>
-                      <th
-                        style={{
-                          padding: "8px 16px",
-                          color: "white",
-                          position: "sticky",
-                          top: 0,
-                          backgroundColor: "#3E3847",
-                          textAlign: "left",
-                        }}
-                      >
-                        Album
-                      </th>
-                      <th
-                        style={{
-                          padding: "8px 16px",
-                          color: "white",
-                          position: "sticky",
-                          top: 0,
-                          backgroundColor: "#3E3847",
-                          textAlign: "right",
-                        }}
-                      >
-                        Duration
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.isArray(selectedPlaylist.tracks) ? (
-                      selectedPlaylist.tracks.map((track, index) => (
-                        <tr
-                          key={index}
-                          style={{
-                            backgroundColor:
-                              index % 2 === 0 ? "#36323A" : "transparent",
-                            transition: "background-color 0.2s",
-                          }}
-                        >
-                          <td
-                            style={{
-                              padding: "8px 16px",
-                              color: "#aaa",
-                              textAlign: "left",
-                            }}
-                          >
-                            {index + 1}
-                          </td>
-                          <td
-                            style={{
-                              padding: "8px 16px",
-                              color: "white",
-                              textAlign: "left",
-                            }}
-                          >
-                            {track.name}
-                          </td>
-                          <td
-                            style={{
-                              padding: "8px 16px",
-                              color: "#aaa",
-                              textAlign: "left",
-                            }}
-                          >
-                            {track.artist}
-                          </td>
-                          <td
-                            style={{
-                              padding: "8px 16px",
-                              color: "#aaa",
-                              textAlign: "left",
-                            }}
-                          >
-                            {track.album}
-                          </td>
-                          <td
-                            style={{
-                              padding: "8px 16px",
-                              color: "#aaa",
-                              textAlign: "right",
-                            }}
-                          >
-                            {formatDuration(track.duration)}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan={5}
-                          style={{
-                            padding: "16px",
-                            color: "white",
-                            textAlign: "center",
-                          }}
-                        >
-                          No tracks available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <p style={{ color: "white" }}>
-              Select a playlist to view its tracks
-            </p>
+          {/* Sidebar - Hidden on mobile */}
+          {!isMobile && (
+            <Box
+              sx={{
+                width: 250,
+                bgcolor: theme.palette.background.paper,
+                borderRight: `1px solid ${theme.palette.divider}`,
+                height: '100%',
+                overflowY: 'auto',
+                // Make sure this has a minimum width and flex-shrink: 0 to prevent it from collapsing
+                minWidth: 250,
+                flexShrink: 0,
+              }}
+            >
+              {sidebarContent}
+            </Box>
           )}
-        </div>
-      </div>
 
-      {/* Transfer Popup */}
-      {showTransferPopup && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-          onClick={closeTransferPopup} // Close popup when clicking outside
-        >
-          <div
-            style={{
-              backgroundColor: "#28242E",
-              borderRadius: "8px",
-              padding: "20px",
-              width: "400px",
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+          {/* Mobile drawer */}
+          <Drawer
+            anchor="left"
+            open={mobileDrawerOpen}
+            onClose={toggleDrawer(false)}
+            sx={{ display: { xs: 'block', sm: 'none' } }}
+            PaperProps={{
+              sx: {
+                bgcolor: theme.palette.background.paper,
+              }
             }}
-            onClick={(e) => e.stopPropagation()} // Prevent clicks from bubbling up
           >
-            <h2
-              style={{
-                color: "white",
-                textAlign: "center",
-                marginTop: 0,
-                marginBottom: "20px",
+            {sidebarContent}
+          </Drawer>
+
+          {/* Main Content */}
+          <Box
+            sx={{
+              flex: 1,
+              bgcolor: theme.palette.background.default,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              p: 2, 
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              bgcolor: theme.palette.background.paper,
+            }}>
+              {isMobile && (
+                <IconButton 
+                  onClick={toggleDrawer(true)} 
+                  sx={{ mr: 2, color: theme.palette.text.primary }}
+                  aria-label="open menu"
+                >
+                  <MenuIcon />
+                </IconButton>
+              )}
+              <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                Harmony
+              </Typography>
+            </Box>
+
+            {/* Scrollable content area */}
+            <Box
+              sx={{
+                p: 2,
+                overflowY: 'auto',
+                flex: 1,
               }}
             >
-              Transfer
-            </h2>
-
-            {/* Playlist Field (Auto-filled) */}
-            <div style={{ marginBottom: "16px" }}>
-              <label
-                style={{
-                  display: "block",
-                  color: "white",
-                  marginBottom: "8px",
-                }}
-              >
-                Playlist
-              </label>
-              <div
-                style={{
-                  padding: "8px 12px",
-                  backgroundColor: "#3E3847",
-                  color: "white",
-                  borderRadius: "4px",
-                  opacity: 0.9,
-                }}
-              >
-                {selectedPlaylist?.name || "Unknown"}
-              </div>
-            </div>
-
-            {/* Source Field (Auto-filled) */}
-            <div style={{ marginBottom: "16px" }}>
-              <label
-                style={{
-                  display: "block",
-                  color: "white",
-                  marginBottom: "8px",
-                }}
-              >
-                Source
-              </label>
-              <div
-                style={{
-                  padding: "8px 12px",
-                  backgroundColor: "#3E3847",
-                  color: "white",
-                  borderRadius: "4px",
-                  opacity: 0.9,
-                }}
-              >
-                {selectedPlaylist?.origin || "Unknown"}
-              </div>
-            </div>
-
-            {/* Destination Dropdown */}
-            <div style={{ marginBottom: "24px" }}>
-              <label
-                style={{
-                  display: "block",
-                  color: "white",
-                  marginBottom: "8px",
-                }}
-              >
-                Destination
-              </label>
-              <div style={{ position: "relative" }}>
-                <div
-                  onClick={() =>
-                    setDestinationDropdownOpen(!destinationDropdownOpen)
-                  }
-                  style={{
-                    padding: "8px 12px",
-                    backgroundColor: "#3E3847",
-                    color: "white",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <span>{transferDestination}</span>
-                  <span>▼</span>
-                </div>
-
-                {destinationDropdownOpen && (
-                  <ul
-                    style={{
-                      position: "absolute",
-                      top: "100%",
-                      left: 0,
-                      right: 0,
-                      backgroundColor: "#3E3847",
-                      border: "1px solid #444",
-                      borderRadius: "4px",
-                      listStyle: "none",
-                      padding: 0,
-                      margin: 0,
-                      zIndex: 10,
+              {selectedPlaylist ? (
+                <Box>
+                  {/* Header with playlist info and transfer button */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: { xs: 'flex-start', sm: 'center' },
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      mb: 3,
+                      gap: 2,
+                      width: '100%',  // Ensure this takes full width
                     }}
                   >
-                    <li
-                      onClick={() => {
-                        setTransferDestination("Spotify");
-                        setDestinationDropdownOpen(false);
-                      }}
-                      style={{
-                        padding: "8px 12px",
-                        cursor: "pointer",
-                        color: "white",
-                        borderBottom: "1px solid #444",
-                        backgroundColor:
-                          transferDestination === "Spotify"
-                            ? "#4b4456"
-                            : "transparent",
-                      }}
-                    >
-                      Spotify
-                    </li>
-                    <li
-                      onClick={() => {
-                        setTransferDestination("Apple Music");
-                        setDestinationDropdownOpen(false);
-                      }}
-                      style={{
-                        padding: "8px 12px",
-                        cursor: "pointer",
-                        color: "white",
-                        backgroundColor:
-                          transferDestination === "Apple Music"
-                            ? "#4b4456"
-                            : "transparent",
-                      }}
-                    >
-                      Apple Music
-                    </li>
-                  </ul>
-                )}
-              </div>
-            </div>
+                    <Box sx={{ maxWidth: '70%' }}>  {/* Limit width to prevent overflow */}
+                      <Typography variant="h5" color="text.primary" sx={{ mb: 0.5 }}>
+                        {selectedPlaylist.name}
+                      </Typography>
+                      {/* Only show user info if it's not Apple Music */}
+                      {selectedPlaylist.origin !== "apple music" && (
+                        <Typography variant="body2" color="text.secondary">
+                          User: {selectedPlaylist.user}
+                        </Typography>
+                      )}
+                      <Typography variant="body2" color="text.secondary">
+                        Tracks: {selectedPlaylist.number_of_tracks} • Duration: {formatDuration(selectedPlaylist.duration)}
+                      </Typography>
+                    </Box>
+                    {isTransferring ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CircularProgress size={16} sx={{ color: 'secondary.main' }} />
+                        <Typography variant="button" sx={{ color: 'secondary.main' }}>
+                          Transferring...
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        onClick={openTransferDialog}
+                        sx={styles.continueButton}
+                      >
+                        Transfer
+                      </Button>
+                    )}
+                  </Box>
 
-            {/* Buttons */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
-              }}
-            >
-              <button
-                onClick={closeTransferPopup}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "transparent",
-                  color: "white",
-                  border: "1px solid #666",
-                  borderRadius: "4px",
-                  cursor: "pointer",
+                  {/* Tracks Table */}
+                  <Paper 
+                    sx={{ 
+                      ...styles.paper, 
+                      p: 0, 
+                      overflow: 'auto', 
+                      width: '100%',
+                      maxWidth: '100%',
+                    }}
+                  >
+                    <TableContainer sx={{ maxWidth: '100%' }}>
+                      <Table stickyHeader aria-label="playlist tracks table">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell width="5%" sx={{ bgcolor: 'rgba(134, 97, 193, 0.05)' }}>#</TableCell>
+                            <TableCell width="35%" sx={{ bgcolor: 'rgba(134, 97, 193, 0.05)' }}>Song</TableCell>
+                            <TableCell width="25%" sx={{ bgcolor: 'rgba(134, 97, 193, 0.05)' }}>Artist</TableCell>
+                            <TableCell 
+                              width="25%" 
+                              sx={{ 
+                                display: { xs: 'none', md: 'table-cell' },
+                                bgcolor: 'rgba(134, 97, 193, 0.05)' 
+                              }}
+                            >
+                              Album
+                            </TableCell>
+                            <TableCell 
+                              width="10%" 
+                              align="right" 
+                              sx={{ bgcolor: 'rgba(134, 97, 193, 0.05)' }}
+                            >
+                              Duration
+                            </TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {selectedPlaylist.tracks && (() => {
+                            // Determine if we're dealing with array or object tracks
+                            const isArrayTracks = Array.isArray(selectedPlaylist.tracks);
+                            const trackItems = isArrayTracks 
+                              ? selectedPlaylist.tracks 
+                              : Object.entries(selectedPlaylist.tracks);
+                            
+                            if (trackItems.length === 0) {
+                              return (
+                                <TableRow>
+                                  <TableCell colSpan={5} align="center">
+                                    No tracks available
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            }
+                            
+                            return trackItems.map((item, index) => {
+                              // Get the track data based on the format
+                              const track = isArrayTracks ? item : item[1];
+                              
+                              return (
+                                <TableRow 
+                                  key={index}
+                                  sx={{
+                                    '&:nth-of-type(odd)': { bgcolor: 'rgba(134, 97, 193, 0.03)' },
+                                    '&:hover': { bgcolor: 'rgba(134, 97, 193, 0.08)' },
+                                  }}
+                                >
+                                  <TableCell component="th" scope="row" sx={{ py: 1.5 }}>
+                                    {index + 1}
+                                  </TableCell>
+                                  <TableCell sx={{ 
+                                    py: 1.5,
+                                    maxWidth: 0,  // Force truncation
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}>
+                                    {track.name}
+                                  </TableCell>
+                                  <TableCell sx={{ 
+                                    py: 1.5,
+                                    maxWidth: 0,  // Force truncation
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}>
+                                    {track.artist}
+                                  </TableCell>
+                                  <TableCell 
+                                    sx={{ 
+                                      display: { xs: 'none', md: 'table-cell' },
+                                      py: 1.5,
+                                      maxWidth: 0,  // Force truncation
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {track.album}
+                                  </TableCell>
+                                  <TableCell align="right" sx={{ py: 1.5 }}>
+                                    {formatDuration(track.duration)}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            });
+                          })()}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Paper>
+                </Box>
+              ) : (
+                <Paper sx={{ ...styles.paper, textAlign: 'center', py: 6 }}>
+                  <Typography variant="h6" color="text.primary" sx={{ mb: 1 }}>
+                    Select a playlist to view its tracks
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Choose from your Spotify or Apple Music playlists in the sidebar
+                  </Typography>
+                </Paper>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Transfer Dialog */}
+      <Dialog
+        open={showTransferDialog}
+        onClose={closeTransferDialog}
+        PaperProps={{
+          sx: {
+            bgcolor: theme.palette.background.paper,
+            borderRadius: 3,
+            width: '100%',
+            maxWidth: '400px',
+            boxShadow: '0 8px 24px rgba(134, 97, 193, 0.12)',
+          },
+        }}
+      >
+        <DialogTitle sx={{ color: 'text.primary', textAlign: 'center', pt: 3 }}>
+          Transfer Playlist
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                Playlist
+              </Typography>
+              <TextField
+                fullWidth
+                value={selectedPlaylist?.name || ""}
+                disabled
+                variant="outlined"
+                sx={{
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: theme.palette.text.secondary,
+                  }
                 }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleTransfer}
-                disabled={isTransferring}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "#C391F5",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: isTransferring ? "default" : "pointer",
-                  opacity: isTransferring ? 0.8 : 1,
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                Source
+              </Typography>
+              <TextField
+                fullWidth
+                value={selectedPlaylist?.origin || ""}
+                disabled
+                variant="outlined"
+                sx={{
+                  '& .MuiInputBase-input.Mui-disabled': {
+                    WebkitTextFillColor: theme.palette.text.secondary,
+                  }
                 }}
-              >
-                {isTransferring ? "Transferring..." : "Transfer"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Success Popup */}
-      {showSuccessPopup && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#28242E",
-              borderRadius: "8px",
-              padding: "30px 40px",
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-              textAlign: "center",
-            }}
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                Destination
+              </Typography>
+              <FormControl fullWidth>
+                <Select
+                  value={transferDestination}
+                  onChange={(e) => setTransferDestination(e.target.value)}
+                >
+                  <MenuItem value="Spotify">Spotify</MenuItem>
+                  <MenuItem value="Apple Music">Apple Music</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button 
+            onClick={closeTransferDialog} 
+            variant="outlined"
+            sx={{ mr: 1 }}
           >
-            <h2
-              style={{
-                color: "#C391F5",
-                margin: 0,
-                fontSize: "16px",
-              }}
-            >
-              Success
-            </h2>
-          </div>
-        </div>
-      )}
-    </div>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleTransfer} 
+            disabled={isTransferring}
+            variant="contained"
+            sx={styles.continueButton}
+          >
+            {isTransferring ? 'Transferring...' : 'Transfer'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Success Alert */}
+      <Snackbar 
+        open={showSuccessAlert} 
+        autoHideDuration={3000} 
+        onClose={() => setShowSuccessAlert(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setShowSuccessAlert(false)} 
+          severity="success" 
+          sx={{ width: '100%' }}
+        >
+          Playlist transferred successfully!
+        </Alert>
+      </Snackbar>
+    </ThemeProvider>
   );
 }
 
