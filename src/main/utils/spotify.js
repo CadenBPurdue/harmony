@@ -242,17 +242,19 @@ class SpotifyApi {
         if (item && item.track) {
           const track = {
             name: item.track.name || "Unknown Track",
-            artist: item.track.artists && item.track.artists.length > 0 
-              ? item.track.artists[0].name 
-              : "Unknown Artist",
+            artist:
+              item.track.artists && item.track.artists.length > 0
+                ? item.track.artists[0].name
+                : "Unknown Artist",
             album: item.track.album?.name || "Unknown Album",
             duration: item.track.duration_ms || 0,
             // Check if album and images array exists and has entries
-            image: item.track.album && 
-                  item.track.album.images && 
-                  item.track.album.images.length > 0 
-                    ? item.track.album.images[0].url 
-                    : "",
+            image:
+              item.track.album &&
+              item.track.album.images &&
+              item.track.album.images.length > 0
+                ? item.track.album.images[0].url
+                : "",
           };
           playlist.tracks.push(track);
         }
