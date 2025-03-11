@@ -215,28 +215,49 @@ class SpotifyApi {
     }
   }
 
-  static async convertToUniversalFormat(data) {
+  // This is the fixed version of the convertToUniversalFormat static method
+  static convertToUniversalFormat(data) {
+    // First, make sure we have valid data
+    if (!data) {
+      throw new Error("Invalid playlist data received");
+    }
+
     var playlist = {
-      user: data.owner.display_name,
+      user: data.owner?.display_name || "Unknown User",
       origin: "Spotify",
-      name: data.name,
-      number_of_tracks: data.tracks.total,
-      duration: data.duration_ms,
-      description: data.description,
-      image: data.images[0].url,
+      name: data.name || "Untitled Playlist",
+      playlist_id: data.id,
+      number_of_tracks: data.tracks?.total || 0,
+      duration: data.duration_ms || 0,
+      description: data.description || "",
+      // Check if images array exists and has entries before accessing [0]
+      image: data.images && data.images.length > 0 ? data.images[0].url : "",
     };
 
     playlist.tracks = [];
-    data.tracks.items.forEach((item) => {
-      const track = {
-        name: item.track.name,
-        artist: item.track.artists[0].name,
-        album: item.track.album.name,
-        duration: item.track.duration_ms,
-        image: item.track.album.images[0].url,
-      };
-      playlist.tracks.push(track);
-    });
+    // Make sure tracks and items exist before trying to iterate
+    if (data.tracks && Array.isArray(data.tracks.items)) {
+      data.tracks.items.forEach((item) => {
+        // Check if track exists before accessing its properties
+        if (item && item.track) {
+          const track = {
+            name: item.track.name || "Unknown Track",
+            artist: item.track.artists && item.track.artists.length > 0 
+              ? item.track.artists[0].name 
+              : "Unknown Artist",
+            album: item.track.album?.name || "Unknown Album",
+            duration: item.track.duration_ms || 0,
+            // Check if album and images array exists and has entries
+            image: item.track.album && 
+                  item.track.album.images && 
+                  item.track.album.images.length > 0 
+                    ? item.track.album.images[0].url 
+                    : "",
+          };
+          playlist.tracks.push(track);
+        }
+      });
+    }
     return playlist;
   }
 }

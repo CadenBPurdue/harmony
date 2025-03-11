@@ -62,7 +62,7 @@ class AppleMusicApi {
       // Process playlists in batches of 2 with a 1-second delay between batches
       const processedPlaylists = await processBatch(
         playlists,
-        2, // Batch size
+        10, // Batch size
         1000, // 1 second delay between batches
         async (playlist) => {
           try {

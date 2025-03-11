@@ -33,8 +33,8 @@ import {
   CssBaseline,
 } from "@mui/material";
 import { useMediaQuery } from "@mui/material";
-import { ChevronDown, ChevronUp, Menu as MenuIcon } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import { ChevronDown, ChevronUp, Menu as MenuIcon, RefreshCw } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
 import { theme, styles, colors } from "./styles/theme";
 
 // Function to format duration from milliseconds to MM:SS format
@@ -68,6 +68,9 @@ function Homepage() {
   const [appleMusicPlaylists, setAppleMusicPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  
+  // Additional state for polling
+  const [pollingActive, setPollingActive] = useState(false);
 
   // Transfer dialog state
   const [showTransferDialog, setShowTransferDialog] = useState(false);
@@ -78,6 +81,53 @@ function Homepage() {
   // Loading state for both services
   const [loadingSpotify, setLoadingSpotify] = useState(false);
   const [loadingAppleMusic, setLoadingAppleMusic] = useState(false);
+  
+  // Function to poll for updated Apple Music playlists
+  const pollForAppleMusicUpdates = useCallback(() => {
+    if (!pollingActive) return;
+    
+    const checkForUpdates = async () => {
+      try {
+        const playlists = await window.electronAPI.getAppleMusicLibrary(true);
+        
+        // Only update if we get playlists back
+        if (playlists && playlists.length > 0) {
+          setAppleMusicPlaylists(playlists);
+          
+          // If we have a selected Apple Music playlist, update it too
+          if (selectedPlaylist && selectedPlaylist.origin === "Apple Music") {
+            const updatedSelectedPlaylist = playlists.find(
+              p => p.playlist_id === selectedPlaylist.playlist_id
+            );
+            if (updatedSelectedPlaylist && !updatedSelectedPlaylist.isLoading) {
+              setSelectedPlaylist(updatedSelectedPlaylist);
+            }
+          }
+          
+          // Check if all playlists are loaded
+          const allLoaded = playlists.every(playlist => !playlist.isLoading);
+          if (allLoaded) {
+            console.log("[Homepage] All Apple Music playlists loaded, stopping polling");
+            setPollingActive(false);
+          }
+        }
+      } catch (error) {
+        console.error("Error polling for Apple Music updates:", error);
+      }
+      
+      // Continue polling if still active
+      if (pollingActive) {
+        setTimeout(checkForUpdates, 3000); // Check every 3 seconds
+      }
+    };
+    
+    checkForUpdates();
+  }, [pollingActive, selectedPlaylist]);
+  
+  // Start/stop polling when pollingActive changes
+  useEffect(() => {
+    pollForAppleMusicUpdates();
+  }, [pollingActive, pollForAppleMusicUpdates]);
 
   // Open transfer dialog
   const openTransferDialog = () => {
@@ -146,7 +196,13 @@ function Homepage() {
     setLoadingAppleMusic(true);
     window.electronAPI.getAppleMusicLibrary()
       .then((playlists) => {
+        const hasLoadingPlaylists = playlists.some(p => p.isLoading);
         setAppleMusicPlaylists(playlists);
+        
+        // Start polling if any playlists are still loading
+        if (hasLoadingPlaylists) {
+          setPollingActive(true);
+        }
       })
       .catch((error) => {
         console.error("Error fetching Apple Music playlists:", error);
@@ -171,7 +227,7 @@ function Homepage() {
     if (!selectedPlaylist) return false;
     
     // Check if this is an Apple Music playlist (has different structure)
-    if (playlist.origin === "apple music" && selectedPlaylist.origin === "apple music") {
+    if (playlist.origin === "Apple Music" && selectedPlaylist.origin === "Apple Music") {
       return selectedPlaylist.playlist_id === playlist.playlist_id;
     }
     
@@ -186,7 +242,33 @@ function Homepage() {
 
   // Handle playlist click
   const handlePlaylistClick = (playlist) => {
-    setSelectedPlaylist(playlist);
+    // If the playlist is still loading and is from Apple Music, we can try to get the latest version
+    if (playlist.isLoading && playlist.origin === "Apple Music") {
+      window.electronAPI.getAppleMusicPlaylist(playlist.playlist_id)
+        .then(updatedPlaylist => {
+          if (updatedPlaylist && !updatedPlaylist.isLoading) {
+            // Update the selected playlist
+            setSelectedPlaylist(updatedPlaylist);
+            
+            // Also update it in the playlist list
+            setAppleMusicPlaylists(prevPlaylists => 
+              prevPlaylists.map(p => 
+                p.playlist_id === updatedPlaylist.playlist_id ? updatedPlaylist : p
+              )
+            );
+          } else {
+            // If still loading, just set what we have
+            setSelectedPlaylist(playlist);
+          }
+        })
+        .catch(error => {
+          console.error("Error fetching playlist details:", error);
+          setSelectedPlaylist(playlist);
+        });
+    } else {
+      setSelectedPlaylist(playlist);
+    }
+    
     if (isMobile) {
       setMobileDrawerOpen(false);
     }
@@ -199,13 +281,18 @@ function Homepage() {
     setMobileDrawerOpen(open);
   };
 
-  // Common style for playlist items
+  // Updated playlist item style with darker background colors
   const playlistItemStyle = (isSelected) => ({
     pl: 2,
     borderRadius: 1,
     mb: 0.5,
-    '&:hover': { bgcolor: 'rgba(134, 97, 193, 0.1)' },
-    bgcolor: isSelected ? 'rgba(134, 97, 193, 0.2)' : 'transparent'
+    '&:hover': { 
+      bgcolor: 'rgba(134, 97, 193, 0.15)' // amethyst color with 15% opacity for hover
+    },
+    bgcolor: isSelected 
+      ? 'rgba(134, 97, 193, 0.3)' // amethyst color with 30% opacity for selected
+      : 'rgba(134, 97, 193, 0.05)', // light amethyst background for all playlist items
+    transition: 'background-color 0.2s ease'
   });
 
   const renderPlaylistItem = (playlist, index) => (
@@ -220,6 +307,7 @@ function Homepage() {
           color: "text.primary",
           noWrap: true,
           fontSize: 14,
+          fontWeight: isPlaylistSelected(playlist) ? 'medium' : 'regular',
         }}
       />
       {playlist.isLoading && (
@@ -228,6 +316,17 @@ function Homepage() {
     </ListItemButton>
   );
 
+  // Updated dropdown header style to match the new design
+  const dropdownHeaderStyle = {
+    borderRadius: 1, 
+    mb: 1, 
+    bgcolor: colors.amethyst,
+    color: 'white',
+    '&:hover': { 
+      bgcolor: '#8a67c2', // slightly lighter than jet for hover
+    }
+  };
+
   const sidebarContent = (
     <Box sx={{ width: 250, bgcolor: theme.palette.background.paper, height: "100%" }}>
       <List component="nav" sx={{ p: 2 }}>
@@ -235,22 +334,18 @@ function Homepage() {
         <ListItem
           button
           onClick={() => setSpotifyOpen(!spotifyOpen)}
-          sx={{ 
-            borderRadius: 1, 
-            mb: 1, 
-            '&:hover': { bgcolor: 'rgba(134, 97, 193, 0.1)' }
-          }}
+          sx={dropdownHeaderStyle}
         >
           <ListItemText 
             primary="Spotify" 
             primaryTypographyProps={{ 
               fontWeight: "bold", 
-              color: "text.primary" 
+              color: "white" 
             }} 
           />
           {spotifyOpen ? 
-            <ChevronUp color={theme.palette.text.primary} size={18} /> : 
-            <ChevronDown color={theme.palette.text.primary} size={18} />
+            <ChevronUp color="white" size={18} /> : 
+            <ChevronDown color="white" size={18} />
           }
         </ListItem>
         
@@ -272,22 +367,18 @@ function Homepage() {
         <ListItem
           button
           onClick={() => setAppleMusicOpen(!appleMusicOpen)}
-          sx={{ 
-            borderRadius: 1, 
-            mb: 1, 
-            '&:hover': { bgcolor: 'rgba(134, 97, 193, 0.1)' }
-          }}
+          sx={dropdownHeaderStyle}
         >
           <ListItemText 
             primary="Apple Music" 
             primaryTypographyProps={{ 
               fontWeight: "bold", 
-              color: "text.primary" 
+              color: "white" 
             }} 
           />
           {appleMusicOpen ? 
-            <ChevronUp color={theme.palette.text.primary} size={18} /> : 
-            <ChevronDown color={theme.palette.text.primary} size={18} />
+            <ChevronUp color="white" size={18} /> : 
+            <ChevronDown color="white" size={18} />
           }
         </ListItem>
         
