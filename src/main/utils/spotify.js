@@ -19,8 +19,8 @@ class SpotifyApi {
     this.refresh_token = token.refreshToken;
     this.client_id = process.env.SPOTIFY_CLIENT_ID;
     this.client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-    await this.refreshToken();
-    this.tokenHandler(); // token will refresh every 55 minutes
+    //await this.refreshToken();
+    //this.tokenHandler(); // token will refresh every 55 minutes
     this.user_id = await this.getUserId();
   }
 
