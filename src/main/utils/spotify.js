@@ -218,7 +218,7 @@ class SpotifyApi {
 
   static async convertToUniversalFormat(data) {
     var playlist = {
-      id: uuidv4(),
+      id: data.id,
       user: data.owner.display_name,
       origin: "Spotify",
       name: data.name,
