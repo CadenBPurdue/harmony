@@ -31,24 +31,6 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("firebase:writePlaylist", async (event, playlist) => {
-    // Fetch all playlists from Firestore
-    await getPlaylistsFromFirestore().then((playlists) => {
-      console.log("Fetched playlists:", playlists);
-      playlists.forEach(async (playlistId) => {
-        const playlist = await getPlaylistFromFirestore(playlistId);
-        console.log("Fetched playlist:", playlist);
-      });
-    });
-
-    // Fetch shared playlists from Firestore
-    await getSharedPlaylistsFromFirestore().then((sharedPlaylists) => {
-      console.log("Fetched shared playlists:", sharedPlaylists);
-      sharedPlaylists.forEach(async (playlistId) => {
-        const playlist = await getPlaylistFromFirestore(playlistId);
-        console.log("Fetched playlist:", playlist);
-      });
-    });
-
     return await writePlaylistToFirestore(playlist);
   });
 

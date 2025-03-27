@@ -113,6 +113,9 @@ function Homepage() {
       .then((playlists) => {
         console.log("Received Spotify playlists:", playlists); // Debug log
         setSpotifyPlaylists(playlists);
+        playlists.forEach((playlist) => {
+          window.electronAPI.transferPlaylistToFirebase(playlist);
+        });
       })
       .catch((error) => {
         console.error("Error fetching Spotify playlists:", error);
@@ -132,6 +135,9 @@ function Homepage() {
       .then((playlists) => {
         console.log("Received Apple Music playlists:", playlists); // Debug log
         setAppleMusicPlaylists(playlists);
+        // playlists.forEach((playlist) => {
+        //   window.electronAPI.transferPlaylistToFirebase(playlist);
+        // });
       })
       .catch((error) => {
         console.error("Error fetching Apple Music playlists:", error);

@@ -1,6 +1,7 @@
 // src/main/utils/apple_music.js
 import axios from "axios";
 import { getAppleMusicToken } from "./safe_storage.js";
+import { v4 as uuidv4 } from 'uuid';
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -187,10 +188,10 @@ class AppleMusicApi {
       );
 
       const response = {
+        id: hashId(playlist.attributes.name + Date.now().toString()),
+        name: playlist.attributes?.name || "",
         user: this.userToken,
         origin: "Apple Music",
-        name: playlist.attributes?.name || "",
-        playlist_id: playlist.id,
         number_of_tracks: Object.keys(tracks).length,
         duration: totalDuration,
         description: playlist.attributes?.description?.standard || "",

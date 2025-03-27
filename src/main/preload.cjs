@@ -57,6 +57,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("transfer:appleMusic", playlist);
   },
 
+  transferPlaylistToFirebase: (playlist) => {
+    console.log("Calling transferPlaylistToFirebase from preload");
+    return ipcRenderer.invoke("firebase:writePlaylist", playlist);
+  },
+
   // Open external links in the default browser
   openExternal: (url) => {
     console.log("Opening external URL:", url);
