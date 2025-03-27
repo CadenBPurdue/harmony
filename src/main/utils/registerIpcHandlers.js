@@ -34,6 +34,10 @@ export function registerIpcHandlers() {
     return await writePlaylistToFirestore(playlist);
   });
 
+  ipcMain.handle("firebase:getPlaylists", async () => {
+    return await getPlaylistsFromFirestore();
+  });
+
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
     try {
       configManager.setCredentials("spotify", credentials);

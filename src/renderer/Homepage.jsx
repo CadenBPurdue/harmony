@@ -113,8 +113,11 @@ function Homepage() {
       .then((playlists) => {
         console.log("Received Spotify playlists:", playlists); // Debug log
         setSpotifyPlaylists(playlists);
+        const userPlaylists = window.electronAPI.getPlaylistsFromFirestore();
         playlists.forEach((playlist) => {
-          window.electronAPI.transferPlaylistToFirebase(playlist);
+          if (!userPlaylists.includes(playlist)) {
+            window.electronAPI.transferPlaylistToFirebase(playlist);
+          }
         });
       })
       .catch((error) => {
