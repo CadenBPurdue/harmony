@@ -1,7 +1,7 @@
 // src/main/utils/apple_music.js
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 import { getAppleMusicToken } from "./safe_storage.js";
-import { v4 as uuidv4 } from 'uuid';
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

@@ -1,8 +1,8 @@
 // src/main/utils/spotify.js
 import axios from "axios";
 import dotenv from "dotenv";
+import { v4 as uuidv4 } from "uuid";
 import { getSpotifyToken } from "./safe_storage.js";
-import { v4 as uuidv4 } from 'uuid';
 
 class SpotifyApi {
   constructor() {
@@ -214,10 +214,9 @@ class SpotifyApi {
       console.log(error);
       throw new Error("Failed to find song");
     }
-  } 
+  }
 
   static async convertToUniversalFormat(data) {
-
     var playlist = {
       id: uuidv4(),
       user: data.owner.display_name,
