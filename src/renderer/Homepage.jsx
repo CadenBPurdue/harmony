@@ -150,10 +150,11 @@ function Homepage() {
   // Check auth status
   useEffect(() => {
     window.electronAPI.getAuthStatus().then((status) => {
-      if (status.spotify) {
+      console.log("Auth status:", status); // Debug log
+      if (status.isSpotifyAuthenticated) {
         fetchSpotifyPlaylists(); // Fetch Spotify playlists if authenticated
       }
-      if (status.appleMusic) {
+      if (status.isAppleMusicAuthenticated) {
         fetchAppleMusicPlaylists(); // Fetch Apple Music playlists if authenticated
       }
     });
