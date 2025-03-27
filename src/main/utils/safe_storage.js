@@ -81,7 +81,6 @@ function loadEncrypted(filePath) {
       }
 
       const data = JSON.parse(fs.readFileSync(devPath, "utf8"));
-      console.log("[SafeStorage] Successfully loaded data from JSON:", data);
       return data;
     }
 
@@ -99,7 +98,6 @@ function loadEncrypted(filePath) {
     const encryptedData = fs.readFileSync(filePath);
     const decryptedString = safeStorage.decryptString(encryptedData);
     const data = JSON.parse(decryptedString);
-    console.log("[SafeStorage] Successfully loaded data:", data);
     return data;
   } catch (error) {
     console.error("[SafeStorage] Error loading data:", error);
@@ -115,7 +113,6 @@ export function setSpotifyToken(token) {
 export function getSpotifyToken() {
   console.log("[SafeStorage] Getting Spotify token");
   const token = loadEncrypted(spotifyPath);
-  console.log("[SafeStorage] Retrieved Spotify token:", token);
   return token;
 }
 
@@ -140,7 +137,6 @@ export function setAppleMusicToken(token) {
 export function getAppleMusicToken() {
   console.log("[SafeStorage] Getting Apple Music token");
   const token = loadEncrypted(appleMusicPath);
-  console.log("[SafeStorage] Retrieved Apple Music token:", token);
   return token;
 }
 
@@ -165,7 +161,6 @@ export function setGoogleToken(token) {
 export function getGoogleToken() {
   console.log("[SafeStorage] Getting Google token");
   const token = loadEncrypted(path.join(storagePath, "google.enc"));
-  console.log("[SafeStorage] Retrieved Google token:", token);
   return token;
 }
 

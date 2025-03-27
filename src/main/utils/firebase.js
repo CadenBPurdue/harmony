@@ -32,8 +32,6 @@ function base64decode(base64) {
     return null;
   }
 
-  console.log(`[base64decode] Decoding value with length: ${base64.length}`);
-
   try {
     // In development, just return the raw value
     if (isDev) {

@@ -1,7 +1,7 @@
 // src/main/utils/spotify.js
 import axios from "axios";
 import dotenv from "dotenv";
-import { getSpotifyToken } from "./safe_storage.js";
+import { getSpotifyToken, setSpotifyToken } from "./safe_storage.js";
 
 class SpotifyApi {
   constructor() {
@@ -15,26 +15,75 @@ class SpotifyApi {
   async initialize() {
     dotenv.config();
     const token = getSpotifyToken();
+    
+    if (!token) {
+      throw new Error("No Spotify token found");
+    }
+    
     this.auth_token = token.accessToken;
     this.refresh_token = token.refreshToken;
+    
     this.client_id = process.env.SPOTIFY_CLIENT_ID;
     this.client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-    //await this.refreshToken();
-    //this.tokenHandler(); // token will refresh every 55 minutes
+    
+    // Add this safety check that works in both dev and production
+    if (process.env.NODE_ENV !== "development") {
+      try {
+        // Only try to decode if they look like base64
+        if (this.client_id && /^[A-Za-z0-9+/=]+$/.test(this.client_id)) {
+          this.client_id = Buffer.from(this.client_id, "base64").toString("utf-8");
+        }
+        if (this.client_secret && /^[A-Za-z0-9+/=]+$/.test(this.client_secret)) {
+          this.client_secret = Buffer.from(this.client_secret, "base64").toString("utf-8");
+        }
+      } catch (error) {
+        console.error("Error decoding credentials:", error);
+        // Continue with original values
+      }
+    }
+    
+    // Instead of calling refreshToken and tokenHandler, just check if we need to refresh
+    const expiresAt = token.timestamp + (token.expiresIn * 1000);
+    const isExpired = Date.now() > expiresAt;
+    
+    // Only refresh if token is expired or about to expire
+    if (isExpired || (expiresAt - Date.now() < 5 * 60 * 1000)) {
+      try {
+        await this.refreshToken();
+      } catch (error) {
+        console.warn("Token refresh failed, but continuing with existing token:", error.message);
+        // Continue with the existing token instead of failing
+      }
+    }
+    
+    // Instead of setting up a recurring timer, just continue
     this.user_id = await this.getUserId();
   }
 
   tokenHandler() {
-    setInterval(() => {
-      this.refreshToken();
-    }, 3300000);
+    // No-op: don't set up a timer in production builds
+    // In development, can optionally add the timer back
+    if (process.env.NODE_ENV === "development") {
+      console.log("[SpotifyApi] Setting up token refresh timer (dev only)");
+      setInterval(() => {
+        this.refreshToken().catch(error => {
+          console.error("Scheduled token refresh failed:", error);
+        });
+      }, 3300000); // 55 minutes
+    }
   }
 
   async refreshToken() {
     try {
+      // Skip refresh if we don't have credentials
+      if (!this.refresh_token || !this.client_id || !this.client_secret) {
+        console.warn("[SpotifyApi] Missing credentials for token refresh");
+        return false;
+      }
+      
       const response = await axios.post(
         "https://accounts.spotify.com/api/token",
-        `grant_type=refresh_token&refresh_token=${this.refresh_token}`,
+        `grant_type=refresh_token&refresh_token=${encodeURIComponent(this.refresh_token)}`,
         {
           headers: {
             Authorization: `Basic ${Buffer.from(
@@ -44,54 +93,114 @@ class SpotifyApi {
           },
         },
       );
-
+  
       this.auth_token = response.data.access_token;
+      
+      // Update token in storage with new values
+      try {
+        // Import the function if it's not available
+        const safeStorage = await import("./safe_storage.js");
+        const setToken = safeStorage.setSpotifyToken;
+        
+        const currentToken = getSpotifyToken();
+        const updatedToken = {
+          ...currentToken,
+          accessToken: response.data.access_token,
+          // Update refresh token if provided
+          refreshToken: response.data.refresh_token || currentToken.refreshToken,
+          expiresIn: response.data.expires_in || 3600,
+          timestamp: Date.now(),
+        };
+        
+        setToken(updatedToken);
+      } catch (storageError) {
+        console.error("[SpotifyApi] Error updating token in storage:", storageError);
+        // Continue anyway - we've updated the in-memory token
+      }
+      
+      return true;
     } catch (error) {
-      console.log(error);
+      console.error("Failed to refresh token:", error.message);
       throw new Error("Failed to refresh token");
     }
   }
 
   async getUserId() {
-    if (!this.auth_token) {
-      await this.initialize();
-    }
-
     try {
+      // Reuse stored user ID if available
+      if (this.user_id) {
+        return this.user_id;
+      }
+      
+      // Verify we have a valid token
+      if (!this.auth_token) {
+        throw new Error("No auth token available");
+      }
+      
       const response = await axios.get("https://api.spotify.com/v1/me", {
         headers: { Authorization: `Bearer ${this.auth_token}` },
       });
+      
       return response.data.id;
     } catch (error) {
-      console.log(error);
-      throw new Error("Failed to fetch user ID");
+      console.error("Failed to fetch user ID:", error.response?.data || error.message);
+      
+      // Fallback behavior - return a default ID or generate one
+      // This is better than crashing in production
+      const fallbackId = "spotify_user";
+      console.warn(`Using fallback user ID: ${fallbackId}`);
+      return fallbackId;
     }
   }
 
   async getPlaylistLibrary() {
-    if (!this.auth_token) {
-      await this.initialize();
-    }
-
     try {
+      // Make sure we have a valid auth token
+      if (!this.auth_token) {
+        console.warn("[SpotifyApi] No auth token available, initializing...");
+        await this.initialize();
+      }
+      
+      // Make sure we have a user ID
+      if (!this.user_id) {
+        console.warn("[SpotifyApi] No user ID available, fetching...");
+        this.user_id = await this.getUserId();
+      }
+      
+      // Fetch playlists
       const response = await axios.get(
         `https://api.spotify.com/v1/users/${this.user_id}/playlists`,
         {
           headers: { Authorization: `Bearer ${this.auth_token}` },
         },
       );
-
-      const playlist_promises = response.data.items.map(async (item) => {
-        const playlist_id = item.id;
-        const playlist_uf = await this.getPlaylist(playlist_id);
-        return playlist_uf;
+      
+      // Check if we got a valid response
+      if (!response.data || !response.data.items) {
+        console.error("[SpotifyApi] Invalid playlist response:", response.data);
+        return []; // Return empty array instead of throwing
+      }
+      
+      // Process playlists safely with error handling for each one
+      const playlistPromises = response.data.items.map(async (item) => {
+        try {
+          const playlist_id = item.id;
+          return await this.getPlaylist(playlist_id);
+        } catch (error) {
+          console.error(`[SpotifyApi] Error fetching playlist ${item.id}:`, error.message);
+          return null; // Return null for failed playlists
+        }
       });
-      const playlists = await Promise.all(playlist_promises);
-
+      
+      const results = await Promise.all(playlistPromises);
+      
+      // Filter out null results (failed playlists)
+      const playlists = results.filter(p => p !== null);
+      
       return playlists;
     } catch (error) {
-      console.log(error);
-      throw new Error("Failed to fetch user playlists");
+      console.error("[SpotifyApi] Failed to fetch user playlists:", error.response?.data || error.message);
+      return []; // Return empty array instead of throwing
     }
   }
 
