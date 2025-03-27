@@ -55,16 +55,20 @@ const Router = () => {
 
   console.log(
     "[Router] Creating routes with auth status:",
-    (authStatus.isGoogleAuthenticated && (authStatus.isSpotifyAuthenticated || authStatus.isAppleAuthenticated)),
+    authStatus.isGoogleAuthenticated &&
+      (authStatus.isSpotifyAuthenticated || authStatus.isAppleAuthenticated),
   );
   const router = createHashRouter([
     {
       path: "/",
-      element: (authStatus.isGoogleAuthenticated && (authStatus.isSpotifyAuthenticated || authStatus.isAppleAuthenticated)) ? (
-        <Homepage />
-      ) : (
-        <Navigate to="/create-account" />
-      ),
+      element:
+        authStatus.isGoogleAuthenticated &&
+        (authStatus.isSpotifyAuthenticated ||
+          authStatus.isAppleAuthenticated) ? (
+          <Homepage />
+        ) : (
+          <Navigate to="/create-account" />
+        ),
       errorElement: <ErrorBoundary />,
     },
     {

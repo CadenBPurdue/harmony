@@ -28,7 +28,7 @@ function createWindow() {
       preload: path.join(__dirname, "preload.cjs"),
       webSecurity: true,
     },
-    devTools: true
+    devTools: true,
   });
 
   if (process.env.NODE_ENV === "development") {
