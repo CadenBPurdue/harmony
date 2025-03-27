@@ -22,6 +22,11 @@ const Router = () => {
         setAuthStatus(status);
         setIsLoading(false);
 
+        // Attempt to connect to Firebase if Google is authenticated
+        if (status.isGoogleAuthenticated) {
+          await window.electronAPI.connectFirebase();
+        }
+
         // Set window size based on authentication
         if (window.electronAPI.setWindowMode) {
           await window.electronAPI.setWindowMode(!status.isGoogleAuthenticated);
@@ -50,12 +55,12 @@ const Router = () => {
 
   console.log(
     "[Router] Creating routes with auth status:",
-    authStatus.isGoogleAuthenticated,
+    (authStatus.isGoogleAuthenticated && (authStatus.isSpotifyAuthenticated || authStatus.isAppleAuthenticated)),
   );
   const router = createHashRouter([
     {
       path: "/",
-      element: authStatus.isGoogleAuthenticated ? (
+      element: (authStatus.isGoogleAuthenticated && (authStatus.isSpotifyAuthenticated || authStatus.isAppleAuthenticated)) ? (
         <Homepage />
       ) : (
         <Navigate to="/create-account" />
