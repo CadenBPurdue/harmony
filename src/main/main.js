@@ -28,7 +28,12 @@ function createWindow() {
       preload: path.join(__dirname, "preload.cjs"),
       webSecurity: true,
     },
+    devTools: true,
   });
+
+  if (process.env.NODE_ENV === "development") {
+    window.webContents.openDevTools();
+  }
 
   // Apply CSP headers
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
