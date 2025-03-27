@@ -103,8 +103,8 @@ function Homepage() {
     }
   };
 
-  // Fetch Spotify playlists from the backend
-  useEffect(() => {
+  // Function to fetch Spotify playlists from the backend
+  const fetchSpotifyPlaylists = () => {
     console.log("Fetching Spotify playlists..."); // Debug log
     setLoadingSpotify(true); // Set loading state to true before fetching
 
@@ -123,10 +123,10 @@ function Homepage() {
       .finally(() => {
         setLoadingSpotify(false); // Set loading state to false after fetching
       });
-  }, []);
+  };
 
-  // Fetch Apple Music playlists from the backend
-  useEffect(() => {
+  // Function to fetch Apple Music playlists from the backend
+  const fetchAppleMusicPlaylists = () => {
     console.log("Fetching Apple Music playlists..."); // Debug log
     setLoadingAppleMusic(true); // Set loading state to true before fetching
 
@@ -145,6 +145,18 @@ function Homepage() {
       .finally(() => {
         setLoadingAppleMusic(false); // Set loading state to false after fetching
       });
+  };
+
+  // Check auth status
+  useEffect(() => {
+    window.electronAPI.getAuthStatus().then((status) => {
+      if (status.spotify) {
+        fetchSpotifyPlaylists(); // Fetch Spotify playlists if authenticated
+      }
+      if (status.appleMusic) {
+        fetchAppleMusicPlaylists(); // Fetch Apple Music playlists if authenticated
+      }
+    });
   }, []);
 
   // Handle playlist click
