@@ -12,6 +12,8 @@
     "test": "vitest",
     "electron:build:arm64": "electron-builder --arm64",
     "electron:build:x64": "electron-builder --x64",
+    "electron:build:mac": "electron-builder --mac",
+    "electron:build:mac:signed": "CSC_NAME='Caden Brennan (XMN64AZANC)' electron-builder --mac",
     "lint": "npx eslint .",
     "lint:fix": "npx eslint . --fix"
   },
@@ -44,6 +46,7 @@
     "@babel/eslint-parser": "^7.26.5",
     "@babel/preset-react": "^7.26.3",
     "@electron-forge/publisher-github": "^7.6.1",
+    "@electron/notarize": "^3.0.1",
     "@eslint/js": "^9.19.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
@@ -62,7 +65,7 @@
     "vitest": "^3.0.3"
   },
   "build": {
-    "appId": "harmony",
+    "appId": "com.harmony.desktop",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "productName": "harmony",
     "files": [
@@ -81,7 +84,13 @@
       "target": [
         "dmg"
       ],
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "identity": "Caden Brennan (XMN64AZANC)",
+      "notarize": false
     },
     "linux": {
       "target": [
