@@ -112,7 +112,7 @@ function Homepage() {
       .then((playlists) => {
         setSpotifyPlaylists(playlists);
         playlists.forEach((playlist) => {
-            window.electronAPI.transferPlaylistToFirebase(playlist);
+          window.electronAPI.transferPlaylistToFirebase(playlist);
         });
       })
       .catch((error) => {
