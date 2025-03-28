@@ -609,7 +609,7 @@ function Homepage() {
           }}
         >
           <h1 style={{ color: "white", margin: "0" }}>Harmony</h1>
-          
+
           {/* User button and dropdown */}
           <div style={{ position: "relative" }}>
             <button
@@ -631,7 +631,7 @@ function Homepage() {
             >
               <span>👤</span>
             </button>
-            
+
             {/* User dropdown menu */}
             {userDropdownOpen && (
               <div
@@ -662,8 +662,12 @@ function Homepage() {
                       borderBottom: "1px solid #444",
                       transition: "background-color 0.2s",
                     }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#3E3847"}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#3E3847")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
                   >
                     User Info
                   </li>
@@ -676,8 +680,12 @@ function Homepage() {
                       borderBottom: "1px solid #444",
                       transition: "background-color 0.2s",
                     }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#3E3847"}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#3E3847")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
                   >
                     Settings
                   </li>
@@ -689,8 +697,12 @@ function Homepage() {
                       cursor: "pointer",
                       transition: "background-color 0.2s",
                     }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#3E3847"}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#3E3847")
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
                   >
                     Friends
                   </li>
