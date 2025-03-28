@@ -108,10 +108,10 @@ function createWindow() {
   );
 
   // Handle window close event specifically for macOS
-  window.on('close', (event) => {
+  window.on("close", (event) => {
     console.log("[Window] Close event triggered");
     // Force the app to quit completely when window is closed
-    if (process.platform === 'darwin') {
+    if (process.platform === "darwin") {
       app.quit();
     }
   });
@@ -156,7 +156,7 @@ app.on("activate", () => {
 });
 
 // Additional explicit quit handler for macOS
-app.on('before-quit', () => {
+app.on("before-quit", () => {
   console.log("[App] Application will quit");
   // You can add cleanup code here if needed
 });
