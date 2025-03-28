@@ -25,9 +25,24 @@ function Homepage() {
   const [isTransferring, setIsTransferring] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
+  // User dropdown state
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState("main"); // main, userInfo, settings, friends
+
   // Loading state for both services
   const [loadingSpotify, setLoadingSpotify] = useState(false);
   const [loadingAppleMusic, setLoadingAppleMusic] = useState(false);
+
+  // Toggle user dropdown
+  const toggleUserDropdown = () => {
+    setUserDropdownOpen(!userDropdownOpen);
+  };
+
+  // Navigate to a page
+  const navigateTo = (page) => {
+    setCurrentPage(page);
+    setUserDropdownOpen(false); // Close the dropdown after selection
+  };
 
   // Open transfer popup
   const openTransferPopup = () => {
@@ -161,6 +176,7 @@ function Homepage() {
   // Handle playlist click
   const handlePlaylistClick = (playlist) => {
     setSelectedPlaylist(playlist); // Set the selected playlist
+    setCurrentPage("main"); // Return to main content when selecting a playlist
   };
 
   // Get available playlists based on the source
@@ -168,6 +184,289 @@ function Homepage() {
     return selectedPlaylist?.origin === "Spotify"
       ? spotifyPlaylists
       : appleMusicPlaylists;
+  };
+
+  // Render different pages based on currentPage state
+  const renderPage = () => {
+    switch (currentPage) {
+      case "userInfo":
+        return (
+          <div style={{ padding: "20px", color: "white" }}>
+            <h2>User Information</h2>
+            <p>This is the user information page.</p>
+            <button
+              onClick={() => setCurrentPage("main")}
+              style={{
+                backgroundColor: "#C391F5",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                padding: "8px 16px",
+                fontSize: "14px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                marginTop: "20px",
+              }}
+            >
+              Back to Main
+            </button>
+          </div>
+        );
+      case "settings":
+        return (
+          <div style={{ padding: "20px", color: "white" }}>
+            <h2>Settings</h2>
+            <p>This is the settings page.</p>
+            <button
+              onClick={() => setCurrentPage("main")}
+              style={{
+                backgroundColor: "#C391F5",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                padding: "8px 16px",
+                fontSize: "14px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                marginTop: "20px",
+              }}
+            >
+              Back to Main
+            </button>
+          </div>
+        );
+      case "friends":
+        return (
+          <div style={{ padding: "20px", color: "white" }}>
+            <h2>Friends</h2>
+            <p>This is the friends page.</p>
+            <button
+              onClick={() => setCurrentPage("main")}
+              style={{
+                backgroundColor: "#C391F5",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                padding: "8px 16px",
+                fontSize: "14px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                marginTop: "20px",
+              }}
+            >
+              Back to Main
+            </button>
+          </div>
+        );
+      default:
+        return (
+          <div
+            style={{
+              padding: "0 20px 20px 20px",
+              overflowY: "auto",
+              flex: 1,
+            }}
+          >
+            {selectedPlaylist ? (
+              <div>
+                {/* Header with playlist info and transfer button */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <h2 style={{ color: "white", marginBottom: "5px" }}>
+                      {selectedPlaylist.name}
+                    </h2>
+                    <p style={{ color: "white", margin: "0" }}>
+                      User: {selectedPlaylist.user}
+                    </p>
+                  </div>
+                  {isTransferring ? (
+                    <div
+                      style={{
+                        color: "white",
+                        backgroundColor: "#C391F5",
+                        padding: "8px 16px",
+                        borderRadius: "4px",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Transferring...
+                    </div>
+                  ) : (
+                    <button
+                      onClick={openTransferPopup}
+                      style={{
+                        backgroundColor: "#C391F5",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "8px 16px",
+                        fontSize: "14px",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                        transition: "background-color 0.3s",
+                      }}
+                    >
+                      Transfer
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ overflowX: "auto", marginTop: "20px" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th
+                          style={{
+                            padding: "8px 16px",
+                            color: "white",
+                            position: "sticky",
+                            top: 0,
+                            backgroundColor: "#3E3847",
+                            textAlign: "left",
+                          }}
+                        >
+                          #
+                        </th>
+                        <th
+                          style={{
+                            padding: "8px 16px",
+                            color: "white",
+                            position: "sticky",
+                            top: 0,
+                            backgroundColor: "#3E3847",
+                            textAlign: "left",
+                          }}
+                        >
+                          Song
+                        </th>
+                        <th
+                          style={{
+                            padding: "8px 16px",
+                            color: "white",
+                            position: "sticky",
+                            top: 0,
+                            backgroundColor: "#3E3847",
+                            textAlign: "left",
+                          }}
+                        >
+                          Artist
+                        </th>
+                        <th
+                          style={{
+                            padding: "8px 16px",
+                            color: "white",
+                            position: "sticky",
+                            top: 0,
+                            backgroundColor: "#3E3847",
+                            textAlign: "left",
+                          }}
+                        >
+                          Album
+                        </th>
+                        <th
+                          style={{
+                            padding: "8px 16px",
+                            color: "white",
+                            position: "sticky",
+                            top: 0,
+                            backgroundColor: "#3E3847",
+                            textAlign: "right",
+                          }}
+                        >
+                          Duration
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.isArray(selectedPlaylist.tracks) ? (
+                        selectedPlaylist.tracks.map((track, index) => (
+                          <tr
+                            key={index}
+                            style={{
+                              backgroundColor:
+                                index % 2 === 0 ? "#36323A" : "transparent",
+                              transition: "background-color 0.2s",
+                            }}
+                          >
+                            <td
+                              style={{
+                                padding: "8px 16px",
+                                color: "#aaa",
+                                textAlign: "left",
+                              }}
+                            >
+                              {index + 1}
+                            </td>
+                            <td
+                              style={{
+                                padding: "8px 16px",
+                                color: "white",
+                                textAlign: "left",
+                              }}
+                            >
+                              {track.name}
+                            </td>
+                            <td
+                              style={{
+                                padding: "8px 16px",
+                                color: "#aaa",
+                                textAlign: "left",
+                              }}
+                            >
+                              {track.artist}
+                            </td>
+                            <td
+                              style={{
+                                padding: "8px 16px",
+                                color: "#aaa",
+                                textAlign: "left",
+                              }}
+                            >
+                              {track.album}
+                            </td>
+                            <td
+                              style={{
+                                padding: "8px 16px",
+                                color: "#aaa",
+                                textAlign: "right",
+                              }}
+                            >
+                              {formatDuration(track.duration)}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            style={{
+                              padding: "16px",
+                              color: "white",
+                              textAlign: "center",
+                            }}
+                          >
+                            No tracks available
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <p style={{ color: "white" }}>
+                Select a playlist to view its tracks
+              </p>
+            )}
+          </div>
+        );
+    }
   };
 
   return (
@@ -299,216 +598,110 @@ function Homepage() {
           flexDirection: "column",
         }}
       >
-        <h1 style={{ color: "white", padding: "0 20px", margin: "20px 0" }}>
-          Harmony
-        </h1>
-
-        {/* Scrollable content area */}
+        {/* Header with app title and user button */}
         <div
           style={{
-            padding: "0 20px 20px 20px",
-            overflowY: "auto",
-            flex: 1,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "0 20px",
+            height: "60px",
           }}
         >
-          {selectedPlaylist ? (
-            <div>
-              {/* Header with playlist info and transfer button */}
+          <h1 style={{ color: "white", margin: "0" }}>Harmony</h1>
+          
+          {/* User button and dropdown */}
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={toggleUserDropdown}
+              style={{
+                backgroundColor: "#C391F5",
+                color: "white",
+                border: "none",
+                borderRadius: "50%",
+                width: "40px",
+                height: "40px",
+                fontSize: "16px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <span>👤</span>
+            </button>
+            
+            {/* User dropdown menu */}
+            {userDropdownOpen && (
               <div
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
+                  position: "absolute",
+                  top: "45px",
+                  right: "0",
+                  backgroundColor: "#28242E",
+                  borderRadius: "4px",
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+                  width: "150px",
+                  zIndex: 1000,
                 }}
               >
-                <div>
-                  <h2 style={{ color: "white", marginBottom: "5px" }}>
-                    {selectedPlaylist.name}
-                  </h2>
-                  <p style={{ color: "white", margin: "0" }}>
-                    User: {selectedPlaylist.user}
-                  </p>
-                </div>
-                {isTransferring ? (
-                  <div
+                <ul
+                  style={{
+                    listStyleType: "none",
+                    padding: "0",
+                    margin: "0",
+                  }}
+                >
+                  <li
+                    onClick={() => navigateTo("userInfo")}
                     style={{
+                      padding: "10px 15px",
                       color: "white",
-                      backgroundColor: "#C391F5",
-                      padding: "8px 16px",
-                      borderRadius: "4px",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Transferring...
-                  </div>
-                ) : (
-                  <button
-                    onClick={openTransferPopup}
-                    style={{
-                      backgroundColor: "#C391F5",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      padding: "8px 16px",
-                      fontSize: "14px",
-                      fontWeight: "bold",
                       cursor: "pointer",
-                      transition: "background-color 0.3s",
+                      borderBottom: "1px solid #444",
+                      transition: "background-color 0.2s",
                     }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#3E3847"}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                   >
-                    Transfer
-                  </button>
-                )}
+                    User Info
+                  </li>
+                  <li
+                    onClick={() => navigateTo("settings")}
+                    style={{
+                      padding: "10px 15px",
+                      color: "white",
+                      cursor: "pointer",
+                      borderBottom: "1px solid #444",
+                      transition: "background-color 0.2s",
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#3E3847"}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                  >
+                    Settings
+                  </li>
+                  <li
+                    onClick={() => navigateTo("friends")}
+                    style={{
+                      padding: "10px 15px",
+                      color: "white",
+                      cursor: "pointer",
+                      transition: "background-color 0.2s",
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = "#3E3847"}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                  >
+                    Friends
+                  </li>
+                </ul>
               </div>
-
-              <div style={{ overflowX: "auto", marginTop: "20px" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr>
-                      <th
-                        style={{
-                          padding: "8px 16px",
-                          color: "white",
-                          position: "sticky",
-                          top: 0,
-                          backgroundColor: "#3E3847",
-                          textAlign: "left",
-                        }}
-                      >
-                        #
-                      </th>
-                      <th
-                        style={{
-                          padding: "8px 16px",
-                          color: "white",
-                          position: "sticky",
-                          top: 0,
-                          backgroundColor: "#3E3847",
-                          textAlign: "left",
-                        }}
-                      >
-                        Song
-                      </th>
-                      <th
-                        style={{
-                          padding: "8px 16px",
-                          color: "white",
-                          position: "sticky",
-                          top: 0,
-                          backgroundColor: "#3E3847",
-                          textAlign: "left",
-                        }}
-                      >
-                        Artist
-                      </th>
-                      <th
-                        style={{
-                          padding: "8px 16px",
-                          color: "white",
-                          position: "sticky",
-                          top: 0,
-                          backgroundColor: "#3E3847",
-                          textAlign: "left",
-                        }}
-                      >
-                        Album
-                      </th>
-                      <th
-                        style={{
-                          padding: "8px 16px",
-                          color: "white",
-                          position: "sticky",
-                          top: 0,
-                          backgroundColor: "#3E3847",
-                          textAlign: "right",
-                        }}
-                      >
-                        Duration
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.isArray(selectedPlaylist.tracks) ? (
-                      selectedPlaylist.tracks.map((track, index) => (
-                        <tr
-                          key={index}
-                          style={{
-                            backgroundColor:
-                              index % 2 === 0 ? "#36323A" : "transparent",
-                            transition: "background-color 0.2s",
-                          }}
-                        >
-                          <td
-                            style={{
-                              padding: "8px 16px",
-                              color: "#aaa",
-                              textAlign: "left",
-                            }}
-                          >
-                            {index + 1}
-                          </td>
-                          <td
-                            style={{
-                              padding: "8px 16px",
-                              color: "white",
-                              textAlign: "left",
-                            }}
-                          >
-                            {track.name}
-                          </td>
-                          <td
-                            style={{
-                              padding: "8px 16px",
-                              color: "#aaa",
-                              textAlign: "left",
-                            }}
-                          >
-                            {track.artist}
-                          </td>
-                          <td
-                            style={{
-                              padding: "8px 16px",
-                              color: "#aaa",
-                              textAlign: "left",
-                            }}
-                          >
-                            {track.album}
-                          </td>
-                          <td
-                            style={{
-                              padding: "8px 16px",
-                              color: "#aaa",
-                              textAlign: "right",
-                            }}
-                          >
-                            {formatDuration(track.duration)}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan={5}
-                          style={{
-                            padding: "16px",
-                            color: "white",
-                            textAlign: "center",
-                          }}
-                        >
-                          No tracks available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ) : (
-            <p style={{ color: "white" }}>
-              Select a playlist to view its tracks
-            </p>
-          )}
+            )}
+          </div>
         </div>
+
+        {/* Content area - changes based on currentPage */}
+        {renderPage()}
       </div>
 
       {/* Transfer Popup */}
@@ -638,7 +831,7 @@ function Homepage() {
                       backgroundColor: "#3E3847",
                       border: "1px solid #444",
                       borderRadius: "4px",
-                      listStyle: "none",
+                      listStyleType: "none",
                       padding: 0,
                       margin: 0,
                       zIndex: 10,
