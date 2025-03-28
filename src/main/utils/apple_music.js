@@ -91,11 +91,11 @@ class AppleMusicApi {
             );
 
             return {
+              id: playlist.id,
+              name: playlist.attributes?.name || "",
               user: "", // update this
               origin: "Apple Music",
-              name: playlist.attributes?.name || "",
-              playlist_id: playlist.id,
-              number_of_tracks: Object.keys(tracks).length,
+              numberOfTracks: Object.keys(tracks).length,
               duration: totalDuration,
               description: playlist.attributes?.description?.standard || "",
               image:
@@ -104,6 +104,7 @@ class AppleMusicApi {
                   "300x300",
                 ) || "",
               tracks: tracks,
+              sharedWith: [],
             };
           } catch (error) {
             console.error(
@@ -188,17 +189,18 @@ class AppleMusicApi {
       );
 
       const response = {
-        id: hashId(playlist.attributes.name + Date.now().toString()),
+        id: playlist.id,
         name: playlist.attributes?.name || "",
         user: this.userToken,
         origin: "Apple Music",
-        number_of_tracks: Object.keys(tracks).length,
+        numberOfTracks: Object.keys(tracks).length,
         duration: totalDuration,
         description: playlist.attributes?.description?.standard || "",
         image:
           playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") ||
           "",
         tracks: tracks,
+        sharedWith: [],
       };
 
       return response;

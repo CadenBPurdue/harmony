@@ -34,6 +34,10 @@ export function registerIpcHandlers() {
     return await writePlaylistToFirestore(playlist);
   });
 
+  ipcMain.handle("firebase:getPlaylist", async (event, playlistId) => {
+    return await getPlaylistFromFirestore(playlistId);
+  });
+
   ipcMain.handle("firebase:getPlaylists", async () => {
     return await getPlaylistsFromFirestore();
   });

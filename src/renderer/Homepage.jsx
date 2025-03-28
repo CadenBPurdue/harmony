@@ -105,19 +105,14 @@ function Homepage() {
 
   // Function to fetch Spotify playlists from the backend
   const fetchSpotifyPlaylists = () => {
-    console.log("Fetching Spotify playlists..."); // Debug log
     setLoadingSpotify(true); // Set loading state to true before fetching
 
     window.electronAPI
       .getSpotifyLibrary()
       .then((playlists) => {
-        console.log("Received Spotify playlists:", playlists); // Debug log
         setSpotifyPlaylists(playlists);
-        const userPlaylists = window.electronAPI.getPlaylistsFromFirestore();
         playlists.forEach((playlist) => {
-          if (!userPlaylists.includes(playlist)) {
             window.electronAPI.transferPlaylistToFirebase(playlist);
-          }
         });
       })
       .catch((error) => {
@@ -138,9 +133,9 @@ function Homepage() {
       .then((playlists) => {
         console.log("Received Apple Music playlists:", playlists); // Debug log
         setAppleMusicPlaylists(playlists);
-        // playlists.forEach((playlist) => {
-        //   window.electronAPI.transferPlaylistToFirebase(playlist);
-        // });
+        playlists.forEach((playlist) => {
+          window.electronAPI.transferPlaylistToFirebase(playlist);
+        });
       })
       .catch((error) => {
         console.error("Error fetching Apple Music playlists:", error);
