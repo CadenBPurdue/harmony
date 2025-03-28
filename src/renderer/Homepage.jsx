@@ -103,16 +103,17 @@ function Homepage() {
     }
   };
 
-  // Fetch Spotify playlists from the backend
-  useEffect(() => {
-    console.log("Fetching Spotify playlists..."); // Debug log
+  // Function to fetch Spotify playlists from the backend
+  const fetchSpotifyPlaylists = () => {
     setLoadingSpotify(true); // Set loading state to true before fetching
 
     window.electronAPI
       .getSpotifyLibrary()
       .then((playlists) => {
-        console.log("Received Spotify playlists:", playlists); // Debug log
         setSpotifyPlaylists(playlists);
+        playlists.forEach((playlist) => {
+          window.electronAPI.transferPlaylistToFirebase(playlist);
+        });
       })
       .catch((error) => {
         console.error("Error fetching Spotify playlists:", error);
@@ -120,10 +121,10 @@ function Homepage() {
       .finally(() => {
         setLoadingSpotify(false); // Set loading state to false after fetching
       });
-  }, []);
+  };
 
-  // Fetch Apple Music playlists from the backend
-  useEffect(() => {
+  // Function to fetch Apple Music playlists from the backend
+  const fetchAppleMusicPlaylists = () => {
     console.log("Fetching Apple Music playlists..."); // Debug log
     setLoadingAppleMusic(true); // Set loading state to true before fetching
 
@@ -132,6 +133,9 @@ function Homepage() {
       .then((playlists) => {
         console.log("Received Apple Music playlists:", playlists); // Debug log
         setAppleMusicPlaylists(playlists);
+        playlists.forEach((playlist) => {
+          window.electronAPI.transferPlaylistToFirebase(playlist);
+        });
       })
       .catch((error) => {
         console.error("Error fetching Apple Music playlists:", error);
@@ -139,6 +143,19 @@ function Homepage() {
       .finally(() => {
         setLoadingAppleMusic(false); // Set loading state to false after fetching
       });
+  };
+
+  // Check auth status
+  useEffect(() => {
+    window.electronAPI.getAuthStatus().then((status) => {
+      console.log("Auth status:", status); // Debug log
+      if (status.isSpotifyAuthenticated) {
+        fetchSpotifyPlaylists(); // Fetch Spotify playlists if authenticated
+      }
+      if (status.isAppleMusicAuthenticated) {
+        fetchAppleMusicPlaylists(); // Fetch Apple Music playlists if authenticated
+      }
+    });
   }, []);
 
   // Handle playlist click

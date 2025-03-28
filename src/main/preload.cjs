@@ -57,6 +57,21 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("transfer:appleMusic", playlist);
   },
 
+  transferPlaylistToFirebase: (playlist) => {
+    console.log("Calling transferPlaylistToFirebase from preload");
+    return ipcRenderer.invoke("firebase:writePlaylist", playlist);
+  },
+
+  getPlaylistsFromFirebase: () => {
+    console.log("Calling getPlaylistFromFirebase from preload");
+    return ipcRenderer.invoke("firebase:getPlaylist");
+  },
+
+  getPlaylistFromFirebase: (id) => {
+    console.log("Calling getPlaylistFromFirebase from preload");
+    return ipcRenderer.invoke("firebase:getPlaylist", id);
+  },
+
   // Open external links in the default browser
   openExternal: (url) => {
     console.log("Opening external URL:", url);

@@ -1,6 +1,7 @@
 // src/main/utils/spotify.js
 import axios from "axios";
 import dotenv from "dotenv";
+import { v4 as uuidv4 } from "uuid";
 import { getSpotifyToken } from "./safe_storage.js";
 
 class SpotifyApi {
@@ -217,17 +218,20 @@ class SpotifyApi {
 
   static async convertToUniversalFormat(data) {
     var playlist = {
+      id: data.id,
       user: data.owner.display_name,
       origin: "Spotify",
       name: data.name,
-      number_of_tracks: data.tracks.total,
-      duration: data.duration_ms,
+      numberOfTracks: data.tracks.total,
+      duration: 0,
       description: data.description,
       image: data.images[0].url,
     };
 
+    var totalDuration = 0;
     playlist.tracks = [];
     data.tracks.items.forEach((item) => {
+      totalDuration += item.track.duration_ms;
       const track = {
         name: item.track.name,
         artist: item.track.artists[0].name,
@@ -237,6 +241,9 @@ class SpotifyApi {
       };
       playlist.tracks.push(track);
     });
+
+    playlist.duration = totalDuration;
+    playlist.sharedWith = [];
     return playlist;
   }
 }
