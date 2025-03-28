@@ -88,9 +88,7 @@
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
-      "identity": "Caden Brennan (XMN64AZANC)",
-      "notarize": false
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "linux": {
       "target": [
