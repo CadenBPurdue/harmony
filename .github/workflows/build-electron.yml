@@ -42,6 +42,15 @@ jobs:
         echo "APPLE_KEY_ID=${{ secrets.APPLE_KEY_ID }}" >> .env
         echo "APPLE_PRIVATE_KEY=${{ secrets.APPLE_PRIVATE_KEY }}" >> .env
 
+    # Add these steps for macOS
+    - name: Import Code Signing Certificate
+      if: inputs.os == 'macos-latest'
+      uses: apple-actions/import-codesign-certs@v2
+      with:
+        p12-file-base64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+        p12-password: ${{ secrets.P12_PASSWORD }}
+        keychain-password: ${{ secrets.KEYCHAIN_PASSWORD }}
+
     - name: Build app
       run: npm run build
 
@@ -55,6 +64,8 @@ jobs:
       run: npm run electron:build:${{ inputs.arch }}
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CSC_KEYCHAIN: ${{ secrets.KEYCHAIN_PATH || 'build.keychain' }}
+        CSC_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
     - name: Upload Artifacts MacOS
       if: inputs.os == 'macos-latest'
