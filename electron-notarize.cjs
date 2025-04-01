@@ -15,7 +15,7 @@ module.exports = async function (params) {
   
   const appPath = path.join(params.appOutDir, `${params.packager.appInfo.productFilename}.app`);
   
-  if (!process.env.APPLE_ID || !process.env.APPLE_ID_PASSWORD || !process.env.APPLE_TEAM_ID) {
+  if (!process.env.APPLE_ID || !process.env.APPLE_ID_PASSWORD || !process.env.CSC_TEAM_ID) {
     console.log('Skipping notarization: missing Apple credentials in environment');
     return;
   }
@@ -24,7 +24,7 @@ module.exports = async function (params) {
     await notarize({
       appPath,
       tool: 'notarytool',
-      teamId: process.env.APPLE_TEAM_ID,
+      teamId: process.env.CSC_TEAM_ID,
       appleId: process.env.APPLE_ID,
       appleIdPassword: process.env.APPLE_ID_PASSWORD,
     });
