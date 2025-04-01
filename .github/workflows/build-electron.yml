@@ -66,6 +66,7 @@ jobs:
         CSC_KEY_PASSWORD: ${{ secrets.P12_PASSWORD }}
         CSC_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
 
     - name: Upload Artifacts MacOS
       if: inputs.os == 'macos-latest'
