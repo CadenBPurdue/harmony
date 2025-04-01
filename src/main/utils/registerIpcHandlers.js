@@ -16,6 +16,10 @@ import {
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
 
+// Create instances that persist across calls
+const appleMusicApi = new AppleMusicApi();
+const spotifyApi = new SpotifyApi();
+
 export function registerIpcHandlers() {
   ipcMain.on("open-external", (event, url) => {
     console.log("Opening external URL in main process:", url);
@@ -112,20 +116,28 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("library:spotify", async () => {
-    const spotifyApi = new SpotifyApi();
     await spotifyApi.initialize();
     return spotifyApi.getPlaylistLibrary();
   });
 
-  ipcMain.handle("library:appleMusic", async () => {
-    const appleMusicApi = new AppleMusicApi();
+  ipcMain.handle("library:appleMusic", async (skipDetailsLoading = false) => {
     await appleMusicApi.initialize();
-    return appleMusicApi.getPlaylistLibrary();
+    return appleMusicApi.getPlaylistLibrary(skipDetailsLoading);
+  });
+
+  // Add a handler to get Apple Music loading status
+  ipcMain.handle("getAppleMusicStatus", async () => {
+    return appleMusicApi.getPlaylistLoadingStatus();
+  });
+
+  // Add a handler to get a specific Apple Music playlist
+  ipcMain.handle("getAppleMusicPlaylist", async (event, playlistId) => {
+    await appleMusicApi.initialize();
+    return appleMusicApi.getPlaylist(playlistId);
   });
 
   ipcMain.handle("transfer:spotify", async (event, playlist) => {
     try {
-      const spotifyApi = new SpotifyApi();
       await spotifyApi.initialize();
       console.log(`Transferring "${playlist.name}" to Spotify`);
       const playlistId = await spotifyApi.createEmptyPlaylist(
@@ -141,7 +153,6 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("transfer:appleMusic", async (event, playlist) => {
-    const appleMusicApi = new AppleMusicApi();
     await appleMusicApi.initialize();
     console.log(`Transferring "${playlist.name}" to Apple Music`);
     const playlistId = await appleMusicApi.createEmptyPlaylist(

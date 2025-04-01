@@ -30,8 +30,6 @@ function base64decode(base64) {
     return null;
   }
 
-  console.log(`[base64decode] Decoding value with length: ${base64.length}`);
-
   try {
     // In development, just return the raw value
     if (isDev) {
@@ -64,21 +62,18 @@ let googleToken = null;
 
 try {
   spotifyToken = getSpotifyToken();
-  console.log("[AuthManager] Loaded Spotify token:", spotifyToken);
 } catch (error) {
   console.error("[AuthManager] Error loading Spotify token:", error);
 }
 
 try {
   appleMusicToken = getAppleMusicToken();
-  console.log("[AuthManager] Loaded Apple Music token:", appleMusicToken);
 } catch (error) {
   console.error("[AuthManager] Error loading Apple Music token:", error);
 }
 
 try {
   googleToken = getGoogleToken();
-  console.log("[AuthManager] Loaded Google token:", googleToken);
 } catch (error) {
   console.error("[AuthManager] Error loading Google token:", error);
   clearGoogleToken();
