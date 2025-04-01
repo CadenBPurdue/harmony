@@ -135,8 +135,8 @@ function Homepage() {
     return cleanup;
   }, [pollAppleMusicStatus]);
 
+  // Set up listener for when individual playlists finish loading
   useEffect(() => {
-    // Set up listener for when individual playlists finish loading
     const handlePlaylistLoaded = (playlistInfo) => {
       console.log("Playlist loaded:", playlistInfo);
       
@@ -156,13 +156,14 @@ function Homepage() {
       }
     };
     
-    // Register the listener
-    window.electronAPI.onPlaylistLoaded(handlePlaylistLoaded);
+    // Check if onPlaylistLoaded is available in the API
+    if (window.electronAPI.onPlaylistLoaded) {
+      window.electronAPI.onPlaylistLoaded(handlePlaylistLoaded);
+    }
     
     // Clean up on unmount
     return () => {
       // Ideally, unregister the listener here if your preload script supports it
-      // If not, the listener will be garbage collected when the component unmounts
     };
   }, [selectedPlaylist]);
 
@@ -220,6 +221,13 @@ function Homepage() {
     window.electronAPI.getSpotifyLibrary()
       .then((playlists) => {
         setSpotifyPlaylists(playlists);
+        
+        // Added from main version: Send playlists to Firebase if needed
+        if (window.electronAPI.transferPlaylistToFirebase) {
+          playlists.forEach((playlist) => {
+            window.electronAPI.transferPlaylistToFirebase(playlist);
+          });
+        }
       })
       .catch((error) => {
         console.error("Error fetching Spotify playlists:", error);
@@ -235,17 +243,26 @@ function Homepage() {
       .then((playlists) => {
         setAppleMusicPlaylists(playlists);
         
+        // Added from main version: Send playlists to Firebase if needed
+        if (window.electronAPI.transferPlaylistToFirebase) {
+          playlists.forEach((playlist) => {
+            window.electronAPI.transferPlaylistToFirebase(playlist);
+          });
+        }
+        
         // Check if any playlists are still loading
         const hasLoadingPlaylists = playlists.some(p => p.isLoading);
         if (hasLoadingPlaylists) {
           // Get initial status
-          window.electronAPI.getAppleMusicStatus()
-            .then(status => {
-              setAppleMusicStatus(status);
-            })
-            .catch(error => {
-              console.error("Error getting Apple Music status:", error);
-            });
+          if (window.electronAPI.getAppleMusicStatus) {
+            window.electronAPI.getAppleMusicStatus()
+              .then(status => {
+                setAppleMusicStatus(status);
+              })
+              .catch(error => {
+                console.error("Error getting Apple Music status:", error);
+              });
+          }
         } else {
           setAppleMusicStatus({
             loaded: playlists.length,
@@ -262,14 +279,17 @@ function Homepage() {
       });
   };
 
-  // Fetch Spotify playlists from the backend
+  // Check auth status
   useEffect(() => {
-    refreshSpotifyPlaylists();
-  }, []);
-
-  // Fetch Apple Music playlists from the backend
-  useEffect(() => {
-    refreshAppleMusicPlaylists();
+    window.electronAPI.getAuthStatus().then((status) => {
+      console.log("Auth status:", status);
+      if (status.isSpotifyAuthenticated) {
+        refreshSpotifyPlaylists();
+      }
+      if (status.isAppleMusicAuthenticated) {
+        refreshAppleMusicPlaylists();
+      }
+    });
   }, []);
 
   // Helper function to check if playlist is selected
@@ -293,7 +313,7 @@ function Homepage() {
   // Handle playlist click
   const handlePlaylistClick = (playlist) => {
     // If the playlist is still loading and is from Apple Music, we can try to get the latest version
-    if (playlist.isLoading && playlist.origin === "Apple Music") {
+    if (playlist.isLoading && playlist.origin === "Apple Music" && window.electronAPI.getAppleMusicPlaylist) {
       window.electronAPI.getAppleMusicPlaylist(playlist.playlist_id)
         .then(updatedPlaylist => {
           if (updatedPlaylist && !updatedPlaylist.isLoading) {
@@ -375,7 +395,7 @@ function Homepage() {
     bgcolor: colors.amethyst,
     color: 'white',
     '&:hover': { 
-      bgcolor: '#8a67c2', // slightly lighter than jet for hover
+      bgcolor: '#8a67c2', // slightly lighter than amethyst for hover
     }
   };
 
@@ -411,6 +431,14 @@ function Homepage() {
               </ListItem>
             ) : (
               spotifyPlaylists.map((playlist, index) => renderPlaylistItem(playlist, index))
+            )}
+            
+            {spotifyPlaylists.length === 0 && !loadingSpotify && (
+              <ListItem sx={{ pl: 2 }}>
+                <Typography variant="caption" color="text.secondary">
+                  No playlists found
+                </Typography>
+              </ListItem>
             )}
           </List>
         </Collapse>
@@ -464,7 +492,6 @@ function Homepage() {
         </ListItem>
         
         <Collapse in={appleMusicOpen} timeout="auto" unmountOnExit>
-          {/* Apple Music loading progress */}          
           <List component="div" disablePadding>
             {appleMusicPlaylists.map((playlist, index) => renderPlaylistItem(playlist, index))}
             
@@ -535,6 +562,11 @@ function Homepage() {
               {selectedPlaylist.name}
             </Typography>
             {/* Only show user info if it's not empty */}
+            {selectedPlaylist.user && (
+              <Typography variant="body2" color="text.secondary">
+                User: {selectedPlaylist.user}
+              </Typography>
+            )}
             <Typography variant="body2" color="text.secondary">
               Tracks: {selectedPlaylist.number_of_tracks} • Duration: {formatDuration(selectedPlaylist.duration)}
             </Typography>
@@ -745,7 +777,7 @@ function Homepage() {
               </Typography>
               
               {/* Refresh button for Apple Music */}
-              {!appleMusicStatus.isComplete && appleMusicStatus.total > 0 && (
+              {!appleMusicStatus.isComplete && appleMusicStatus.total > 0 && window.electronAPI.getAppleMusicStatus && (
                 <Tooltip title="Check for loaded playlists">
                   <IconButton 
                     onClick={() => window.electronAPI.getAppleMusicStatus().then(setAppleMusicStatus)}

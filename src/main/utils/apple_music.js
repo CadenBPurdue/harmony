@@ -88,7 +88,6 @@ class AppleMusicApi {
           this.loadingProgress.loaded += 1;
           
           return {
-            user: "",
             origin: "Apple Music",
             name: playlist.attributes?.name || "",
             playlist_id: playlistId,
@@ -96,15 +95,19 @@ class AppleMusicApi {
             duration: loadedData.duration || 0,
             description: playlist.attributes?.description?.standard || "",
             image: playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") || "",
-            tracks: loadedData.tracks || {},
+            // Convert tracks from object to array
+            tracks: loadedData.tracks ? Object.values(loadedData.tracks) : [],
             isLoading: false,
-            loadError: false
+            loadError: false,
+            // Properties from main version
+            id: playlistId,
+            numberOfTracks: loadedData.trackCount || 0,
+            sharedWith: []
           };
         }
         
         // Return basic info for unloaded playlists
         return {
-          user: "",
           origin: "Apple Music",
           name: playlist.attributes?.name || "",
           playlist_id: playlistId,
@@ -112,9 +115,13 @@ class AppleMusicApi {
           duration: 0,
           description: playlist.attributes?.description?.standard || "",
           image: playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") || "",
-          tracks: {},
+          tracks: [], // Make sure this is an empty array
           isLoading: true,
-          loadError: false
+          loadError: false,
+          // Properties from main version
+          id: playlistId,
+          numberOfTracks: 0,
+          sharedWith: []
         };
       });
 
@@ -123,7 +130,7 @@ class AppleMusicApi {
         this.loadingProgress.isComplete = true;
       }
       
-      // Start background loading IMMEDIATELY, regardless of skipDetailsLoading parameter
+      // Start background loading if not explicitly skipped
       if (!this.isLoadingDetails) {
         console.log("[AppleMusicApi] Starting immediate background load process");
         this.loadPlaylistDetailsInBackground(playlists);
@@ -271,6 +278,16 @@ class AppleMusicApi {
             processedCount += 1;
             
             console.log(`[AppleMusicApi] Successfully loaded playlist "${playlist.attributes?.name}" with ${Object.keys(tracks).length} tracks (Progress: ${this.loadingProgress.loaded}/${this.loadingProgress.total})`);
+            
+            // Emit event for anyone listening for playlist loaded events
+            if (global.playlistLoadedCallback) {
+              global.playlistLoadedCallback({
+                id: playlistId,
+                origin: "Apple Music",
+                isLoaded: true,
+                trackCount: Object.keys(tracks).length
+              });
+            }
           } catch (error) {
             console.error(`[AppleMusicApi] Error loading playlist ${playlist.id}:`, error.message);
             
@@ -306,13 +323,26 @@ class AppleMusicApi {
     }
   }
 
-  async getPlaylist(playlistId) {
+  async getPlaylist(input) {
     if (!this.api) {
       await this.initialize();
     }
     
     try {
-      console.log(`[AppleMusicApi] Getting playlist: ${playlistId}`);
+      console.log(`[AppleMusicApi] Getting playlist: ${input}`);
+      
+      // Extract playlist ID from input if it's a URL or URI (from main version)
+      let playlistId = input;
+      if (typeof input === 'string') {
+        if (input.includes("music.apple.com")) {
+          const urlParts = input.split("/");
+          playlistId = urlParts[urlParts.length - 1];
+          console.log("[AppleMusicApi] Extracted ID from URL:", playlistId);
+        } else if (input.startsWith("apple:playlist:")) {
+          playlistId = input.split(":")[2];
+          console.log("[AppleMusicApi] Extracted ID from URI:", playlistId);
+        }
+      }
       
       // Check if we already know this playlist doesn't exist or had an error
       if (this.loadedPlaylists.has(playlistId)) {
@@ -360,17 +390,20 @@ class AppleMusicApi {
         console.log(`[AppleMusicApi] Using pre-loaded tracks for playlist: ${playlist.attributes?.name}`);
         
         return {
-          user: this.userToken,
           origin: "Apple Music",
           name: playlist.attributes?.name || "",
           playlist_id: playlistId,
-          number_of_tracks: loadedData.trackCount,
-          duration: loadedData.duration,
+          // Use loadedData instead of undefined tracks/totalDuration variables
+          number_of_tracks: loadedData.trackCount, // Changed from Object.keys(tracks).length
+          duration: loadedData.duration, // Changed from totalDuration
           description: playlist.attributes?.description?.standard || "",
           image: playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") || "",
-          tracks: loadedData.tracks,
+          tracks: Object.values(loadedData.tracks), // Changed from Object.values(tracks)
           isLoading: false,
-          loadError: false
+          loadError: false,
+          id: playlistId,
+          numberOfTracks: loadedData.trackCount, // Changed from Object.keys(tracks).length
+          sharedWith: []
         };
       }
       
@@ -424,7 +457,6 @@ class AppleMusicApi {
       }
       
       return {
-        user: this.userToken,
         origin: "Apple Music",
         name: playlist.attributes?.name || "",
         playlist_id: playlistId,
@@ -434,23 +466,30 @@ class AppleMusicApi {
         image: playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") || "",
         tracks: tracks,
         isLoading: false,
-        loadError: false
+        loadError: false,
+        // Properties from main version
+        id: playlistId,
+        numberOfTracks: Object.keys(tracks).length,
+        sharedWith: []
       };
     } catch (error) {
-      console.error(`[AppleMusicApi] Error getting playlist ${playlistId}:`, error);
+      console.error(`[AppleMusicApi] Error getting playlist ${input}:`, error);
       
       return {
-        user: this.userToken,
         origin: "Apple Music",
         name: "Error Loading Playlist",
-        playlist_id: playlistId,
+        playlist_id: typeof input === 'string' ? input : 'unknown',
         number_of_tracks: 0,
         duration: 0,
         description: `Error: ${error.message}`,
         image: "",
-        tracks: {},
+        tracks: [], // <- Make sure this is an empty array, not an object
         isLoading: false,
-        loadError: true
+        loadError: true,
+        // Properties from main version
+        id: typeof input === 'string' ? input : 'unknown',
+        numberOfTracks: 0,
+        sharedWith: []
       };
     }
   }
@@ -464,7 +503,6 @@ class AppleMusicApi {
     };
   }
 
-  // The rest of the methods remain the same
   calculateSimilarity(str1, str2) {
     const s1 = str1.toLowerCase();
     const s2 = str2.toLowerCase();
@@ -662,14 +700,18 @@ class AppleMusicApi {
     console.log(
       `[PopulatePlaylist] Starting population of playlist: ${playlistId}`
     );
-    console.log(
-      `[PopulatePlaylist] Number of tracks to process: ${Object.keys(unifiedFormat.tracks).length}`
-    );
+    
+    // Handle both object format and array format for tracks
+    let trackEntries;
+    if (Array.isArray(unifiedFormat.tracks)) {
+      trackEntries = unifiedFormat.tracks.map(track => ['track_id', track]);
+      console.log(`[PopulatePlaylist] Number of tracks to process: ${trackEntries.length}`);
+    } else {
+      trackEntries = Object.entries(unifiedFormat.tracks);
+      console.log(`[PopulatePlaylist] Number of tracks to process: ${trackEntries.length}`);
+    }
 
     try {
-      // Convert UF tracks to catalog IDs
-      const trackEntries = Object.entries(unifiedFormat.tracks);
-
       // Process tracks in batches of 5 with 1 second delay between batches
       const processedTracks = await processBatch(
         trackEntries,

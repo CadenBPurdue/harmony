@@ -1,7 +1,8 @@
 // src/main/utils/spotify.js
 import axios from "axios";
 import dotenv from "dotenv";
-import { getSpotifyToken, setSpotifyToken } from "./safe_storage.js";
+import { v4 as uuidv4 } from "uuid";
+import { getSpotifyToken } from "./safe_storage.js";
 
 class SpotifyApi {
   constructor() {
@@ -356,24 +357,25 @@ class SpotifyApi {
     }
 
     var playlist = {
+      id: data.id,
       user: data.owner?.display_name || "Unknown User",
       origin: "Spotify",
-      name: data.name || "Untitled Playlist",
-      playlist_id: data.id,
-      number_of_tracks: data.tracks?.total || 0,
-      duration: data.duration_ms || 0,
-      description: data.description || "",
-      // Check if images array exists and has entries before accessing [0]
-      image: data.images && data.images.length > 0 ? data.images[0].url : "",
+      name: data.name,
+      numberOfTracks: data.tracks.total,
+      duration: 0,
+      description: data.description,
+      image: data.images[0].url,
     };
 
+    var totalDuration = 0;
     playlist.tracks = [];
     // Make sure tracks and items exist before trying to iterate
     if (data.tracks && Array.isArray(data.tracks.items)) {
       data.tracks.items.forEach((item) => {
         // Check if track exists before accessing its properties
         if (item && item.track) {
-          const track = {
+          totalDuration += item.track.duration_ms;
+      const track = {
             name: item.track.name || "Unknown Track",
             artist:
               item.track.artists && item.track.artists.length > 0
@@ -393,6 +395,9 @@ class SpotifyApi {
         }
       });
     }
+
+    playlist.duration = totalDuration;
+    playlist.sharedWith = [];
     return playlist;
   }
 }
