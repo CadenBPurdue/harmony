@@ -13,7 +13,8 @@
     "electron:build:arm64": "electron-builder --arm64",
     "electron:build:x64": "electron-builder --x64",
     "electron:build:mac": "electron-builder --mac",
-    "electron:build:mac:signed": "CSC_NAME='Caden Brennan (XMN64AZANC)' electron-builder --mac",
+    "electron:build:mac:signed": "cross-env CSC_NAME='Caden Brennan (XMN64AZANC)' electron-builder --mac",
+    "electron:build:mac:p12": "cross-env CSC_LINK=./certificate.p12 CSC_KEY_PASSWORD=Harmony12!@ CSC_TEAM_ID=XMN64AZANC electron-builder --mac",
     "lint": "npx eslint .",
     "lint:fix": "npx eslint . --fix"
   },
@@ -87,8 +88,9 @@
       "category": "public.app-category.productivity",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.plist",
+      "notarize": false
     },
     "linux": {
       "target": [
@@ -101,6 +103,7 @@
         "nsis"
       ]
     },
-    "publish": null
+    "publish": null,
+    "afterSign": "electron-notarize.cjs"
   }
 }
