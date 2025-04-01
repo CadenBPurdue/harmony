@@ -63,7 +63,7 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         CSC_LINK: ./certificate.p12
-        CSC_KEYCHAIN: ${{ secrets.P12_PASSWORD }}
+        CSC_KEY_PASSWORD: ${{ secrets.P12_PASSWORD }}
         CSC_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         APPLE_ID: ${{ secrets.APPLE_ID }}
 
