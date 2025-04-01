@@ -37,11 +37,29 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("library:spotify");
   },
 
-  getAppleMusicLibrary: () => {
+  getAppleMusicLibrary: (skipDetailsLoading) => {
     console.log("Calling getAppleMusicLibrary from preload");
-    return ipcRenderer.invoke("library:appleMusic");
+    return ipcRenderer.invoke("library:appleMusic", skipDetailsLoading);
   },
 
+  // Get Apple Music status
+  getAppleMusicStatus: () => {
+    console.log("Calling getAppleMusicStatus from preload");
+    return ipcRenderer.invoke("getAppleMusicStatus");
+  },
+
+  onPlaylistLoaded: (callback) => {
+    ipcRenderer.on('playlist-loaded', (event, playlistInfo) => {
+      callback(playlistInfo);
+    });
+  },
+
+  // Get a specific Apple Music playlist with full details
+  getAppleMusicPlaylist: (playlistId) => {
+    console.log("Calling getAppleMusicPlaylist from preload");
+    return ipcRenderer.invoke("getAppleMusicPlaylist", playlistId);
+  },
+  
   transferToSpotify: (playlist) => {
     console.log("Calling transferToSpotify from preload");
     return ipcRenderer.invoke("transfer:spotify", playlist);
