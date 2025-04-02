@@ -58,11 +58,6 @@ jobs:
         sudo apt-get install -y snapd
         sudo snap install snapcraft --classic
 
-    - name: Package app
-      run: npm run electron:build:${{ inputs.arch }}
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
     - name: Package app for macOS
       if: inputs.os == 'macos-latest'
       run: npm run electron:build:${{ inputs.arch }}
