@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { BrowserWindow } from "electron";
 import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
+import { getAuthInstance } from "./firebase.js";
 import {
   getSpotifyToken,
   setSpotifyToken,
@@ -13,7 +14,6 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
-import { getAuthInstance } from "./firebase.js";
 
 const isDev = process.env.NODE_ENV === "development";
 
