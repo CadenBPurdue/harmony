@@ -49,7 +49,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
 
   onPlaylistLoaded: (callback) => {
-    ipcRenderer.on('playlist-loaded', (event, playlistInfo) => {
+    ipcRenderer.on("playlist-loaded", (event, playlistInfo) => {
       callback(playlistInfo);
     });
   },
@@ -59,7 +59,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     console.log("Calling getAppleMusicPlaylist from preload");
     return ipcRenderer.invoke("getAppleMusicPlaylist", playlistId);
   },
-  
+
   transferToSpotify: (playlist) => {
     console.log("Calling transferToSpotify from preload");
     return ipcRenderer.invoke("transfer:spotify", playlist);

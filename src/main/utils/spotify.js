@@ -375,7 +375,7 @@ class SpotifyApi {
         // Check if track exists before accessing its properties
         if (item && item.track) {
           totalDuration += item.track.duration_ms;
-      const track = {
+          const track = {
             name: item.track.name || "Unknown Track",
             artist:
               item.track.artists && item.track.artists.length > 0

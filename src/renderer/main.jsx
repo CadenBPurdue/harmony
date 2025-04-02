@@ -22,10 +22,8 @@ const Router = () => {
         setAuthStatus(status);
         setIsLoading(false);
 
-        // Attempt to connect to Firebase if Google is authenticated
-        if (status.isGoogleAuthenticated) {
-          await window.electronAPI.connectFirebase();
-        }
+        // Authenticate with Firebase, re-authenticating if necessary
+        await window.electronAPI.connectFirebase();
 
         // Set window size based on authentication
         if (window.electronAPI.setWindowMode) {
