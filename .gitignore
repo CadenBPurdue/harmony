@@ -6,3 +6,4 @@ dist_electron
 .DS_Store
 *.env
 *.p8
+*.p12
