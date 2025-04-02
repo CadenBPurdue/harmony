@@ -941,7 +941,7 @@ function Homepage() {
                     "&:hover": { bgcolor: "primary.dark" },
                   }}
                 >
-                  <Typography></Typography>
+                  <Typography>?</Typography>
                 </IconButton>
                 
                 {/* User dropdown menu */}
