@@ -693,7 +693,7 @@ function Homepage() {
               </Typography>
             )}
             <Typography variant="body2" color="text.secondary">
-              Tracks: {selectedPlaylist.number_of_tracks} • Duration:{" "}
+              Tracks: {selectedPlaylist.numberOfTracks} • Duration:{" "}
               {formatDuration(selectedPlaylist.duration)}
             </Typography>
           </Box>
