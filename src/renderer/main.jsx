@@ -16,14 +16,15 @@ const Router = () => {
     console.log("[Router] Initializing...");
     const checkAuthStatus = async () => {
       try {
+        // Authenticate with Firebase, re-authenticating if necessary
+        await window.electronAPI.connectFirebase();
+
+        // Check authentication status
         const status = await window.electronAPI.getAuthStatus();
         console.log("[Router] Auth status received:", status);
 
         setAuthStatus(status);
         setIsLoading(false);
-
-        // Authenticate with Firebase, re-authenticating if necessary
-        await window.electronAPI.connectFirebase();
 
         // Set window size based on authentication
         if (window.electronAPI.setWindowMode) {

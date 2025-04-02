@@ -13,6 +13,7 @@ import {
   setGoogleToken,
   clearGoogleToken,
 } from "./safe_storage.js";
+import { getAuthInstance } from "./firebase.js";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -689,7 +690,7 @@ function getAuthStatus() {
   const authStatus = {
     isSpotifyAuthenticated: !!spotifyToken?.accessToken,
     isAppleMusicAuthenticated: !!appleMusicToken?.userToken,
-    isGoogleAuthenticated: !!googleToken?.accessToken,
+    isGoogleAuthenticated: getAuthInstance().currentUser !== null,
     spotifyExpiresIn: spotifyToken
       ? Math.floor(
           (spotifyToken.timestamp +

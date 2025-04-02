@@ -107,6 +107,9 @@ function validateUser(user) {
 }
 
 async function writePlaylistToFirestore(playlist) {
+  if (!getAuthInstance().currentUser) {
+    throw new Error("User must be authenticated before writing playlists");
+  }
   const db = getDbInstance();
   const collection = "playlists";
   if (!validatePlaylist(playlist)) {
