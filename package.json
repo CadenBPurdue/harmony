@@ -104,7 +104,8 @@
     "win": {
       "target": [
         "nsis"
-      ]
+      ],
+      "sign": "false"
     },
     "publish": null,
     "afterSign": "electron-notarize.cjs"
