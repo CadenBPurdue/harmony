@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { BrowserWindow } from "electron";
 import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
+import { getAuthInstance } from "./firebase.js";
 import {
   getSpotifyToken,
   setSpotifyToken,
@@ -689,7 +690,7 @@ function getAuthStatus() {
   const authStatus = {
     isSpotifyAuthenticated: !!spotifyToken?.accessToken,
     isAppleMusicAuthenticated: !!appleMusicToken?.userToken,
-    isGoogleAuthenticated: !!googleToken?.accessToken,
+    isGoogleAuthenticated: getAuthInstance().currentUser !== null,
     spotifyExpiresIn: spotifyToken
       ? Math.floor(
           (spotifyToken.timestamp +
