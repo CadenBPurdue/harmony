@@ -104,7 +104,11 @@
     "win": {
       "target": [
         "nsis"
-      ]
+      ],
+      "signingHashAlgorithms": null,
+      "signtoolOptions": {
+        "sign": false
+      }
     },
     "publish": null,
     "afterSign": "electron-notarize.cjs"
