@@ -50,7 +50,7 @@ export default [
   },
   {
     // Override for CommonJS files like preload.cjs
-    files: ["**/preload.cjs"],
+    files: ["**/preload.cjs", "electron-notarize.cjs"],
     languageOptions: {
       sourceType: "script", // Set to "script" for CommonJS files
     },
