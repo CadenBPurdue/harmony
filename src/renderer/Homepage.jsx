@@ -943,7 +943,7 @@ function Homepage() {
                 >
                   <Typography>?</Typography>
                 </IconButton>
-                
+
                 {/* User dropdown menu */}
                 {userDropdownOpen && (
                   <Paper
@@ -959,22 +959,28 @@ function Homepage() {
                     }}
                   >
                     <List sx={{ p: 0 }}>
-                      <ListItemButton onClick={() => {
-                        setCurrentPage("userInfo");
-                        setUserDropdownOpen(false);
-                      }}>
+                      <ListItemButton
+                        onClick={() => {
+                          setCurrentPage("userInfo");
+                          setUserDropdownOpen(false);
+                        }}
+                      >
                         <ListItemText primary="User Info" />
                       </ListItemButton>
-                      <ListItemButton onClick={() => {
-                        setCurrentPage("settings");
-                        setUserDropdownOpen(false);
-                      }}>
+                      <ListItemButton
+                        onClick={() => {
+                          setCurrentPage("settings");
+                          setUserDropdownOpen(false);
+                        }}
+                      >
                         <ListItemText primary="Settings" />
                       </ListItemButton>
-                      <ListItemButton onClick={() => {
-                        setCurrentPage("friends");
-                        setUserDropdownOpen(false);
-                      }}>
+                      <ListItemButton
+                        onClick={() => {
+                          setCurrentPage("friends");
+                          setUserDropdownOpen(false);
+                        }}
+                      >
                         <ListItemText primary="Friends" />
                       </ListItemButton>
                     </List>
