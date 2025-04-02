@@ -90,6 +90,7 @@ class AppleMusicApi {
           return {
             origin: "Apple Music",
             name: playlist.attributes?.name || "",
+            user: "",
             playlist_id: playlistId,
             number_of_tracks: loadedData.trackCount || 0,
             duration: loadedData.duration || 0,
@@ -114,6 +115,7 @@ class AppleMusicApi {
         return {
           origin: "Apple Music",
           name: playlist.attributes?.name || "",
+          user: "",
           playlist_id: playlistId,
           number_of_tracks: 0,
           duration: 0,
@@ -450,6 +452,7 @@ class AppleMusicApi {
           origin: "Apple Music",
           name: playlist.attributes?.name || "",
           playlist_id: playlistId,
+          user: "",
           // Use loadedData instead of undefined tracks/totalDuration variables
           number_of_tracks: loadedData.trackCount, // Changed from Object.keys(tracks).length
           duration: loadedData.duration, // Changed from totalDuration
@@ -524,6 +527,7 @@ class AppleMusicApi {
       return {
         origin: "Apple Music",
         name: playlist.attributes?.name || "",
+        user: "",
         playlist_id: playlistId,
         number_of_tracks: Object.keys(tracks).length,
         duration: totalDuration,
