@@ -92,6 +92,10 @@ function Homepage() {
   const [loadingSpotify, setLoadingSpotify] = useState(false);
   const [loadingAppleMusic, setLoadingAppleMusic] = useState(false);
 
+  // User dropdown state
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState("main");
+
   // Poll Apple Music playlist loading status
   const pollAppleMusicStatus = useCallback(() => {
     // Only poll if we have Apple Music playlists that may still be loading
@@ -366,6 +370,9 @@ function Homepage() {
       setSelectedPlaylist(playlist);
     }
 
+    // Always return to main page when selecting a playlist
+    setCurrentPage("main");
+
     if (isMobile) {
       setMobileDrawerOpen(false);
     }
@@ -561,6 +568,68 @@ function Homepage() {
       </List>
     </Box>
   );
+
+  // Render different pages based on currentPage state
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      case "userInfo":
+        return (
+          <Paper sx={{ ...styles.paper, p: 3 }}>
+            <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
+              User Information
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              This is the user information page.
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => setCurrentPage("main")}
+              sx={styles.continueButton}
+            >
+              Back to Main
+            </Button>
+          </Paper>
+        );
+      case "settings":
+        return (
+          <Paper sx={{ ...styles.paper, p: 3 }}>
+            <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
+              Settings
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              This is the settings page.
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => setCurrentPage("main")}
+              sx={styles.continueButton}
+            >
+              Back to Main
+            </Button>
+          </Paper>
+        );
+      case "friends":
+        return (
+          <Paper sx={{ ...styles.paper, p: 3 }}>
+            <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
+              Friends
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              This is the friends page.
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => setCurrentPage("main")}
+              sx={styles.continueButton}
+            >
+              Back to Main
+            </Button>
+          </Paper>
+        );
+      default:
+        return renderPlaylistDetails();
+    }
+  };
 
   const renderPlaylistDetails = () => {
     if (!selectedPlaylist) {
@@ -860,6 +929,59 @@ function Homepage() {
                 Harmony
               </Typography>
 
+              {/* User Button */}
+              <Box sx={{ position: "relative", ml: 2 }}>
+                <IconButton
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  sx={{
+                    bgcolor: "primary.main",
+                    color: "white",
+                    width: 40,
+                    height: 40,
+                    "&:hover": { bgcolor: "primary.dark" },
+                  }}
+                >
+                  <Typography></Typography>
+                </IconButton>
+                
+                {/* User dropdown menu */}
+                {userDropdownOpen && (
+                  <Paper
+                    sx={{
+                      position: "absolute",
+                      top: 48,
+                      right: 0,
+                      width: 150,
+                      boxShadow: 3,
+                      borderRadius: 1,
+                      overflow: "hidden",
+                      zIndex: 1000,
+                    }}
+                  >
+                    <List sx={{ p: 0 }}>
+                      <ListItemButton onClick={() => {
+                        setCurrentPage("userInfo");
+                        setUserDropdownOpen(false);
+                      }}>
+                        <ListItemText primary="User Info" />
+                      </ListItemButton>
+                      <ListItemButton onClick={() => {
+                        setCurrentPage("settings");
+                        setUserDropdownOpen(false);
+                      }}>
+                        <ListItemText primary="Settings" />
+                      </ListItemButton>
+                      <ListItemButton onClick={() => {
+                        setCurrentPage("friends");
+                        setUserDropdownOpen(false);
+                      }}>
+                        <ListItemText primary="Friends" />
+                      </ListItemButton>
+                    </List>
+                  </Paper>
+                )}
+              </Box>
+
               {/* Refresh button for Apple Music */}
               {!appleMusicStatus.isComplete &&
                 appleMusicStatus.total > 0 &&
@@ -887,7 +1009,7 @@ function Homepage() {
                 flex: 1,
               }}
             >
-              {renderPlaylistDetails()}
+              {renderCurrentPage()}
             </Box>
           </Box>
         </Box>
