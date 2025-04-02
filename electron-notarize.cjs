@@ -12,7 +12,7 @@ dotenv.config({ path: envPath });
 // In base64decode function
 function base64decode(base64) {
   if (!base64) {
-    console.log("[base64decode] Empty or undefined input");
+    console.warn("[base64decode] Empty or undefined input");
     return null;
   }
 
@@ -28,7 +28,7 @@ function base64decode(base64) {
       decoded = Buffer.from(base64, "base64").toString("utf-8");
       // Trim whitespace and newlines
       decoded = decoded.trim();
-      console.log(`[base64decode] Decoded to length: ${decoded.length}`);
+      // console.log(`[base64decode] Decoded to length: ${decoded.length}`);
       return decoded;
     } catch (error) {
       console.error("[base64decode] Error decoding:", error.message);
