@@ -67,14 +67,24 @@ const normalizeTrackData = (trackItem, isArrayFormat) => {
 };
 
 function formatTimestamp(timestamp) {
-  if (!timestamp || typeof timestamp.seconds !== 'number') {
-    return 'Invalid timestamp';
+  if (!timestamp || typeof timestamp.seconds !== "number") {
+    return "Invalid timestamp";
   }
-  
+
   const date = new Date(timestamp.seconds * 1000);
-    const months = [
-    'January', 'February', 'March', 'April', 'May', 'June', 
-    'July', 'August', 'September', 'October', 'November', 'December'
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   const month = months[date.getMonth()];
@@ -120,7 +130,8 @@ function Homepage() {
 
   // Function to fetch user information
   const fetchUserInfo = () => {
-    window.electronAPI.getUserInfoFromFirebase()
+    window.electronAPI
+      .getUserInfoFromFirebase()
       .then((info) => {
         setUserInfo(info);
       })
@@ -133,7 +144,7 @@ function Homepage() {
   const navigateTo = (page) => {
     setCurrentPage(page);
     setUserDropdownOpen(false); // Close the dropdown after selection
-    
+
     // Fetch user info when navigating to the user info page
     if (page === "userInfo") {
       fetchUserInfo();
@@ -622,21 +633,26 @@ function Homepage() {
             <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
               User Information
             </Typography>
-            
+
             {userInfo ? (
               <Stack spacing={3}>
-                <Paper 
-                  elevation={0} 
-                  sx={{ 
-                    p: 2, 
-                    bgcolor: "rgba(134, 97, 193, 0.05)", 
-                    borderRadius: 2
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    bgcolor: "rgba(134, 97, 193, 0.05)",
+                    borderRadius: 2,
                   }}
                 >
-                  <Typography variant="h6" sx={{ mb: 2 }}>Profile</Typography>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Profile
+                  </Typography>
                   <Stack spacing={1}>
                     <Box sx={{ display: "flex" }}>
-                      <Typography variant="body2" sx={{ fontWeight: "medium", width: 120 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "medium", width: 120 }}
+                      >
                         Name:
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
@@ -644,7 +660,10 @@ function Homepage() {
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex" }}>
-                      <Typography variant="body2" sx={{ fontWeight: "medium", width: 120 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "medium", width: 120 }}
+                      >
                         Email:
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
@@ -652,7 +671,10 @@ function Homepage() {
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex" }}>
-                      <Typography variant="body2" sx={{ fontWeight: "medium", width: 120 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "medium", width: 120 }}
+                      >
                         Member since:
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
@@ -661,43 +683,73 @@ function Homepage() {
                     </Box>
                   </Stack>
                 </Paper>
-                
-                <Paper 
-                  elevation={0} 
-                  sx={{ 
-                    p: 2, 
-                    bgcolor: "rgba(134, 97, 193, 0.05)", 
-                    borderRadius: 2
+
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    bgcolor: "rgba(134, 97, 193, 0.05)",
+                    borderRadius: 2,
                   }}
                 >
-                  <Typography variant="h6" sx={{ mb: 2 }}>Connected Services</Typography>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Connected Services
+                  </Typography>
                   <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
                     <Chip
                       label="Spotify"
-                      icon={userInfo.spotifyConnected ? <ChevronDown size={16} style={{ opacity: 0 }} /> : null}
-                      deleteIcon={userInfo.spotifyConnected ? <ChevronDown size={16} style={{ opacity: 0 }} /> : null}
-                      onDelete={userInfo.spotifyConnected ? (() => {}) : undefined}
+                      icon={
+                        userInfo.spotifyConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      deleteIcon={
+                        userInfo.spotifyConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      onDelete={
+                        userInfo.spotifyConnected ? () => {} : undefined
+                      }
                       sx={{
-                        bgcolor: userInfo.spotifyConnected ? "#1DB954" : "rgba(134, 97, 193, 0.1)",
-                        color: userInfo.spotifyConnected ? "white" : "text.primary",
+                        bgcolor: userInfo.spotifyConnected
+                          ? "#1DB954"
+                          : "rgba(134, 97, 193, 0.1)",
+                        color: userInfo.spotifyConnected
+                          ? "white"
+                          : "text.primary",
                         "& .MuiChip-icon": { color: "inherit" },
                         "& .MuiChip-deleteIcon": { color: "inherit" },
                       }}
                     />
                     <Chip
                       label="Apple Music"
-                      icon={userInfo.appleMusicConnected ? <ChevronDown size={16} style={{ opacity: 0 }} /> : null}
-                      deleteIcon={userInfo.appleMusicConnected ? <ChevronDown size={16} style={{ opacity: 0 }} /> : null}
-                      onDelete={userInfo.appleMusicConnected ? (() => {}) : undefined}
+                      icon={
+                        userInfo.appleMusicConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      deleteIcon={
+                        userInfo.appleMusicConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      onDelete={
+                        userInfo.appleMusicConnected ? () => {} : undefined
+                      }
                       sx={{
-                        bgcolor: userInfo.appleMusicConnected ? "#FC3C44" : "rgba(134, 97, 193, 0.1)",
-                        color: userInfo.appleMusicConnected ? "white" : "text.primary",
+                        bgcolor: userInfo.appleMusicConnected
+                          ? "#FC3C44"
+                          : "rgba(134, 97, 193, 0.1)",
+                        color: userInfo.appleMusicConnected
+                          ? "white"
+                          : "text.primary",
                         "& .MuiChip-icon": { color: "inherit" },
                         "& .MuiChip-deleteIcon": { color: "inherit" },
                       }}
                     />
                   </Box>
-                  
+
                   <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
                     {!userInfo.spotifyConnected && (
                       <Button
@@ -706,8 +758,8 @@ function Homepage() {
                         sx={{
                           bgcolor: "#1DB954",
                           "&:hover": {
-                            bgcolor: "#19a34a"
-                          }
+                            bgcolor: "#19a34a",
+                          },
                         }}
                       >
                         Connect Spotify
@@ -720,8 +772,8 @@ function Homepage() {
                         sx={{
                           bgcolor: "#FC3C44",
                           "&:hover": {
-                            bgcolor: "#e02e38"
-                          }
+                            bgcolor: "#e02e38",
+                          },
                         }}
                       >
                         Connect Apple Music
@@ -735,7 +787,7 @@ function Homepage() {
                 <CircularProgress size={40} sx={{ color: "primary.main" }} />
               </Box>
             )}
-            
+
             <Button
               variant="contained"
               onClick={() => setCurrentPage("main")}
