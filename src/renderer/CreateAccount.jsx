@@ -112,6 +112,10 @@ const CreateAccount = () => {
       );
       if (result.success) {
         await checkAuthStatus(); // Refresh auth status
+        const authStatus = await getAuthStatus();
+        if (authStatus.isSpotifyAuthenticated) {
+          await window.electronAPI.updateConnectedServices("spotify");
+        }
       }
     } catch (err) {
       console.error("[CreateAccount] Failed to connect to Spotify:", err);
@@ -132,6 +136,10 @@ const CreateAccount = () => {
       );
       if (result.success) {
         await checkAuthStatus(); // Refresh auth status
+        const authStatus = await getAuthStatus();
+        if (authStatus.isAppleMusicAuthenticated) {
+          await window.electronAPI.updateConnectedServices("appleMusic");
+        }
       }
     } catch (err) {
       console.error("[CreateAccount] Failed to connect to Apple Music:", err);

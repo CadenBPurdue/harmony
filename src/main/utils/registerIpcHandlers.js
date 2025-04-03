@@ -7,12 +7,13 @@ import {
   getAuthStatus,
 } from "./auth_manager.js";
 import { configManager } from "./config.js";
-import { authenticateWithFirebase } from "./firebase.js";
+import { authenticateWithFirebase, updateConnectedSerives } from "./firebase.js";
 import {
   writePlaylistToFirestore,
   getPlaylistsFromFirestore,
   getSharedPlaylistsFromFirestore,
   getPlaylistFromFirestore,
+  getUsersFromFirestore,
   getCurrentUserFromFirestore,
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
@@ -51,6 +52,18 @@ export function registerIpcHandlers() {
     return await getCurrentUserFromFirestore(userId);
   });
 
+  ipcMain.handle("firebase:getUsers", async () => {
+    return await getUsersFromFirestore();
+  });
+
+  ipcMain.handle("firebase:setSpotifyConnected", async () => {
+    return await updateConnectedSerives("spotify");
+  });
+
+  ipcMain.handle("firebase:setAppleMusicConnected", async () => {
+    return await updateConnectedSerives("appleMusic");
+  });
+  
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
     try {
       configManager.setCredentials("spotify", credentials);

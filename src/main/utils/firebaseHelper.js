@@ -76,6 +76,7 @@ function validateUser(user) {
     email: "string",
     createdAt: "timestamp",
     lastLoginAt: "timestamp",
+    connectedServices: "object",
   };
 
   function validateObject(obj, schema) {

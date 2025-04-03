@@ -358,7 +358,7 @@ class SpotifyApi {
 
     var playlist = {
       id: data.id,
-      user: data.owner?.display_name || "Unknown User",
+      user: data.owner?.display_name || "",
       origin: "Spotify",
       name: data.name,
       numberOfTracks: data.tracks.total,
