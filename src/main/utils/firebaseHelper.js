@@ -282,6 +282,15 @@ async function getUserFromFirestore(userId) {
   }
 }
 
+async function getCurrentUserFromFirestore() {
+  const auth = getAuthInstance();
+  if (!auth.currentUser) {
+    throw new Error("User must be authenticated to fetch current user");
+  }
+
+  return await getUserFromFirestore(auth.currentUser.uid);
+}
+
 export {
   validatePlaylist,
   writePlaylistToFirestore,
@@ -291,4 +300,5 @@ export {
   writeUserToFirestore,
   getUsersFromFirestore,
   getUserFromFirestore,
+  getCurrentUserFromFirestore,
 };

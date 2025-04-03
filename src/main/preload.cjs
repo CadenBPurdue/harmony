@@ -85,6 +85,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("firebase:getPlaylist", id);
   },
 
+  getUserInfoFromFirebase: (userId) => {
+    console.log("Calling getUserInfoFromFirebase from preload");
+    return ipcRenderer.invoke("firebase:getUserInfo", userId);
+  },
+
   // Open external links in the default browser
   openExternal: (url) => {
     console.log("Opening external URL:", url);

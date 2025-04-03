@@ -32,6 +32,7 @@ import {
   ThemeProvider,
   CssBaseline,
   Tooltip,
+  Chip,
 } from "@mui/material";
 import { useMediaQuery } from "@mui/material";
 import {
@@ -65,6 +66,24 @@ const normalizeTrackData = (trackItem, isArrayFormat) => {
   return trackItem[1];
 };
 
+function formatTimestamp(timestamp) {
+  if (!timestamp || typeof timestamp.seconds !== 'number') {
+    return 'Invalid timestamp';
+  }
+  
+  const date = new Date(timestamp.seconds * 1000);
+    const months = [
+    'January', 'February', 'March', 'April', 'May', 'June', 
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+
+  return `${month} ${day}, ${year}`;
+}
+
 function Homepage() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -95,6 +114,31 @@ function Homepage() {
   // User dropdown state
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState("main");
+
+  // User information state
+  const [userInfo, setUserInfo] = useState(null);
+
+  // Function to fetch user information
+  const fetchUserInfo = () => {
+    window.electronAPI.getUserInfoFromFirebase()
+      .then((info) => {
+        setUserInfo(info);
+      })
+      .catch((error) => {
+        console.error("Error fetching user information:", error);
+      });
+  };
+
+  // Navigate to a page
+  const navigateTo = (page) => {
+    setCurrentPage(page);
+    setUserDropdownOpen(false); // Close the dropdown after selection
+    
+    // Fetch user info when navigating to the user info page
+    if (page === "userInfo") {
+      fetchUserInfo();
+    }
+  };
 
   // Poll Apple Music playlist loading status
   const pollAppleMusicStatus = useCallback(() => {
@@ -578,13 +622,124 @@ function Homepage() {
             <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
               User Information
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              This is the user information page.
-            </Typography>
+            
+            {userInfo ? (
+              <Stack spacing={3}>
+                <Paper 
+                  elevation={0} 
+                  sx={{ 
+                    p: 2, 
+                    bgcolor: "rgba(134, 97, 193, 0.05)", 
+                    borderRadius: 2
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 2 }}>Profile</Typography>
+                  <Stack spacing={1}>
+                    <Box sx={{ display: "flex" }}>
+                      <Typography variant="body2" sx={{ fontWeight: "medium", width: 120 }}>
+                        Name:
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {userInfo.displayName || "Not provided"}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex" }}>
+                      <Typography variant="body2" sx={{ fontWeight: "medium", width: 120 }}>
+                        Email:
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {userInfo.email || "Not provided"}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex" }}>
+                      <Typography variant="body2" sx={{ fontWeight: "medium", width: 120 }}>
+                        Member since:
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {formatTimestamp(userInfo.createdAt) || "Unknown"}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Paper>
+                
+                <Paper 
+                  elevation={0} 
+                  sx={{ 
+                    p: 2, 
+                    bgcolor: "rgba(134, 97, 193, 0.05)", 
+                    borderRadius: 2
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 2 }}>Connected Services</Typography>
+                  <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                    <Chip
+                      label="Spotify"
+                      icon={userInfo.spotifyConnected ? <ChevronDown size={16} style={{ opacity: 0 }} /> : null}
+                      deleteIcon={userInfo.spotifyConnected ? <ChevronDown size={16} style={{ opacity: 0 }} /> : null}
+                      onDelete={userInfo.spotifyConnected ? (() => {}) : undefined}
+                      sx={{
+                        bgcolor: userInfo.spotifyConnected ? "#1DB954" : "rgba(134, 97, 193, 0.1)",
+                        color: userInfo.spotifyConnected ? "white" : "text.primary",
+                        "& .MuiChip-icon": { color: "inherit" },
+                        "& .MuiChip-deleteIcon": { color: "inherit" },
+                      }}
+                    />
+                    <Chip
+                      label="Apple Music"
+                      icon={userInfo.appleMusicConnected ? <ChevronDown size={16} style={{ opacity: 0 }} /> : null}
+                      deleteIcon={userInfo.appleMusicConnected ? <ChevronDown size={16} style={{ opacity: 0 }} /> : null}
+                      onDelete={userInfo.appleMusicConnected ? (() => {}) : undefined}
+                      sx={{
+                        bgcolor: userInfo.appleMusicConnected ? "#FC3C44" : "rgba(134, 97, 193, 0.1)",
+                        color: userInfo.appleMusicConnected ? "white" : "text.primary",
+                        "& .MuiChip-icon": { color: "inherit" },
+                        "& .MuiChip-deleteIcon": { color: "inherit" },
+                      }}
+                    />
+                  </Box>
+                  
+                  <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
+                    {!userInfo.spotifyConnected && (
+                      <Button
+                        variant="contained"
+                        onClick={() => window.electronAPI.connectSpotify()}
+                        sx={{
+                          bgcolor: "#1DB954",
+                          "&:hover": {
+                            bgcolor: "#19a34a"
+                          }
+                        }}
+                      >
+                        Connect Spotify
+                      </Button>
+                    )}
+                    {!userInfo.appleMusicConnected && (
+                      <Button
+                        variant="contained"
+                        onClick={() => window.electronAPI.connectAppleMusic()}
+                        sx={{
+                          bgcolor: "#FC3C44",
+                          "&:hover": {
+                            bgcolor: "#e02e38"
+                          }
+                        }}
+                      >
+                        Connect Apple Music
+                      </Button>
+                    )}
+                  </Box>
+                </Paper>
+              </Stack>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress size={40} sx={{ color: "primary.main" }} />
+              </Box>
+            )}
+            
             <Button
               variant="contained"
               onClick={() => setCurrentPage("main")}
-              sx={styles.continueButton}
+              sx={{ ...styles.continueButton, mt: 3 }}
             >
               Back to Main
             </Button>
@@ -963,6 +1118,7 @@ function Homepage() {
                         onClick={() => {
                           setCurrentPage("userInfo");
                           setUserDropdownOpen(false);
+                          fetchUserInfo();
                         }}
                       >
                         <ListItemText primary="User Info" />

@@ -112,10 +112,11 @@ class AppleMusicApi {
 
         // Return basic info for unloaded playlists
         return {
-          origin: "Apple Music",
+          id: playlistId,
           name: playlist.attributes?.name || "",
-          playlist_id: playlistId,
-          number_of_tracks: 0,
+          user: "", // info has to match firebase schema
+          origin: "Apple Music",
+          numberOfTracks: 0,
           duration: 0,
           description: playlist.attributes?.description?.standard || "",
           image:
@@ -447,11 +448,12 @@ class AppleMusicApi {
         );
 
         return {
+          user: "", // info has to match firebase schema
           origin: "Apple Music",
           name: playlist.attributes?.name || "",
-          playlist_id: playlistId,
+          id: playlistId,
           // Use loadedData instead of undefined tracks/totalDuration variables
-          number_of_tracks: loadedData.trackCount, // Changed from Object.keys(tracks).length
+          numberOfTracks: loadedData.trackCount, // Changed from Object.keys(tracks).length
           duration: loadedData.duration, // Changed from totalDuration
           description: playlist.attributes?.description?.standard || "",
           image:
@@ -460,7 +462,6 @@ class AppleMusicApi {
           tracks: Object.values(loadedData.tracks), // Changed from Object.values(tracks)
           isLoading: false,
           loadError: false,
-          id: playlistId,
           numberOfTracks: loadedData.trackCount, // Changed from Object.keys(tracks).length
           sharedWith: [],
         };

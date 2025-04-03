@@ -13,6 +13,7 @@ import {
   getPlaylistsFromFirestore,
   getSharedPlaylistsFromFirestore,
   getPlaylistFromFirestore,
+  getCurrentUserFromFirestore,
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
 
@@ -44,6 +45,10 @@ export function registerIpcHandlers() {
 
   ipcMain.handle("firebase:getPlaylists", async () => {
     return await getPlaylistsFromFirestore();
+  });
+
+  ipcMain.handle("firebase:getUserInfo", async (event, userId) => {
+    return await getCurrentUserFromFirestore(userId);
   });
 
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
