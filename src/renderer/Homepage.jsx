@@ -162,9 +162,9 @@ function Homepage() {
   };
 
   // Function to handle friend search
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!searchQuery) return;
-
+  
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(searchQuery)) {
       setSearchError('Invalid email format.');
@@ -175,21 +175,23 @@ function Homepage() {
     setSearchResult(null);
     setSearchError('');
     
-    const users = window.electronAPI.getUsersFromFirebase();
-    if (!users) {
-      setSearchError('No users found.');
-      setSearchLoading(false);
-      return;
-    } 
-
     try {
+      // Make this an await call to properly handle the promise
+      const users = await window.electronAPI.getUsersFromFirebase();
+      
+      if (!users || users.length === 0) {
+        setSearchError('No users found.');
+        setSearchLoading(false);
+        return;
+      }
+  
       let foundUser = null;
       users.forEach((user) => {
         if (user.email === searchQuery) {
           foundUser = user;
         }
       });
-
+  
       if (foundUser) {
         setSearchResult(foundUser);
       } else {
@@ -202,7 +204,7 @@ function Homepage() {
       setSearchLoading(false);
     }
   };
-
+  
   const handleConnectFriend = (userId) => {
     // write this function
     console.log("Connecting to friend with ID:", userId);

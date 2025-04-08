@@ -252,11 +252,14 @@ async function getUsersFromFirestore() {
   const collectionName = "users";
   const users = [];
 
+  console.log("Successfully entered the function getUsersFromFirestore");
+
   try {
     const querySnapshot = await getDocs(collection(db, collectionName));
     querySnapshot.forEach((doc) => {
       users.push({ id: doc.id, ...doc.data() });
     });
+    console.log("Successfully fetched users from Firestore");
     return users;
   } catch (error) {
     console.error("Error fetching users from Firestore:", error);

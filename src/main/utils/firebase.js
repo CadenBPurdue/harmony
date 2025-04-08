@@ -155,17 +155,8 @@ async function updateUserInFirestore(user) {
       );
     } else {
       // User does not exist, create the user
-      const newUser = {
-        userId: user.uid,
-        displayName: user.displayName || "",
-        email: user.email || "",
-        createdAt: Timestamp.fromDate(new Date()),
-        lastLoginAt: Timestamp.fromDate(new Date()),
-        connectedServices: {
-          appleMusic: false,
-          spotify: false,
-        },
-      };
+      const newUser = getNewUser();
+
 
       await writeUserToFirestore(newUser); // Pass the newUser object correctly
       console.log(`[Firebase] Created new user ${user.uid}`);
@@ -179,8 +170,6 @@ async function updateUserInFirestore(user) {
 async function updateConnectedSerives(service) {
   try {
     const existingUser = await getUserFromFirestore(user.uid);
-
-    console.log("TEJIGIRGRIGJIRGFNIRNGIFNRIGNIGRNIGNRIGNRINGI");
 
     var spotifyConnected = false;
     var appleMusicConnected = false;
@@ -205,17 +194,7 @@ async function updateConnectedSerives(service) {
       );
     } else {
       // User does not exist, create the user
-      const newUser = {
-        userId: user.uid,
-        displayName: user.displayName || "",
-        email: user.email || "",
-        createdAt: Timestamp.fromDate(new Date()),
-        lastLoginAt: Timestamp.fromDate(new Date()),
-        connectedServices: {
-          appleMusic: false,
-          spotify: false,
-        },
-      };
+      const newUser = getNewUser();
 
       await writeUserToFirestore(newUser); // Pass the newUser object correctly
       console.log(`[Firebase] Created new user ${user.uid}`);
@@ -224,6 +203,20 @@ async function updateConnectedSerives(service) {
     console.error("[Firebase] Error updating user in Firestore:", error);
     throw error;
   }
+}
+
+function getNewUser() {
+  return {
+    userId: "",
+    displayName: "",
+    email: "",
+    createdAt: Timestamp.fromDate(new Date()),
+    lastLoginAt: Timestamp.fromDate(new Date()),
+    connectedServices: {
+      appleMusic: false,
+      spotify: false,
+    },
+  };
 }
 
 function getDbInstance() {
