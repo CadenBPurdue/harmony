@@ -7,7 +7,10 @@ import {
   getAuthStatus,
 } from "./auth_manager.js";
 import { configManager } from "./config.js";
-import { authenticateWithFirebase, updateConnectedSerives } from "./firebase.js";
+import {
+  authenticateWithFirebase,
+  updateConnectedSerives,
+} from "./firebase.js";
 import {
   writePlaylistToFirestore,
   getPlaylistsFromFirestore,
@@ -63,7 +66,7 @@ export function registerIpcHandlers() {
   ipcMain.handle("firebase:setAppleMusicConnected", async () => {
     return await updateConnectedSerives("appleMusic");
   });
-  
+
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
     try {
       configManager.setCredentials("spotify", credentials);

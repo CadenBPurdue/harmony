@@ -157,7 +157,6 @@ async function updateUserInFirestore(user) {
       // User does not exist, create the user
       const newUser = getNewUser();
 
-
       await writeUserToFirestore(newUser); // Pass the newUser object correctly
       console.log(`[Firebase] Created new user ${user.uid}`);
     }
@@ -227,4 +226,9 @@ function getAuthInstance() {
   return getAuth();
 }
 
-export { authenticateWithFirebase, getDbInstance, getAuthInstance, updateConnectedSerives};
+export {
+  authenticateWithFirebase,
+  getDbInstance,
+  getAuthInstance,
+  updateConnectedSerives,
+};

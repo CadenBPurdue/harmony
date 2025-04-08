@@ -129,10 +129,10 @@ function Homepage() {
   const [userInfo, setUserInfo] = useState(null);
 
   // Friends page state
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError, setSearchError] = useState('');
+  const [searchError, setSearchError] = useState("");
   const [friendsList, setFriendsList] = useState([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [connectingId, setConnectingId] = useState(null);
@@ -164,47 +164,47 @@ function Homepage() {
   // Function to handle friend search
   const handleSearch = async () => {
     if (!searchQuery) return;
-  
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(searchQuery)) {
-      setSearchError('Invalid email format.');
+      setSearchError("Invalid email format.");
       return;
     }
-    
+
     setSearchLoading(true);
     setSearchResult(null);
-    setSearchError('');
-    
+    setSearchError("");
+
     try {
       // Make this an await call to properly handle the promise
       const users = await window.electronAPI.getUsersFromFirebase();
-      
+
       if (!users || users.length === 0) {
-        setSearchError('No users found.');
+        setSearchError("No users found.");
         setSearchLoading(false);
         return;
       }
-  
+
       let foundUser = null;
       users.forEach((user) => {
         if (user.email === searchQuery) {
           foundUser = user;
         }
       });
-  
+
       if (foundUser) {
         setSearchResult(foundUser);
       } else {
-        setSearchError('No user found with that email or username.');
+        setSearchError("No user found with that email or username.");
       }
     } catch (error) {
       console.error("Error searching for user:", error);
-      setSearchError('An error occurred while searching. Please try again.');
+      setSearchError("An error occurred while searching. Please try again.");
     } finally {
       setSearchLoading(false);
     }
   };
-  
+
   const handleConnectFriend = (userId) => {
     // write this function
     console.log("Connecting to friend with ID:", userId);
@@ -223,7 +223,7 @@ function Homepage() {
 
   // Fetch friends when navigating to the friends page
   useEffect(() => {
-    if (currentPage === 'friends') {
+    if (currentPage === "friends") {
       fetchFriends();
     }
   }, [currentPage]);
@@ -789,20 +789,38 @@ function Homepage() {
                         userInfo.spotifyConnected ? () => {} : undefined
                       }
                       sx={{
-                        bgcolor: userInfo.spotifyConnected ? "#1DB954" : "rgba(134, 97, 193, 0.1)",
-                        color: userInfo.spotifyConnected ? "white" : "text.primary",
+                        bgcolor: userInfo.spotifyConnected
+                          ? "#1DB954"
+                          : "rgba(134, 97, 193, 0.1)",
+                        color: userInfo.spotifyConnected
+                          ? "white"
+                          : "text.primary",
                         "& .MuiChip-icon": { color: "inherit" },
                         "& .MuiChip-deleteIcon": { color: "inherit" },
                       }}
                     />
                     <Chip
                       label="Apple Music"
-                      icon={userInfo.appleMusicConnected ? <ChevronDown size={16} style={{ opacity: 0 }} /> : null}
-                      deleteIcon={userInfo.appleMusicConnected ? <ChevronDown size={16} style={{ opacity: 0 }} /> : null}
-                      onDelete={userInfo.appleMusicConnected ? (() => {}) : undefined}
+                      icon={
+                        userInfo.appleMusicConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      deleteIcon={
+                        userInfo.appleMusicConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      onDelete={
+                        userInfo.appleMusicConnected ? () => {} : undefined
+                      }
                       sx={{
-                        bgcolor: userInfo.appleMusicConnected ? "#FC3C44" : "rgba(134, 97, 193, 0.1)",
-                        color: userInfo.appleMusicConnected ? "white" : "text.primary",
+                        bgcolor: userInfo.appleMusicConnected
+                          ? "#FC3C44"
+                          : "rgba(134, 97, 193, 0.1)",
+                        color: userInfo.appleMusicConnected
+                          ? "white"
+                          : "text.primary",
                         "& .MuiChip-icon": { color: "inherit" },
                         "& .MuiChip-deleteIcon": { color: "inherit" },
                       }}
@@ -813,9 +831,11 @@ function Homepage() {
                     {!userInfo.spotifyConnected && (
                       <Button
                         variant="contained"
-                        onClick={() => window.electronAPI?.connectSpotify().then(() => { 
-                          refreshSpotifyPlaylists();
-                        })}
+                        onClick={() =>
+                          window.electronAPI?.connectSpotify().then(() => {
+                            refreshSpotifyPlaylists();
+                          })
+                        }
                         sx={{
                           bgcolor: "#1DB954",
                           "&:hover": {
@@ -829,9 +849,11 @@ function Homepage() {
                     {!userInfo.appleMusicConnected && (
                       <Button
                         variant="contained"
-                        onClick={() => window.electronAPI.connectAppleMusic().then(() => {
-                          refreshAppleMusicPlaylists();
-                        })}
+                        onClick={() =>
+                          window.electronAPI.connectAppleMusic().then(() => {
+                            refreshAppleMusicPlaylists();
+                          })
+                        }
                         sx={{
                           bgcolor: "#FC3C44",
                           "&:hover": {
@@ -878,182 +900,201 @@ function Homepage() {
             </Button>
           </Paper>
         );
-        case "friends":
-          return (
-            <Paper sx={{ ...styles.paper, p: 3 }}>
-              <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
-                Friends
+      case "friends":
+        return (
+          <Paper sx={{ ...styles.paper, p: 3 }}>
+            <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
+              Friends
+            </Typography>
+
+            {/* Search Bar */}
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                mb: 3,
+                bgcolor: "rgba(134, 97, 193, 0.05)",
+                borderRadius: 2,
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Find Friends
               </Typography>
-              
-              {/* Search Bar */}
-              <Paper 
-                elevation={0} 
-                sx={{ 
-                  p: 2, 
-                  mb: 3,
-                  bgcolor: "rgba(134, 97, 193, 0.05)", 
-                  borderRadius: 2
-                }}
-              >
-                <Typography variant="h6" sx={{ mb: 2 }}>Find Friends</Typography>
-                <Box sx={{ display: 'flex', mb: 2 }}>
-                  <TextField
-                    fullWidth
-                    placeholder="Search by email or username"
-                    variant="outlined"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    sx={{ mr: 1 }}
-                    InputProps={{
-                      endAdornment: searchQuery && (
-                        <IconButton 
-                          size="small" 
-                          onClick={() => setSearchQuery('')}
-                          sx={{ color: 'text.secondary' }}
-                        >
-                          <Typography>×</Typography>
-                        </IconButton>
-                      )
-                    }}
-                  />
+              <Box sx={{ display: "flex", mb: 2 }}>
+                <TextField
+                  fullWidth
+                  placeholder="Search by email or username"
+                  variant="outlined"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  sx={{ mr: 1 }}
+                  InputProps={{
+                    endAdornment: searchQuery && (
+                      <IconButton
+                        size="small"
+                        onClick={() => setSearchQuery("")}
+                        sx={{ color: "text.secondary" }}
+                      >
+                        <Typography>×</Typography>
+                      </IconButton>
+                    ),
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleSearch}
+                  sx={styles.continueButton}
+                  disabled={!searchQuery || searchLoading}
+                >
+                  {searchLoading ? <CircularProgress size={24} /> : "Search"}
+                </Button>
+              </Box>
+
+              {/* Search Results */}
+              {searchResult && (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    bgcolor: "white",
+                    borderRadius: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Box>
+                    <Typography variant="body1" sx={{ fontWeight: "medium" }}>
+                      {searchResult.displayName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {searchResult.email}
+                    </Typography>
+                  </Box>
                   <Button
                     variant="contained"
-                    onClick={handleSearch}
-                    sx={styles.continueButton}
-                    disabled={!searchQuery || searchLoading}
-                  >
-                    {searchLoading ? <CircularProgress size={24} /> : "Search"}
-                  </Button>
-                </Box>
-                
-                {/* Search Results */}
-                {searchResult && (
-                  <Paper
-                    elevation={0}
+                    size="small"
+                    onClick={() => handleConnectFriend(searchResult.id)}
+                    disabled={connectingId === searchResult.id}
                     sx={{
-                      p: 2,
-                      bgcolor: "white",
-                      borderRadius: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between'
+                      bgcolor: colors.amethyst,
+                      "&:hover": {
+                        bgcolor: "#8a67c2",
+                      },
                     }}
                   >
-                    <Box>
-                      <Typography variant="body1" sx={{ fontWeight: "medium" }}>
-                        {searchResult.displayName}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {searchResult.email}
-                      </Typography>
-                    </Box>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      onClick={() => handleConnectFriend(searchResult.id)}
-                      disabled={connectingId === searchResult.id}
-                      sx={{
-                        bgcolor: colors.amethyst,
-                        '&:hover': {
-                          bgcolor: '#8a67c2',
-                        }
-                      }}
-                    >
-                      {connectingId === searchResult.id ? 
-                        <CircularProgress size={20} sx={{ color: 'white' }} /> : 
-                        "Connect"
-                      }
-                    </Button>
-                  </Paper>
-                )}
-                
-                {searchError && (
-                  <Alert severity="info" sx={{ mt: 2 }}>
-                    {searchError}
-                  </Alert>
-                )}
-              </Paper>
-              
-              {/* Friends List */}
-              <Paper 
-                elevation={0} 
-                sx={{ 
-                  p: 2, 
-                  bgcolor: "rgba(134, 97, 193, 0.05)", 
-                  borderRadius: 2
+                    {connectingId === searchResult.id ? (
+                      <CircularProgress size={20} sx={{ color: "white" }} />
+                    ) : (
+                      "Connect"
+                    )}
+                  </Button>
+                </Paper>
+              )}
+
+              {searchError && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  {searchError}
+                </Alert>
+              )}
+            </Paper>
+
+            {/* Friends List */}
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                bgcolor: "rgba(134, 97, 193, 0.05)",
+                borderRadius: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
                 }}
               >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                  <Typography variant="h6">My Friends</Typography>
-                  {friendsLoading ? (
-                    <CircularProgress size={20} sx={{ color: colors.amethyst }} />
-                  ) : (
-                    <IconButton 
-                      size="small" 
-                      onClick={fetchFriends}
-                      sx={{ color: colors.amethyst }}
-                    >
-                      <RefreshCw size={16} />
-                    </IconButton>
-                  )}
-                </Box>
-                
-                {friendsList.length > 0 ? (
-                  <Stack spacing={1}>
-                    {friendsList.map((friend) => (
-                      <Paper
-                        key={friend.id}
-                        elevation={0}
-                        sx={{
-                          p: 2,
-                          bgcolor: "white",
-                          borderRadius: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between'
-                        }}
-                      >
-                        <Box>
-                          <Typography variant="body1" sx={{ fontWeight: "medium" }}>
-                            {friend.displayName}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {friend.email}
-                          </Typography>
-                        </Box>
-                        <IconButton
-                          onClick={() => handleRemoveFriend(friend.id)}
-                          disabled={removingId === friend.id}
-                          sx={{ color: 'text.secondary' }}
-                        >
-                          {removingId === friend.id ? 
-                            <CircularProgress size={20} /> : 
-                            <Typography>×</Typography>
-                          }
-                        </IconButton>
-                      </Paper>
-                    ))}
-                  </Stack>
-                ) : friendsLoading ? (
-                  <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                    <CircularProgress size={30} sx={{ color: colors.amethyst }} />
-                  </Box>
+                <Typography variant="h6">My Friends</Typography>
+                {friendsLoading ? (
+                  <CircularProgress size={20} sx={{ color: colors.amethyst }} />
                 ) : (
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                    You haven't connected with any friends yet. Use the search above to find friends.
-                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={fetchFriends}
+                    sx={{ color: colors.amethyst }}
+                  >
+                    <RefreshCw size={16} />
+                  </IconButton>
                 )}
-              </Paper>
-              
-              <Button
-                variant="contained"
-                onClick={() => setCurrentPage("main")}
-                sx={{ ...styles.continueButton, mt: 3 }}
-              >
-                Back to Main
-              </Button>
+              </Box>
+
+              {friendsList.length > 0 ? (
+                <Stack spacing={1}>
+                  {friendsList.map((friend) => (
+                    <Paper
+                      key={friend.id}
+                      elevation={0}
+                      sx={{
+                        p: 2,
+                        bgcolor: "white",
+                        borderRadius: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Box>
+                        <Typography
+                          variant="body1"
+                          sx={{ fontWeight: "medium" }}
+                        >
+                          {friend.displayName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {friend.email}
+                        </Typography>
+                      </Box>
+                      <IconButton
+                        onClick={() => handleRemoveFriend(friend.id)}
+                        disabled={removingId === friend.id}
+                        sx={{ color: "text.secondary" }}
+                      >
+                        {removingId === friend.id ? (
+                          <CircularProgress size={20} />
+                        ) : (
+                          <Typography>×</Typography>
+                        )}
+                      </IconButton>
+                    </Paper>
+                  ))}
+                </Stack>
+              ) : friendsLoading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                  <CircularProgress size={30} sx={{ color: colors.amethyst }} />
+                </Box>
+              ) : (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ textAlign: "center", py: 4 }}
+                >
+                  You haven't connected with any friends yet. Use the search
+                  above to find friends.
+                </Typography>
+              )}
             </Paper>
-          );
+
+            <Button
+              variant="contained"
+              onClick={() => setCurrentPage("main")}
+              sx={{ ...styles.continueButton, mt: 3 }}
+            >
+              Back to Main
+            </Button>
+          </Paper>
+        );
       default:
         return renderPlaylistDetails();
     }
