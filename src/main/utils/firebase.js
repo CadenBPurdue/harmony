@@ -155,7 +155,7 @@ async function updateUserInFirestore(user) {
       );
     } else {
       // User does not exist, create the user
-      const newUser = getNewUser();
+      const newUser = getNewUser(user);
 
       await writeUserToFirestore(newUser); // Pass the newUser object correctly
       console.log(`[Firebase] Created new user ${user.uid}`);
@@ -193,7 +193,7 @@ async function updateConnectedSerives(service) {
       );
     } else {
       // User does not exist, create the user
-      const newUser = getNewUser();
+      const newUser = getNewUser(user);
 
       await writeUserToFirestore(newUser); // Pass the newUser object correctly
       console.log(`[Firebase] Created new user ${user.uid}`);
@@ -204,11 +204,11 @@ async function updateConnectedSerives(service) {
   }
 }
 
-function getNewUser() {
+function getNewUser(user) {
   return {
-    userId: "",
-    displayName: "",
-    email: "",
+    userId: user.uid,
+    displayName: user.displayName,
+    email: user.email,
     createdAt: Timestamp.fromDate(new Date()),
     lastLoginAt: Timestamp.fromDate(new Date()),
     connectedServices: {
