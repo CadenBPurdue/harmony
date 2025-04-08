@@ -1,5 +1,13 @@
 // src/main/utils/apple_music.js
 import axios from "axios";
+import {
+  normalizeTrackTitle,
+  normalizeArtistName,
+  areEquivalentTitles,
+  scoreSongMatch,
+  findExactMatch,
+  findBestMatch,
+} from "./match_scoring.js";
 import { getAppleMusicToken } from "./safe_storage.js";
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -181,9 +189,9 @@ class AppleMusicApi {
         nextUrl = null;
         if (response.data.next) {
           nextUrl = response.data.next;
-          console.log(
-            `[AppleMusicApi] Loading next page of tracks: ${nextUrl}`,
-          );
+          // console.log(
+          //   `[AppleMusicApi] Loading next page of tracks: ${nextUrl}`,
+          // );
           // Add a small delay between pagination requests
           await delay(500);
         }
@@ -206,9 +214,9 @@ class AppleMusicApi {
     }
 
     this.isLoadingDetails = true;
-    console.log(
-      `[AppleMusicApi] Starting background loading for ${playlists.length} playlists`,
-    );
+    // console.log(
+    //   `[AppleMusicApi] Starting background loading for ${playlists.length} playlists`,
+    // );
 
     try {
       // Filter out already loaded playlists
@@ -231,17 +239,17 @@ class AppleMusicApi {
 
       for (let i = 0; i < playlistsToLoad.length; i += 2) {
         const batch = playlistsToLoad.slice(i, i + 2);
-        console.log(
-          `[AppleMusicApi] Processing batch ${i / 2 + 1}: ${batch.map((p) => p.attributes?.name).join(", ")}`,
-        );
+        // console.log(
+        //   `[AppleMusicApi] Processing batch ${i / 2 + 1}: ${batch.map((p) => p.attributes?.name).join(", ")}`,
+        // );
 
         await Promise.all(
           batch.map(async (playlist) => {
             try {
               const playlistId = playlist.id;
-              console.log(
-                `[AppleMusicApi] Loading tracks for playlist: ${playlist.attributes?.name} (${playlistId})`,
-              );
+              // console.log(
+              //   `[AppleMusicApi] Loading tracks for playlist: ${playlist.attributes?.name} (${playlistId})`,
+              // );
 
               // Check if this playlist exists
               try {
@@ -278,9 +286,9 @@ class AppleMusicApi {
               let totalDuration = 0;
 
               if (allTracks.length > 0) {
-                console.log(
-                  `[AppleMusicApi] Found ${allTracks.length} tracks in playlist ${playlist.attributes?.name}`,
-                );
+                // console.log(
+                //   `[AppleMusicApi] Found ${allTracks.length} tracks in playlist ${playlist.attributes?.name}`,
+                // );
 
                 allTracks.forEach((track) => {
                   const trackDuration = track.attributes?.durationInMillis || 0;
@@ -352,16 +360,16 @@ class AppleMusicApi {
 
         // Add delay between batches to avoid rate limiting
         if (i + 2 < playlistsToLoad.length) {
-          console.log(
-            `[AppleMusicApi] Waiting before processing next batch...`,
-          );
+          // console.log(
+          //   `[AppleMusicApi] Waiting before processing next batch...`,
+          // );
           await delay(1000);
         }
       }
 
-      console.log(
-        `[AppleMusicApi] Background loading completed. Processed ${processedCount} playlists.`,
-      );
+      // console.log(
+      //   `[AppleMusicApi] Background loading completed. Processed ${processedCount} playlists.`,
+      // );
       this.loadingProgress.isComplete =
         this.loadingProgress.loaded >= this.loadingProgress.total;
     } catch (error) {
@@ -470,9 +478,9 @@ class AppleMusicApi {
       }
 
       // Get tracks if not already loaded
-      console.log(
-        `[AppleMusicApi] Loading tracks for playlist: ${playlist.attributes?.name}`,
-      );
+      // console.log(
+      //   `[AppleMusicApi] Loading tracks for playlist: ${playlist.attributes?.name}`,
+      // );
 
       // Get all tracks with pagination
       let allTracks;
@@ -549,6 +557,7 @@ class AppleMusicApi {
       return {
         origin: "Apple Music",
         name: "Error Loading Playlist",
+        user: "",
         playlist_id: typeof input === "string" ? input : "unknown",
         number_of_tracks: 0,
         duration: 0,
@@ -574,27 +583,6 @@ class AppleMusicApi {
     };
   }
 
-  calculateSimilarity(str1, str2) {
-    const s1 = str1.toLowerCase();
-    const s2 = str2.toLowerCase();
-
-    if (s1 === s2) return 1;
-
-    let matchCount = 0;
-    const words1 = s1.split(" ");
-    const words2 = s2.split(" ");
-
-    for (const word1 of words1) {
-      if (
-        words2.some((word2) => word2.includes(word1) || word1.includes(word2))
-      ) {
-        matchCount++;
-      }
-    }
-
-    return matchCount / Math.max(words1.length, words2.length);
-  }
-
   async findSong(songUF) {
     if (!this.api) {
       await this.initialize();
@@ -602,111 +590,194 @@ class AppleMusicApi {
 
     try {
       if (!songUF.name || !songUF.artist) {
-        throw new Error("Song name and artist are required");
-      }
-
-      const searchQuery = `${songUF.name} ${songUF.artist}`;
-
-      const response = await this.api.get(
-        `/v1/catalog/${this.storefront}/search`,
-        {
-          params: {
-            term: searchQuery,
-            types: "songs",
-            limit: 5,
-          },
-        },
-      );
-
-      if (!response.data.results.songs) {
+        console.log("[AppleMusicApi] MATCH FAILED: Missing name or artist");
         return null;
       }
 
-      const songs = response.data.results.songs.data;
+      // Normalize inputs
+      const normalizedTitle = normalizeTrackTitle(songUF.name);
+      const normalizedArtist = normalizeArtistName(songUF.artist);
 
-      const scoredResults = songs.map((song) => {
-        const nameExactMatch =
-          song.attributes.name.toLowerCase() === songUF.name.toLowerCase()
-            ? 1
-            : 0;
-        const artistExactMatch =
-          song.attributes.artistName.toLowerCase() ===
-          songUF.artist.toLowerCase()
-            ? 1
-            : 0;
+      // Define search strategies
+      const searchStrategies = [
+        // Strategy 1: Standard search with normalized name and artist
+        {
+          name: "Standard search",
+          query: `${normalizedTitle} ${normalizedArtist}`,
+          limit: 15,
+        },
+        // Strategy 2: Artist search with title filtering
+        {
+          name: "Artist search",
+          query: normalizedArtist,
+          limit: 25,
+          titleFilter: normalizedTitle,
+        },
+      ];
 
-        const nameScore = this.calculateSimilarity(
-          song.attributes.name,
-          songUF.name,
-        );
-        const artistScore = this.calculateSimilarity(
-          song.attributes.artistName,
-          songUF.artist,
-        );
-        const albumScore = songUF.album
-          ? this.calculateSimilarity(song.attributes.albumName, songUF.album)
-          : 1;
+      let allCandidates = [];
 
-        const totalScore =
-          nameExactMatch * 0.2 +
-          nameScore * 0.2 +
-          (artistExactMatch * 0.2 + artistScore * 0.2) +
-          albumScore * 0.2;
-
-        let durationMatch = 1;
-        if (songUF.duration && song.attributes.durationInMillis) {
-          const durationDiff = Math.abs(
-            song.attributes.durationInMillis - songUF.duration,
+      // Try each search strategy
+      for (const strategy of searchStrategies) {
+        try {
+          const response = await this.api.get(
+            `/v1/catalog/${this.storefront}/search`,
+            {
+              params: {
+                term: strategy.query,
+                types: "songs",
+                limit: strategy.limit || 10,
+              },
+            },
           );
-          const durationDiffPercent = durationDiff / songUF.duration;
-          if (durationDiffPercent > 0.1) {
-            durationMatch = 0.5;
+
+          if (
+            !response.data.results.songs ||
+            response.data.results.songs.data.length === 0
+          ) {
+            continue; // Try the next strategy
           }
+
+          let songs = response.data.results.songs.data;
+
+          // Apply artist filter - STRICT MATCHING
+          // Only accept songs by the same artist or featuring the artist
+          const artistFilter = normalizedArtist.toLowerCase();
+          songs = songs.filter((song) => {
+            const songArtist = song.attributes.artistName.toLowerCase();
+            // Check if artists match or if the song artist contains the search artist
+            return (
+              songArtist === artistFilter ||
+              songArtist.includes(artistFilter) ||
+              artistFilter.includes(songArtist)
+            );
+          });
+
+          if (songs.length === 0) continue; // Try the next strategy if no matches
+
+          // Apply title filter if specified
+          if (strategy.titleFilter) {
+            const titleFilter = strategy.titleFilter.toLowerCase();
+            songs = songs.filter((song) => {
+              const songTitle = normalizeTrackTitle(
+                song.attributes.name,
+              ).toLowerCase();
+              // More lenient title matching but still needs to be recognizable
+              return (
+                songTitle.includes(titleFilter) ||
+                titleFilter.includes(songTitle) ||
+                areEquivalentTitles(song.attributes.name, songUF.name)
+              );
+            });
+
+            if (songs.length === 0) continue;
+          }
+
+          // Score each candidate
+          const scoredResults = songs.map((song) => {
+            const result = scoreSongMatch(
+              {
+                name: song.attributes.name,
+                artist: song.attributes.artistName,
+                album: song.attributes.albumName,
+                duration: song.attributes.durationInMillis,
+                id: song.id,
+              },
+              {
+                name: songUF.name,
+                artist: songUF.artist,
+                album: songUF.album,
+                duration: songUF.duration,
+              },
+            );
+
+            // Store the song ID in the result
+            result.id = song.id;
+
+            return result;
+          });
+
+          // Add to all candidates
+          allCandidates = [...allCandidates, ...scoredResults];
+
+          // Only match if we have EXACT artist match
+          const exactArtistMatches = scoredResults.filter(
+            (result) => result.details.isOriginalArtist,
+          );
+
+          if (exactArtistMatches.length > 0) {
+            // If we have any matches by the correct artist, sort by score
+            exactArtistMatches.sort((a, b) => b.score - a.score);
+
+            // Just take the top match if it's good enough
+            const bestExactMatch = exactArtistMatches[0];
+
+            if (bestExactMatch.score >= 0.75) {
+              console.log(
+                `[AppleMusicApi] Found match with correct artist: "${bestExactMatch.details.name}" by "${bestExactMatch.details.artist}" (Score: ${bestExactMatch.score.toFixed(2)})`,
+              );
+              return bestExactMatch.id;
+            }
+          }
+        } catch (error) {
+          console.error(
+            `[AppleMusicApi] Error with ${strategy.name}:`,
+            error.message,
+          );
+          continue; // Try the next strategy
         }
-
-        const finalScore = totalScore * durationMatch;
-
-        return {
-          id: song.id,
-          score: finalScore,
-          attributes: song.attributes,
-          matches: {
-            nameExact: nameExactMatch === 1,
-            artistExact: artistExactMatch === 1,
-            namePartial: nameScore,
-            artistPartial: artistScore,
-            albumMatch: albumScore,
-            durationMatch,
-          },
-        };
-      });
-
-      scoredResults.sort((a, b) => b.score - a.score);
-
-      const bestMatch = scoredResults[0];
-      const matchThresholds = {
-        minimumScore: 0.7,
-        nameThreshold: 0.6,
-        artistThreshold: 0.6,
-      };
-
-      if (
-        bestMatch.score >= matchThresholds.minimumScore &&
-        (bestMatch.matches.nameExact ||
-          bestMatch.matches.namePartial >= matchThresholds.nameThreshold) &&
-        (bestMatch.matches.artistExact ||
-          bestMatch.matches.artistPartial >= matchThresholds.artistThreshold)
-      ) {
-        return bestMatch.id;
       }
 
+      // If we reach here, no direct artist match was found
+      if (allCandidates.length > 0) {
+        // Final check: exact artist and title match with any score
+        const exactMatches = allCandidates.filter(
+          (result) =>
+            result.details.isOriginalArtist &&
+            areEquivalentTitles(result.details.name, songUF.name),
+        );
+
+        if (exactMatches.length > 0) {
+          exactMatches.sort((a, b) => b.score - a.score);
+          return exactMatches[0].id;
+        }
+      }
+
+      // If we get here, all strategies failed - log the failure
+      console.log(
+        "\n========== MATCH FAILED: NO EXACT ARTIST MATCH ==========",
+      );
+      console.log(`Original: "${songUF.name}" by "${songUF.artist}"`);
+      if (songUF.album) console.log(`Album: "${songUF.album}"`);
+      console.log(`Normalized title: "${normalizedTitle}"`);
+      console.log(`Normalized artist: "${normalizedArtist}"`);
+
+      // Log the top candidates
+      console.log("\nTop candidates that were rejected (wrong artist):");
+      allCandidates
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3)
+        .forEach((result, idx) => {
+          console.log(
+            `[${idx + 1}] "${result.details.name}" by "${result.details.artist}"`,
+          );
+          console.log(
+            `    Normalized name: "${result.details.normalizedName}"`,
+          );
+          console.log(`    Score: ${result.score.toFixed(3)}`);
+          console.log(
+            `    Original Artist: ${result.details.isOriginalArtist ? "Yes" : "No"}`,
+          );
+        });
+
+      console.log("=======================================================\n");
       return null;
     } catch (error) {
-      console.error(
-        "[AppleMusicApi] Error in findSong:",
-        error.response?.data || error,
-      );
-      throw error;
+      console.error("\n========== MATCH ERROR ==========");
+      console.log(`Failed to match: "${songUF.name}" by "${songUF.artist}"`);
+      console.error("Error:", error.message || error);
+      console.log("=================================\n");
+      return null;
     }
   }
 
@@ -794,9 +865,9 @@ class AppleMusicApi {
         1000,
         async ([_, trackInfo]) => {
           try {
-            console.log(
-              `[PopulatePlaylist] Processing track: ${trackInfo.name} by ${trackInfo.artist}`,
-            );
+            // console.log(
+            //   `[PopulatePlaylist] Processing track: ${trackInfo.name} by ${trackInfo.artist}`,
+            // );
             const catalogId = await this.findSong(trackInfo);
             if (catalogId) {
               return {
