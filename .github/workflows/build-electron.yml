@@ -58,7 +58,19 @@ jobs:
         sudo apt-get install -y snapd
         sudo snap install snapcraft --classic
 
-    - name: Package app
+    - name: Package app for macOS
+      if: inputs.os == 'macos-latest'
+      run: npm run electron:build:${{ inputs.arch }}
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CSC_LINK: ./certificate.p12
+        CSC_KEY_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        CSC_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          
+    - name: Package app for non-macOS
+      if: inputs.os != 'macos-latest'
       run: npm run electron:build:${{ inputs.arch }}
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

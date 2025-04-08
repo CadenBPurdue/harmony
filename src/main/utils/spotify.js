@@ -235,15 +235,60 @@ class SpotifyApi {
     }
 
     try {
+      // Get the initial playlist data
       const response = await axios.get(
         `https://api.spotify.com/v1/playlists/${id}`,
         {
           headers: { Authorization: `Bearer ${this.auth_token}` },
         },
       );
-      return SpotifyApi.convertToUniversalFormat(response.data);
+
+      // Store the initial tracks
+      let allTracks = response.data.tracks.items || [];
+      let nextUrl = response.data.tracks.next;
+
+      // Fetch additional tracks if there are more
+      while (nextUrl) {
+        console.log(`[SpotifyApi] Fetching more tracks from: ${nextUrl}`);
+
+        const nextResponse = await axios.get(nextUrl, {
+          headers: { Authorization: `Bearer ${this.auth_token}` },
+        });
+
+        // Add the new tracks to our collection
+        if (nextResponse.data.items && nextResponse.data.items.length > 0) {
+          allTracks = [...allTracks, ...nextResponse.data.items];
+        }
+
+        // Update the next URL for pagination
+        nextUrl = nextResponse.data.next;
+
+        // Add a small delay to avoid rate limiting
+        if (nextUrl) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+      }
+
+      console.log(
+        `[SpotifyApi] Retrieved a total of ${allTracks.length} tracks for playlist ${id}`,
+      );
+
+      // Create a modified response with all tracks
+      const fullResponse = {
+        ...response.data,
+        tracks: {
+          ...response.data.tracks,
+          items: allTracks,
+          total: allTracks.length,
+        },
+      };
+
+      return SpotifyApi.convertToUniversalFormat(fullResponse);
     } catch (error) {
-      console.log(error);
+      console.error(
+        `[SpotifyApi] Error fetching playlist ${id}:`,
+        error.response?.data || error.message,
+      );
       throw new Error("Failed to fetch playlist from URL");
     }
   }
@@ -358,7 +403,7 @@ class SpotifyApi {
 
     var playlist = {
       id: data.id,
-      user: data.owner?.display_name || "",
+      user: data.owner?.display_name || "Unknown User",
       origin: "Spotify",
       name: data.name,
       numberOfTracks: data.tracks.total,

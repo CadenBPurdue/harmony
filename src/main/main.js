@@ -12,7 +12,6 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/* eslint-disable-next-line no-unused-vars */
 let mainWindow = null;
 
 function createWindow() {
@@ -28,7 +27,6 @@ function createWindow() {
       preload: path.join(__dirname, "preload.cjs"),
       webSecurity: true,
     },
-    devTools: true,
   });
 
   if (process.env.NODE_ENV === "development") {
@@ -113,6 +111,15 @@ function createWindow() {
     },
   );
 
+  // Handle window close event specifically for macOS
+  window.on("close", (event) => {
+    console.log("[Window] Close event triggered");
+    // Force the app to quit completely when window is closed
+    if (process.platform === "darwin") {
+      app.quit();
+    }
+  });
+
   return window;
 }
 
@@ -139,14 +146,21 @@ app.on("open-url", (event, url) => {
   console.log("Received URL on macOS:", url);
 });
 
+// Modified to make sure app quits on all platforms
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
+  console.log("[App] All windows closed, quitting application");
+  app.quit();
 });
 
+// This handles activation (clicking on the dock icon)
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     mainWindow = createWindow();
   }
+});
+
+// Additional explicit quit handler for macOS
+app.on("before-quit", () => {
+  console.log("[App] Application will quit");
+  // You can add cleanup code here if needed
 });

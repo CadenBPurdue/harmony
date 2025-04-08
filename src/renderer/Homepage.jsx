@@ -504,7 +504,7 @@ function Homepage() {
 
     // Always return to main page when selecting a playlist
     setCurrentPage("main");
-
+    
     if (isMobile) {
       setMobileDrawerOpen(false);
     }
