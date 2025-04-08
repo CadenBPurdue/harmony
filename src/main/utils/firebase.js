@@ -155,16 +155,7 @@ async function updateUserInFirestore(user) {
       );
     } else {
       // User does not exist, create the user
-      const newUser = {
-        userId: user.uid,
-        displayName: user.displayName || "",
-        email: user.email || "",
-        profilePictureUrl: user.photoURL || "",
-        createdAt: Timestamp.fromDate(new Date()),
-        lastLoginAt: Timestamp.fromDate(new Date()),
-        playlists: [],
-        sharedPlaylists: [],
-      };
+      const newUser = getNewUser(user);
 
       await writeUserToFirestore(newUser); // Pass the newUser object correctly
       console.log(`[Firebase] Created new user ${user.uid}`);
@@ -175,6 +166,58 @@ async function updateUserInFirestore(user) {
   }
 }
 
+async function updateConnectedSerives(service) {
+  try {
+    const existingUser = await getUserFromFirestore(user.uid);
+
+    var spotifyConnected = false;
+    var appleMusicConnected = false;
+    if (service == "appleMusic") {
+      appleMusicConnected = true;
+    } else if (service == "spotify") {
+      spotifyConnected = true;
+    }
+
+    if (existingUser) {
+      // User exists, update the last logged in timestamp
+      const updatedUser = {
+        ...existingUser,
+        connectedServices: {
+          appleMusic: appleMusicConnected,
+          spotify: spotifyConnected,
+        },
+      };
+      await writeUserToFirestore(updatedUser);
+      console.log(
+        `[Firebase] Updated last login timestamp for user ${user.uid}`,
+      );
+    } else {
+      // User does not exist, create the user
+      const newUser = getNewUser(user);
+
+      await writeUserToFirestore(newUser); // Pass the newUser object correctly
+      console.log(`[Firebase] Created new user ${user.uid}`);
+    }
+  } catch (error) {
+    console.error("[Firebase] Error updating user in Firestore:", error);
+    throw error;
+  }
+}
+
+function getNewUser(user) {
+  return {
+    userId: user.uid,
+    displayName: user.displayName,
+    email: user.email,
+    createdAt: Timestamp.fromDate(new Date()),
+    lastLoginAt: Timestamp.fromDate(new Date()),
+    connectedServices: {
+      appleMusic: false,
+      spotify: false,
+    },
+  };
+}
+
 function getDbInstance() {
   return getFirestore();
 }
@@ -183,4 +226,9 @@ function getAuthInstance() {
   return getAuth();
 }
 
-export { authenticateWithFirebase, getDbInstance, getAuthInstance };
+export {
+  authenticateWithFirebase,
+  getDbInstance,
+  getAuthInstance,
+  updateConnectedSerives,
+};

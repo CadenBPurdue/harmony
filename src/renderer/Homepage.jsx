@@ -32,6 +32,7 @@ import {
   ThemeProvider,
   CssBaseline,
   Tooltip,
+  Chip,
 } from "@mui/material";
 import { useMediaQuery } from "@mui/material";
 import {
@@ -65,6 +66,34 @@ const normalizeTrackData = (trackItem, isArrayFormat) => {
   return trackItem[1];
 };
 
+function formatTimestamp(timestamp) {
+  if (!timestamp || typeof timestamp.seconds !== "number") {
+    return "Invalid timestamp";
+  }
+
+  const date = new Date(timestamp.seconds * 1000);
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+
+  return `${month} ${day}, ${year}`;
+}
+
 function Homepage() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -91,6 +120,113 @@ function Homepage() {
   // Loading state for both services
   const [loadingSpotify, setLoadingSpotify] = useState(false);
   const [loadingAppleMusic, setLoadingAppleMusic] = useState(false);
+
+  // User dropdown state
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState("main");
+
+  // User information state
+  const [userInfo, setUserInfo] = useState(null);
+
+  // Friends page state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResult, setSearchResult] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [friendsList, setFriendsList] = useState([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [connectingId, setConnectingId] = useState(null);
+  const [removingId, setRemovingId] = useState(null);
+
+  // Function to fetch user information
+  const fetchUserInfo = () => {
+    window.electronAPI
+      .getUserInfoFromFirebase()
+      .then((info) => {
+        setUserInfo(info);
+      })
+      .catch((error) => {
+        console.error("Error fetching user information:", error);
+      });
+  };
+
+  // Navigate to a page
+  const navigateTo = (page) => {
+    setCurrentPage(page);
+    setUserDropdownOpen(false); // Close the dropdown after selection
+
+    // Fetch user info when navigating to the user info page
+    if (page === "userInfo") {
+      fetchUserInfo();
+    }
+  };
+
+  // Function to handle friend search
+  const handleSearch = async () => {
+    if (!searchQuery) return;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(searchQuery)) {
+      setSearchError("Invalid email format.");
+      return;
+    }
+
+    setSearchLoading(true);
+    setSearchResult(null);
+    setSearchError("");
+
+    try {
+      // Make this an await call to properly handle the promise
+      const users = await window.electronAPI.getUsersFromFirebase();
+
+      if (!users || users.length === 0) {
+        setSearchError("No users found.");
+        setSearchLoading(false);
+        return;
+      }
+
+      let foundUser = null;
+      users.forEach((user) => {
+        if (user.email === searchQuery) {
+          foundUser = user;
+        }
+      });
+
+      if (foundUser) {
+        setSearchResult(foundUser);
+      } else {
+        setSearchError("No user found with that email or username.");
+      }
+    } catch (error) {
+      console.error("Error searching for user:", error);
+      setSearchError("An error occurred while searching. Please try again.");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleConnectFriend = (userId) => {
+    // write this function
+    console.log("Connecting to friend with ID:", userId);
+  };
+
+  const handleRemoveFriend = (userId) => {
+    // write this function
+    console.log("Removing friend with ID:", userId);
+  };
+
+  // Function to fetch friends list
+  const fetchFriends = () => {
+    // Fetch the friends list from Firebase
+    console.log("Fetching friends list...");
+  };
+
+  // Fetch friends when navigating to the friends page
+  useEffect(() => {
+    if (currentPage === "friends") {
+      fetchFriends();
+    }
+  }, [currentPage]);
 
   // Poll Apple Music playlist loading status
   const pollAppleMusicStatus = useCallback(() => {
@@ -366,6 +502,9 @@ function Homepage() {
       setSelectedPlaylist(playlist);
     }
 
+    // Always return to main page when selecting a playlist
+    setCurrentPage("main");
+
     if (isMobile) {
       setMobileDrawerOpen(false);
     }
@@ -562,6 +701,405 @@ function Homepage() {
     </Box>
   );
 
+  // Render different pages based on currentPage state
+  const renderCurrentPage = () => {
+    switch (currentPage) {
+      case "userInfo":
+        return (
+          <Paper sx={{ ...styles.paper, p: 3 }}>
+            <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
+              User Information
+            </Typography>
+
+            {userInfo ? (
+              <Stack spacing={3}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    bgcolor: "rgba(134, 97, 193, 0.05)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Profile
+                  </Typography>
+                  <Stack spacing={1}>
+                    <Box sx={{ display: "flex" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "medium", width: 120 }}
+                      >
+                        Name:
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {userInfo.displayName || "Not provided"}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "medium", width: 120 }}
+                      >
+                        Email:
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {userInfo.email || "Not provided"}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "medium", width: 120 }}
+                      >
+                        Member since:
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {formatTimestamp(userInfo.createdAt) || "Unknown"}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </Paper>
+
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    bgcolor: "rgba(134, 97, 193, 0.05)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Connected Services
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                    <Chip
+                      label="Spotify"
+                      icon={
+                        userInfo.spotifyConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      deleteIcon={
+                        userInfo.spotifyConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      onDelete={
+                        userInfo.spotifyConnected ? () => {} : undefined
+                      }
+                      sx={{
+                        bgcolor: userInfo.spotifyConnected
+                          ? "#1DB954"
+                          : "rgba(134, 97, 193, 0.1)",
+                        color: userInfo.spotifyConnected
+                          ? "white"
+                          : "text.primary",
+                        "& .MuiChip-icon": { color: "inherit" },
+                        "& .MuiChip-deleteIcon": { color: "inherit" },
+                      }}
+                    />
+                    <Chip
+                      label="Apple Music"
+                      icon={
+                        userInfo.appleMusicConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      deleteIcon={
+                        userInfo.appleMusicConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      onDelete={
+                        userInfo.appleMusicConnected ? () => {} : undefined
+                      }
+                      sx={{
+                        bgcolor: userInfo.appleMusicConnected
+                          ? "#FC3C44"
+                          : "rgba(134, 97, 193, 0.1)",
+                        color: userInfo.appleMusicConnected
+                          ? "white"
+                          : "text.primary",
+                        "& .MuiChip-icon": { color: "inherit" },
+                        "& .MuiChip-deleteIcon": { color: "inherit" },
+                      }}
+                    />
+                  </Box>
+
+                  <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
+                    {!userInfo.spotifyConnected && (
+                      <Button
+                        variant="contained"
+                        onClick={() =>
+                          window.electronAPI?.connectSpotify().then(() => {
+                            refreshSpotifyPlaylists();
+                          })
+                        }
+                        sx={{
+                          bgcolor: "#1DB954",
+                          "&:hover": {
+                            bgcolor: "#19a34a",
+                          },
+                        }}
+                      >
+                        Connect Spotify
+                      </Button>
+                    )}
+                    {!userInfo.appleMusicConnected && (
+                      <Button
+                        variant="contained"
+                        onClick={() =>
+                          window.electronAPI.connectAppleMusic().then(() => {
+                            refreshAppleMusicPlaylists();
+                          })
+                        }
+                        sx={{
+                          bgcolor: "#FC3C44",
+                          "&:hover": {
+                            bgcolor: "#e02e38",
+                          },
+                        }}
+                      >
+                        Connect Apple Music
+                      </Button>
+                    )}
+                  </Box>
+                </Paper>
+              </Stack>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress size={40} sx={{ color: "primary.main" }} />
+              </Box>
+            )}
+
+            <Button
+              variant="contained"
+              onClick={() => setCurrentPage("main")}
+              sx={{ ...styles.continueButton, mt: 3 }}
+            >
+              Back to Main
+            </Button>
+          </Paper>
+        );
+      case "settings":
+        return (
+          <Paper sx={{ ...styles.paper, p: 3 }}>
+            <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
+              Settings
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              This is the settings page.
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => setCurrentPage("main")}
+              sx={styles.continueButton}
+            >
+              Back to Main
+            </Button>
+          </Paper>
+        );
+      case "friends":
+        return (
+          <Paper sx={{ ...styles.paper, p: 3 }}>
+            <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
+              Friends
+            </Typography>
+
+            {/* Search Bar */}
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                mb: 3,
+                bgcolor: "rgba(134, 97, 193, 0.05)",
+                borderRadius: 2,
+              }}
+            >
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Find Friends
+              </Typography>
+              <Box sx={{ display: "flex", mb: 2 }}>
+                <TextField
+                  fullWidth
+                  placeholder="Search by email or username"
+                  variant="outlined"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  sx={{ mr: 1 }}
+                  InputProps={{
+                    endAdornment: searchQuery && (
+                      <IconButton
+                        size="small"
+                        onClick={() => setSearchQuery("")}
+                        sx={{ color: "text.secondary" }}
+                      >
+                        <Typography>×</Typography>
+                      </IconButton>
+                    ),
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleSearch}
+                  sx={styles.continueButton}
+                  disabled={!searchQuery || searchLoading}
+                >
+                  {searchLoading ? <CircularProgress size={24} /> : "Search"}
+                </Button>
+              </Box>
+
+              {/* Search Results */}
+              {searchResult && (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    bgcolor: "white",
+                    borderRadius: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Box>
+                    <Typography variant="body1" sx={{ fontWeight: "medium" }}>
+                      {searchResult.displayName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {searchResult.email}
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => handleConnectFriend(searchResult.id)}
+                    disabled={connectingId === searchResult.id}
+                    sx={{
+                      bgcolor: colors.amethyst,
+                      "&:hover": {
+                        bgcolor: "#8a67c2",
+                      },
+                    }}
+                  >
+                    {connectingId === searchResult.id ? (
+                      <CircularProgress size={20} sx={{ color: "white" }} />
+                    ) : (
+                      "Connect"
+                    )}
+                  </Button>
+                </Paper>
+              )}
+
+              {searchError && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  {searchError}
+                </Alert>
+              )}
+            </Paper>
+
+            {/* Friends List */}
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                bgcolor: "rgba(134, 97, 193, 0.05)",
+                borderRadius: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h6">My Friends</Typography>
+                {friendsLoading ? (
+                  <CircularProgress size={20} sx={{ color: colors.amethyst }} />
+                ) : (
+                  <IconButton
+                    size="small"
+                    onClick={fetchFriends}
+                    sx={{ color: colors.amethyst }}
+                  >
+                    <RefreshCw size={16} />
+                  </IconButton>
+                )}
+              </Box>
+
+              {friendsList.length > 0 ? (
+                <Stack spacing={1}>
+                  {friendsList.map((friend) => (
+                    <Paper
+                      key={friend.id}
+                      elevation={0}
+                      sx={{
+                        p: 2,
+                        bgcolor: "white",
+                        borderRadius: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Box>
+                        <Typography
+                          variant="body1"
+                          sx={{ fontWeight: "medium" }}
+                        >
+                          {friend.displayName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {friend.email}
+                        </Typography>
+                      </Box>
+                      <IconButton
+                        onClick={() => handleRemoveFriend(friend.id)}
+                        disabled={removingId === friend.id}
+                        sx={{ color: "text.secondary" }}
+                      >
+                        {removingId === friend.id ? (
+                          <CircularProgress size={20} />
+                        ) : (
+                          <Typography>×</Typography>
+                        )}
+                      </IconButton>
+                    </Paper>
+                  ))}
+                </Stack>
+              ) : friendsLoading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                  <CircularProgress size={30} sx={{ color: colors.amethyst }} />
+                </Box>
+              ) : (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ textAlign: "center", py: 4 }}
+                >
+                  You haven't connected with any friends yet. Use the search
+                  above to find friends.
+                </Typography>
+              )}
+            </Paper>
+
+            <Button
+              variant="contained"
+              onClick={() => setCurrentPage("main")}
+              sx={{ ...styles.continueButton, mt: 3 }}
+            >
+              Back to Main
+            </Button>
+          </Paper>
+        );
+      default:
+        return renderPlaylistDetails();
+    }
+  };
+
   const renderPlaylistDetails = () => {
     if (!selectedPlaylist) {
       return (
@@ -624,7 +1162,7 @@ function Homepage() {
               </Typography>
             )}
             <Typography variant="body2" color="text.secondary">
-              Tracks: {selectedPlaylist.number_of_tracks} • Duration:{" "}
+              Tracks: {selectedPlaylist.numberOfTracks} • Duration:{" "}
               {formatDuration(selectedPlaylist.duration)}
             </Typography>
           </Box>
@@ -860,6 +1398,66 @@ function Homepage() {
                 Harmony
               </Typography>
 
+              {/* User Button */}
+              <Box sx={{ position: "relative", ml: 2 }}>
+                <IconButton
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  sx={{
+                    bgcolor: "primary.main",
+                    color: "white",
+                    width: 40,
+                    height: 40,
+                    "&:hover": { bgcolor: "primary.dark" },
+                  }}
+                >
+                  <Typography>?</Typography>
+                </IconButton>
+
+                {/* User dropdown menu */}
+                {userDropdownOpen && (
+                  <Paper
+                    sx={{
+                      position: "absolute",
+                      top: 48,
+                      right: 0,
+                      width: 150,
+                      boxShadow: 3,
+                      borderRadius: 1,
+                      overflow: "hidden",
+                      zIndex: 1000,
+                    }}
+                  >
+                    <List sx={{ p: 0 }}>
+                      <ListItemButton
+                        onClick={() => {
+                          setCurrentPage("userInfo");
+                          setUserDropdownOpen(false);
+                          fetchUserInfo();
+                        }}
+                      >
+                        <ListItemText primary="User Info" />
+                      </ListItemButton>
+                      <ListItemButton
+                        onClick={() => {
+                          setCurrentPage("settings");
+                          setUserDropdownOpen(false);
+                        }}
+                      >
+                        <ListItemText primary="Settings" />
+                      </ListItemButton>
+                      <ListItemButton
+                        onClick={() => {
+                          setCurrentPage("friends");
+                          setUserDropdownOpen(false);
+                        }}
+                      >
+                        <ListItemText primary="Friends" />
+                      </ListItemButton>
+                    </List>
+                  </Paper>
+                )}
+              </Box>
+
               {/* Refresh button for Apple Music */}
               {!appleMusicStatus.isComplete &&
                 appleMusicStatus.total > 0 &&
@@ -887,7 +1485,7 @@ function Homepage() {
                 flex: 1,
               }}
             >
-              {renderPlaylistDetails()}
+              {renderCurrentPage()}
             </Box>
           </Box>
         </Box>

@@ -29,6 +29,10 @@ function createWindow() {
     },
   });
 
+  if (process.env.NODE_ENV === "development") {
+    // window.webContents.openDevTools();
+  }
+
   // Apply CSP headers
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({

@@ -121,11 +121,11 @@ class AppleMusicApi {
 
         // Return basic info for unloaded playlists
         return {
-          origin: "Apple Music",
+          id: playlistId,
           name: playlist.attributes?.name || "",
-          user: "",
-          playlist_id: playlistId,
-          number_of_tracks: 0,
+          user: "", // info has to match firebase schema
+          origin: "Apple Music",
+          numberOfTracks: 0,
           duration: 0,
           description: playlist.attributes?.description?.standard || "",
           image:
@@ -366,7 +366,6 @@ class AppleMusicApi {
           await delay(1000);
         }
       }
-
       // console.log(
       //   `[AppleMusicApi] Background loading completed. Processed ${processedCount} playlists.`,
       // );
@@ -457,12 +456,12 @@ class AppleMusicApi {
         );
 
         return {
+          user: "", // info has to match firebase schema
           origin: "Apple Music",
           name: playlist.attributes?.name || "",
-          playlist_id: playlistId,
-          user: "",
+          id: playlistId,
           // Use loadedData instead of undefined tracks/totalDuration variables
-          number_of_tracks: loadedData.trackCount, // Changed from Object.keys(tracks).length
+          numberOfTracks: loadedData.trackCount, // Changed from Object.keys(tracks).length
           duration: loadedData.duration, // Changed from totalDuration
           description: playlist.attributes?.description?.standard || "",
           image:
@@ -471,16 +470,15 @@ class AppleMusicApi {
           tracks: Object.values(loadedData.tracks), // Changed from Object.values(tracks)
           isLoading: false,
           loadError: false,
-          id: playlistId,
           numberOfTracks: loadedData.trackCount, // Changed from Object.keys(tracks).length
           sharedWith: [],
         };
       }
 
       // Get tracks if not already loaded
-      // console.log(
-      //   `[AppleMusicApi] Loading tracks for playlist: ${playlist.attributes?.name}`,
-      // );
+      console.log(
+        `[AppleMusicApi] Loading tracks for playlist: ${playlist.attributes?.name}`,
+      );
 
       // Get all tracks with pagination
       let allTracks;
@@ -696,7 +694,6 @@ class AppleMusicApi {
 
             return result;
           });
-
           // Add to all candidates
           allCandidates = [...allCandidates, ...scoredResults];
 

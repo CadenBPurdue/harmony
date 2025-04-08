@@ -76,6 +76,7 @@ function validateUser(user) {
     email: "string",
     createdAt: "timestamp",
     lastLoginAt: "timestamp",
+    connectedServices: "object",
   };
 
   function validateObject(obj, schema) {
@@ -254,11 +255,14 @@ async function getUsersFromFirestore() {
   const collectionName = "users";
   const users = [];
 
+  console.log("Successfully entered the function getUsersFromFirestore");
+
   try {
     const querySnapshot = await getDocs(collection(db, collectionName));
     querySnapshot.forEach((doc) => {
       users.push({ id: doc.id, ...doc.data() });
     });
+    console.log("Successfully fetched users from Firestore");
     return users;
   } catch (error) {
     console.error("Error fetching users from Firestore:", error);
@@ -285,6 +289,15 @@ async function getUserFromFirestore(userId) {
   }
 }
 
+async function getCurrentUserFromFirestore() {
+  const auth = getAuthInstance();
+  if (!auth.currentUser) {
+    throw new Error("User must be authenticated to fetch current user");
+  }
+
+  return await getUserFromFirestore(auth.currentUser.uid);
+}
+
 export {
   validatePlaylist,
   writePlaylistToFirestore,
@@ -294,4 +307,5 @@ export {
   writeUserToFirestore,
   getUsersFromFirestore,
   getUserFromFirestore,
+  getCurrentUserFromFirestore,
 };
