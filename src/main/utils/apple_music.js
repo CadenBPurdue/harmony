@@ -154,7 +154,6 @@ class AppleMusicApi {
         this.loadPlaylistDetailsInBackground(playlists);
       }
 
-
       return playlistObjects;
     } catch (error) {
       console.error(
@@ -552,7 +551,7 @@ class AppleMusicApi {
       };
     } catch (error) {
       console.error(`[AppleMusicApi] Error getting playlist ${input}:`, error);
-      
+
       return {
         origin: "Apple Music",
         name: "Error Loading Playlist",
@@ -596,7 +595,7 @@ class AppleMusicApi {
       // Normalize inputs
       const normalizedTitle = normalizeTrackTitle(songUF.name);
       const normalizedArtist = normalizeArtistName(songUF.artist);
-      
+
       // Define search strategies
       const searchStrategies = [
         // Strategy 1: Standard search with normalized name and artist
