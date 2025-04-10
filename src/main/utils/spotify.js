@@ -7,7 +7,7 @@ import {
   normalizeArtistName,
   calculateSimilarity,
   scoreSongMatch,
-  findBestMatch
+  findBestMatch,
 } from "./match_scoring.js";
 import { getSpotifyToken } from "./safe_storage.js";
 // Import match_scoring utilities
@@ -24,7 +24,6 @@ class SpotifyApi {
   async initialize() {
     dotenv.config();
     const token = getSpotifyToken();
-
 
     if (!token) {
       throw new Error("No Spotify token found");
@@ -358,7 +357,7 @@ class SpotifyApi {
       // Track both successful and failed songs
       const song_uris = [];
       const failedSongs = [];
-      
+
       // Helper function to delay execution
       const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -394,7 +393,7 @@ class SpotifyApi {
       // Process songs in batches to avoid rate limiting
       const BATCH_SIZE = 3; // Process only 3 songs at a time
       const DELAY_MS = 1200; // Wait 1.2 seconds between batches
-      
+
       for (let i = 0; i < tracksToProcess.length; i += BATCH_SIZE) {
         const batchTracks = tracksToProcess.slice(i, i + BATCH_SIZE);
         console.log(
@@ -406,21 +405,31 @@ class SpotifyApi {
           try {
             // Use enhanced findSong method with match_scoring
             const result = await retryWithBackoff(
-              () => this.findSong(track), 
-              3,  // max retries
-              2000 // initial delay
+              () => this.findSong(track),
+              3, // max retries
+              2000, // initial delay
             );
-            
+
             if (result && result.uri) {
               song_uris.push(result.uri);
-              console.log(`[SpotifyApi] Found match for: ${track.name} by ${track.artist} (Score: ${result.score.toFixed(2)})`);
+              console.log(
+                `[SpotifyApi] Found match for: ${track.name} by ${track.artist} (Score: ${result.score.toFixed(2)})`,
+              );
             } else {
-              failedSongs.push({...track, reason: result?.reason || "No match found"});
-              console.log(`[SpotifyApi] No match found for: ${track.name} by ${track.artist}`);
+              failedSongs.push({
+                ...track,
+                reason: result?.reason || "No match found",
+              });
+              console.log(
+                `[SpotifyApi] No match found for: ${track.name} by ${track.artist}`,
+              );
             }
           } catch (error) {
-            console.error(`[SpotifyApi] Error finding song: ${track.name}`, error.message);
-            failedSongs.push({...track, reason: `Error: ${error.message}`});
+            console.error(
+              `[SpotifyApi] Error finding song: ${track.name}`,
+              error.message,
+            );
+            failedSongs.push({ ...track, reason: `Error: ${error.message}` });
           }
         });
 
@@ -514,7 +523,7 @@ class SpotifyApi {
       // Normalize the search query
       const normalizedTitle = normalizeTrackTitle(song_uf.name);
       const normalizedArtist = normalizeArtistName(song_uf.artist);
-      
+
       // Build the search query - try different strategies
       // Strategy 1: Use Spotify's field-specific search (most accurate)
       const encodeSafeComponent = (str) => {
@@ -524,106 +533,110 @@ class SpotifyApi {
           .replace(/\)/g, "%29")
           .replace(/\'/g, "%27");
       };
-      
+
       const fieldSearchQuery = `track:${encodeSafeComponent(normalizedTitle)} artist:${encodeSafeComponent(normalizedArtist)}`;
-      
+
       // Strategy 2: Plain text search (sometimes catches things field search misses)
       const plainSearchQuery = `${encodeSafeComponent(normalizedTitle)} ${encodeSafeComponent(normalizedArtist)}`;
-      
+
       // First try field search
-      console.log(`[SpotifyApi] Searching for "${normalizedTitle}" by "${normalizedArtist}"`);
+      console.log(
+        `[SpotifyApi] Searching for "${normalizedTitle}" by "${normalizedArtist}"`,
+      );
       let response = await axios.get(
         `https://api.spotify.com/v1/search?q=${fieldSearchQuery}&type=track&limit=5`,
         {
           headers: { Authorization: `Bearer ${this.auth_token}` },
         },
       );
-      
+
       let tracks = response.data?.tracks?.items || [];
-      
+
       // If no results, try plan text search
       if (tracks.length === 0) {
-        console.log(`[SpotifyApi] No results with field search, trying plain text search`);
+        console.log(
+          `[SpotifyApi] No results with field search, trying plain text search`,
+        );
         response = await axios.get(
           `https://api.spotify.com/v1/search?q=${plainSearchQuery}&type=track&limit=10`,
           {
             headers: { Authorization: `Bearer ${this.auth_token}` },
-          }
+          },
         );
         tracks = response.data?.tracks?.items || [];
       }
-      
+
       if (tracks.length === 0) {
-        return { 
+        return {
           uri: null,
           score: 0,
-          reason: "No matches found in Spotify catalog" 
+          reason: "No matches found in Spotify catalog",
         };
       }
-      
+
       // Convert Spotify tracks to format for scoring
-      const candidates = tracks.map(track => ({
+      const candidates = tracks.map((track) => ({
         name: track.name,
         artist: track.artists[0].name,
         album: track.album.name,
         duration: track.duration_ms,
         uri: track.uri,
         id: track.id,
-        popularity: track.popularity
+        popularity: track.popularity,
       }));
-      
+
       // Score each candidate
-      const scoredCandidates = candidates.map(candidate => {
-        const result = scoreSongMatch(
-          candidate, 
-          song_uf,
-          {
-            nameWeight: 0.45,
-            artistWeight: 0.4,
-            durationWeight: 0.05,
-            albumWeight: 0.1
-          }
-        );
-        
+      const scoredCandidates = candidates.map((candidate) => {
+        const result = scoreSongMatch(candidate, song_uf, {
+          nameWeight: 0.45,
+          artistWeight: 0.4,
+          durationWeight: 0.05,
+          albumWeight: 0.1,
+        });
+
         return {
           ...result,
           uri: candidate.uri,
           id: candidate.id,
-          popularity: candidate.popularity
+          popularity: candidate.popularity,
         };
       });
-      
+
       // Sort by score
       scoredCandidates.sort((a, b) => b.score - a.score);
-      
+
       // Find the best match with a score above threshold
       const bestMatch = scoredCandidates[0];
-      
+
       if (bestMatch && bestMatch.score >= 0.6) {
         return {
           uri: bestMatch.uri,
           id: bestMatch.id,
           score: bestMatch.score,
-          matchDetails: bestMatch.details
+          matchDetails: bestMatch.details,
         };
       }
-      
+
       // If we have a high popularity match with decent score, use it
-      const popularMatch = scoredCandidates.find(c => c.popularity > 60 && c.score > 0.5);
+      const popularMatch = scoredCandidates.find(
+        (c) => c.popularity > 60 && c.score > 0.5,
+      );
       if (popularMatch) {
         return {
           uri: popularMatch.uri,
           id: popularMatch.id,
           score: popularMatch.score,
-          matchDetails: popularMatch.details
+          matchDetails: popularMatch.details,
         };
       }
-      
+
       // No good matches
-      return { 
-        uri: null, 
+      return {
+        uri: null,
         score: bestMatch ? bestMatch.score : 0,
-        reason: bestMatch ? `Best match score (${bestMatch.score.toFixed(2)}) below threshold` : "No matches found"
+        reason: bestMatch
+          ? `Best match score (${bestMatch.score.toFixed(2)}) below threshold`
+          : "No matches found",
       };
     } catch (error) {
       // If error is rate limiting (429), let caller handle it for retry
