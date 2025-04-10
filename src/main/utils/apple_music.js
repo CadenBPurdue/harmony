@@ -835,15 +835,15 @@ class AppleMusicApi {
     if (!this.api) {
       await this.initialize();
     }
-  
+
     console.log(
       `[PopulatePlaylist] Starting population of playlist: ${playlistId}`,
     );
-  
+
     // Handle both object format and array format for tracks
     let trackEntries;
     let totalTracks = 0;
-    
+
     if (Array.isArray(unifiedFormat.tracks)) {
       trackEntries = unifiedFormat.tracks.map((track) => ["track_id", track]);
       totalTracks = unifiedFormat.tracks.length;
@@ -857,48 +857,64 @@ class AppleMusicApi {
         `[PopulatePlaylist] Number of tracks to process: ${trackEntries.length}`,
       );
     }
-  
+
     try {
       // Track both successful and failed songs
       const successfulTracks = [];
       const failedTracks = [];
-      
+
       // Process tracks in batches of 5 with 1 second delay between batches
       for (let i = 0; i < trackEntries.length; i += 5) {
-        const batch = trackEntries.slice(i, Math.min(i + 5, trackEntries.length));
-        console.log(`[PopulatePlaylist] Processing batch ${i/5 + 1}`);
-        
-        await Promise.all(batch.map(async ([_, trackInfo]) => {
-          try {
-            const catalogId = await this.findSong(trackInfo);
-            if (catalogId) {
-              // Found the song in catalog
-              successfulTracks.push({
-                id: catalogId,
-                type: "songs"
-              });
-              console.log(`[PopulatePlaylist] Found match for: ${trackInfo.name}`);
-            } else {
-              // No match found
+        const batch = trackEntries.slice(
+          i,
+          Math.min(i + 5, trackEntries.length),
+        );
+        console.log(`[PopulatePlaylist] Processing batch ${i / 5 + 1}`);
+
+        await Promise.all(
+          batch.map(async ([_, trackInfo]) => {
+            try {
+              const catalogId = await this.findSong(trackInfo);
+              if (catalogId) {
+                // Found the song in catalog
+                successfulTracks.push({
+                  id: catalogId,
+                  type: "songs",
+                });
+                console.log(
+                  `[PopulatePlaylist] Found match for: ${trackInfo.name}`,
+                );
+              } else {
+                // No match found
+                failedTracks.push(trackInfo);
+                console.log(
+                  `[PopulatePlaylist] No match found for: ${trackInfo.name}`,
+                );
+              }
+            } catch (error) {
+              // Error during search
               failedTracks.push(trackInfo);
-              console.log(`[PopulatePlaylist] No match found for: ${trackInfo.name}`);
+              console.error(
+                `[PopulatePlaylist] Error finding song: ${trackInfo.name}`,
+                error,
+              );
             }
-          } catch (error) {
-            // Error during search
-            failedTracks.push(trackInfo);
-            console.error(`[PopulatePlaylist] Error finding song: ${trackInfo.name}`, error);
-          }
-        }));
-        
+          }),
+        );
+
         // Add delay between batches
         if (i + 5 < trackEntries.length) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
-  
-      console.log(`[PopulatePlaylist] Found ${successfulTracks.length} matching tracks`);
-      console.log(`[PopulatePlaylist] Failed to find ${failedTracks.length} tracks`);
-  
+
+      console.log(
+        `[PopulatePlaylist] Found ${successfulTracks.length} matching tracks`,
+      );
+      console.log(
+        `[PopulatePlaylist] Failed to find ${failedTracks.length} tracks`,
+      );
+
       // Now add the successful tracks to the playlist
       if (successfulTracks.length === 0) {
         console.log("[PopulatePlaylist] No matching tracks found in catalog");
@@ -907,10 +923,10 @@ class AppleMusicApi {
           tracksAdded: 0,
           totalTracks: totalTracks,
           failedCount: failedTracks.length,
-          failedSongs: failedTracks
+          failedSongs: failedTracks,
         };
       }
-  
+
       // Add tracks to playlist in batches of 25
       for (let i = 0; i < successfulTracks.length; i += 25) {
         const batch = successfulTracks.slice(
@@ -920,17 +936,17 @@ class AppleMusicApi {
         console.log(
           `[PopulatePlaylist] Adding batch of ${batch.length} tracks (${i + 1}-${i + batch.length})`,
         );
-  
+
         await this.api.post(`/v1/me/library/playlists/${playlistId}/tracks`, {
           data: batch,
         });
-  
+
         // Add delay between batches
         if (i + 25 < successfulTracks.length) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
-  
+
       console.log(
         `[PopulatePlaylist] Successfully added ${successfulTracks.length} tracks to playlist`,
       );
@@ -938,7 +954,7 @@ class AppleMusicApi {
         tracksAdded: successfulTracks.length,
         totalTracks: totalTracks,
         failedCount: failedTracks.length,
-        failedSongs: failedTracks
+        failedSongs: failedTracks,
       };
     } catch (error) {
       console.error("[PopulatePlaylist] Error:", error.response?.data || error);

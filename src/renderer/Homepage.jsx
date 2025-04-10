@@ -49,7 +49,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNotifications } from "./NotificationContext";
 import { theme, styles, colors } from "./styles/theme";
 
-
 // Function to format duration from milliseconds to MM:SS format
 const formatDuration = (milliseconds) => {
   if (!milliseconds) return "--:--";
@@ -134,13 +133,13 @@ function Homepage() {
   const [removingId, setRemovingId] = useState(null);
 
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const { 
-    notifications, 
-    unreadCount, 
-    addNotification, 
-    markAsRead, 
+  const {
+    notifications,
+    unreadCount,
+    addNotification,
+    markAsRead,
     markAllAsRead,
-    formatNotificationTime 
+    formatNotificationTime,
   } = useNotifications();
 
   // Function to fetch user information
@@ -336,17 +335,18 @@ function Homepage() {
   // Handle transfer function
   const handleTransfer = async () => {
     setIsTransferring(true);
-  
+
     try {
       let result = null;
       if (transferDestination === "Spotify") {
         result = await window.electronAPI.transferToSpotify(selectedPlaylist);
       } else if (transferDestination === "Apple Music") {
-        result = await window.electronAPI.transferToAppleMusic(selectedPlaylist);
+        result =
+          await window.electronAPI.transferToAppleMusic(selectedPlaylist);
       }
-  
+
       console.log("Transfer result:", result); // Log complete result for debugging
-  
+
       if (result && result.success) {
         // reload playlists from destination
         if (transferDestination === "Spotify") {
@@ -354,18 +354,18 @@ function Homepage() {
         } else if (transferDestination === "Apple Music") {
           refreshAppleMusicPlaylists();
         }
-  
+
         // Extract transfer statistics
         const totalTracks = result.totalTracks || 0;
         const tracksAdded = result.tracksAdded || 0;
         const failedCount = result.failedCount || 0;
         const failedSongs = result.failedSongs || [];
-        
+
         // Create appropriate notification based on results
         if (failedCount > 0) {
           // Partial success notification
           addNotification({
-            type: 'playlist_transfer_partial',
+            type: "playlist_transfer_partial",
             message: `Playlist "${selectedPlaylist.name}" transferred to ${transferDestination}. ${failedCount} songs failed.`,
             details: {
               playlistName: selectedPlaylist.name,
@@ -373,23 +373,23 @@ function Homepage() {
               totalTracks: totalTracks,
               tracksAdded: tracksAdded,
               failedCount: failedCount,
-              failedSongs: failedSongs
-            }
+              failedSongs: failedSongs,
+            },
           });
         } else {
           // Full success notification
           addNotification({
-            type: 'playlist_transfer_success',
+            type: "playlist_transfer_success",
             message: `Playlist "${selectedPlaylist.name}" transferred to ${transferDestination}.`,
             details: {
               playlistName: selectedPlaylist.name,
               destination: transferDestination,
               totalTracks: totalTracks,
-              tracksAdded: tracksAdded
-            }
+              tracksAdded: tracksAdded,
+            },
           });
         }
-  
+
         setShowTransferDialog(false);
         setShowSuccessAlert(true);
         setTimeout(() => {
@@ -1141,14 +1141,16 @@ function Homepage() {
             </Button>
           </Paper>
         );
-      {/* Notification Logs */}
+        {
+          /* Notification Logs */
+        }
       case "notificationLogs":
         return (
           <Paper sx={{ ...styles.paper, p: 3 }}>
             <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
               Notification History
             </Typography>
-            
+
             {notifications.length > 0 ? (
               <Stack spacing={2}>
                 {notifications.map((notification) => (
@@ -1157,104 +1159,157 @@ function Homepage() {
                     elevation={0}
                     sx={{
                       p: 2,
-                      bgcolor: notification.read 
-                        ? "rgba(134, 97, 193, 0.05)" 
+                      bgcolor: notification.read
+                        ? "rgba(134, 97, 193, 0.05)"
                         : "rgba(134, 97, 193, 0.15)",
                       borderRadius: 2,
-                      borderLeft: notification.read 
-                        ? "none" 
+                      borderLeft: notification.read
+                        ? "none"
                         : `4px solid ${colors.amethyst}`,
                     }}
                   >
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <Typography variant="body1" sx={{ fontWeight: notification.read ? "regular" : "medium" }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: notification.read ? "regular" : "medium",
+                        }}
+                      >
                         {notification.message}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {formatNotificationTime(notification.timestamp)}
                       </Typography>
                     </Box>
-                    
+
                     {/* For partial transfers with failed songs */}
-                    {notification.type === 'playlist_transfer_partial' && notification.details && (
-                      <Box sx={{ mt: 2 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: "medium", mb: 1 }}>
-                          Transfer Details:
-                        </Typography>
-                        
-                        <Box sx={{ pl: 2, borderLeft: `2px solid ${colors.amethyst}`, mb: 2 }}>
-                          <Typography variant="body2" color="text.secondary">
-                            Total tracks: {notification.details.totalTracks}
+                    {notification.type === "playlist_transfer_partial" &&
+                      notification.details && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: "medium", mb: 1 }}
+                          >
+                            Transfer Details:
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Successfully transferred: {notification.details.tracksAdded}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Failed: {notification.details.failedCount}
-                          </Typography>
-                        </Box>
-                        
-                        {notification.details.failedSongs && notification.details.failedSongs.length > 0 && (
-                          <>
-                            <Typography variant="subtitle2" sx={{ fontWeight: "medium", mb: 1 }}>
-                              Failed Songs:
+
+                          <Box
+                            sx={{
+                              pl: 2,
+                              borderLeft: `2px solid ${colors.amethyst}`,
+                              mb: 2,
+                            }}
+                          >
+                            <Typography variant="body2" color="text.secondary">
+                              Total tracks: {notification.details.totalTracks}
                             </Typography>
-                            <Paper 
-                              variant="outlined" 
-                              sx={{ 
-                                maxHeight: 150, 
-                                overflowY: 'auto',
-                                p: 1,
-                                bgcolor: 'background.default'
-                              }}
-                            >
-                              <List dense disablePadding>
-                                {notification.details.failedSongs.map((song, index) => (
-                                  <ListItem key={index} sx={{ py: 0.5 }}>
-                                    <ListItemText
-                                      primary={song.name || 'Unknown Song'}
-                                      secondary={`${song.artist || 'Unknown Artist'} • ${song.album || 'Unknown Album'}`}
-                                      secondaryTypographyProps={{ variant: 'caption' }}
-                                    />
-                                  </ListItem>
-                                ))}
-                              </List>
-                            </Paper>
-                          </>
-                        )}
-                        
-                        {(!notification.details.failedSongs || notification.details.failedSongs.length === 0) && notification.details.failedCount > 0 && (
-                          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontStyle: 'italic' }}>
-                            Details of failed songs are not available.
-                          </Typography>
-                        )}
-                      </Box>
-                    )}
-                    
+                            <Typography variant="body2" color="text.secondary">
+                              Successfully transferred:{" "}
+                              {notification.details.tracksAdded}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Failed: {notification.details.failedCount}
+                            </Typography>
+                          </Box>
+
+                          {notification.details.failedSongs &&
+                            notification.details.failedSongs.length > 0 && (
+                              <>
+                                <Typography
+                                  variant="subtitle2"
+                                  sx={{ fontWeight: "medium", mb: 1 }}
+                                >
+                                  Failed Songs:
+                                </Typography>
+                                <Paper
+                                  variant="outlined"
+                                  sx={{
+                                    maxHeight: 150,
+                                    overflowY: "auto",
+                                    p: 1,
+                                    bgcolor: "background.default",
+                                  }}
+                                >
+                                  <List dense disablePadding>
+                                    {notification.details.failedSongs.map(
+                                      (song, index) => (
+                                        <ListItem key={index} sx={{ py: 0.5 }}>
+                                          <ListItemText
+                                            primary={
+                                              song.name || "Unknown Song"
+                                            }
+                                            secondary={`${song.artist || "Unknown Artist"} • ${song.album || "Unknown Album"}`}
+                                            secondaryTypographyProps={{
+                                              variant: "caption",
+                                            }}
+                                          />
+                                        </ListItem>
+                                      ),
+                                    )}
+                                  </List>
+                                </Paper>
+                              </>
+                            )}
+
+                          {(!notification.details.failedSongs ||
+                            notification.details.failedSongs.length === 0) &&
+                            notification.details.failedCount > 0 && (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ mt: 1, fontStyle: "italic" }}
+                              >
+                                Details of failed songs are not available.
+                              </Typography>
+                            )}
+                        </Box>
+                      )}
+
                     {/* For successful transfers, show summary */}
-                    {notification.type === 'playlist_transfer_success' && notification.details && (
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        Successfully transferred all {notification.details.totalTracks} songs.
-                      </Typography>
-                    )}
+                    {notification.type === "playlist_transfer_success" &&
+                      notification.details && (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 1 }}
+                        >
+                          Successfully transferred all{" "}
+                          {notification.details.totalTracks} songs.
+                        </Typography>
+                      )}
                   </Paper>
                 ))}
               </Stack>
             ) : (
-              <Typography variant="body1" color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ textAlign: "center", py: 4 }}
+              >
                 No notifications to display
               </Typography>
             )}
-            
-            <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
+
+            <Box
+              sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}
+            >
               <Button
                 variant="outlined"
                 onClick={markAllAsRead}
-                disabled={notifications.length === 0 || notifications.every(n => n.read)}
+                disabled={
+                  notifications.length === 0 ||
+                  notifications.every((n) => n.read)
+                }
               >
                 Mark All as Read
               </Button>
-              
+
               <Button
                 variant="contained"
                 onClick={() => setCurrentPage("main")}
@@ -1598,11 +1653,21 @@ function Homepage() {
                       zIndex: 1000,
                     }}
                   >
-                    <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${theme.palette.divider}` }}>
-                      <Typography variant="h6" sx={{ fontSize: 16 }}>Notifications</Typography>
+                    <Box
+                      sx={{
+                        p: 2,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        borderBottom: `1px solid ${theme.palette.divider}`,
+                      }}
+                    >
+                      <Typography variant="h6" sx={{ fontSize: 16 }}>
+                        Notifications
+                      </Typography>
                       {unreadCount > 0 && (
-                        <Button 
-                          size="small" 
+                        <Button
+                          size="small"
                           sx={{ color: "primary.main" }}
                           onClick={markAllAsRead}
                         >
@@ -1610,57 +1675,88 @@ function Homepage() {
                         </Button>
                       )}
                     </Box>
-                    
+
                     {/* Add "Show All" button at the top */}
-                    <Box 
+                    <Box
                       onClick={() => {
                         setNotificationsOpen(false);
                         setCurrentPage("notificationLogs");
                       }}
-                      sx={{ 
-                        p: 1.5, 
+                      sx={{
+                        p: 1.5,
                         borderBottom: `1px solid ${theme.palette.divider}`,
                         display: "flex",
                         justifyContent: "center",
                         bgcolor: "rgba(134, 97, 193, 0.05)",
                         cursor: "pointer",
                         "&:hover": {
-                          bgcolor: "rgba(134, 97, 193, 0.1)"
-                        }
+                          bgcolor: "rgba(134, 97, 193, 0.1)",
+                        },
                       }}
                     >
-                      <Typography variant="body2" sx={{ color: "primary.main", fontWeight: "medium" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "primary.main", fontWeight: "medium" }}
+                      >
                         Show All Notifications
                       </Typography>
                     </Box>
-                    
+
                     <List sx={{ p: 0 }}>
                       {notifications.length > 0 ? (
                         <>
                           {notifications.slice(0, 5).map((notification) => (
-                            <ListItem 
+                            <ListItem
                               key={notification.id}
                               onClick={() => markAsRead(notification.id)}
-                              sx={{ 
+                              sx={{
                                 p: 2,
-                                borderLeft: notification.read ? "none" : `4px solid ${colors.amethyst}`,
-                                bgcolor: notification.read ? "transparent" : "rgba(134, 97, 193, 0.08)",
+                                borderLeft: notification.read
+                                  ? "none"
+                                  : `4px solid ${colors.amethyst}`,
+                                bgcolor: notification.read
+                                  ? "transparent"
+                                  : "rgba(134, 97, 193, 0.08)",
                                 cursor: "pointer",
                                 "&:hover": {
-                                  bgcolor: "rgba(134, 97, 193, 0.05)"
-                                }
+                                  bgcolor: "rgba(134, 97, 193, 0.05)",
+                                },
                               }}
                               divider
                             >
                               <Box sx={{ width: "100%" }}>
-                                <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
-                                  <Typography variant="body2" sx={{ fontWeight: notification.read ? "regular" : "medium", pr: 1 }}>
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    width: "100%",
+                                  }}
+                                >
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      fontWeight: notification.read
+                                        ? "regular"
+                                        : "medium",
+                                      pr: 1,
+                                    }}
+                                  >
                                     {notification.message}
                                   </Typography>
                                 </Box>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    mt: 0.5,
+                                  }}
+                                >
                                   <Clock size={12} style={{ marginRight: 4 }} />
-                                  {formatNotificationTime(notification.timestamp)}
+                                  {formatNotificationTime(
+                                    notification.timestamp,
+                                  )}
                                 </Typography>
                               </Box>
                             </ListItem>
@@ -1668,7 +1764,11 @@ function Homepage() {
                         </>
                       ) : (
                         <ListItem sx={{ py: 4 }}>
-                          <Typography variant="body2" color="text.secondary" sx={{ width: "100%", textAlign: "center" }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ width: "100%", textAlign: "center" }}
+                          >
                             No notifications yet
                           </Typography>
                         </ListItem>
