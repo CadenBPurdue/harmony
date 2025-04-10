@@ -5,6 +5,7 @@ import { createHashRouter, RouterProvider, Navigate } from "react-router-dom";
 import CreateAccount from "./CreateAccount";
 import ErrorBoundary from "./ErrorBoundary";
 import Homepage from "./Homepage";
+import { NotificationProvider } from "./NotificationContext";
 
 const Router = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -81,7 +82,11 @@ const Router = () => {
     },
   ]);
 
-  return <RouterProvider router={router} />;
+  return (
+    <NotificationProvider>
+      <RouterProvider router={router} />
+    </NotificationProvider>
+  );
 };
 
 // Create root and render

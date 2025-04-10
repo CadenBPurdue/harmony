@@ -2,7 +2,15 @@
 import axios from "axios";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
+import {
+  normalizeTrackTitle,
+  normalizeArtistName,
+  calculateSimilarity,
+  scoreSongMatch,
+  findBestMatch,
+} from "./match_scoring.js";
 import { getSpotifyToken } from "./safe_storage.js";
+// Import match_scoring utilities
 
 class SpotifyApi {
   constructor() {
@@ -51,12 +59,14 @@ class SpotifyApi {
       }
     }
 
-    // Instead of calling refreshToken and tokenHandler, just check if we need to refresh
+    // Check if token is expired or about to expire (within 5 minutes)
     const expiresAt = token.timestamp + token.expiresIn * 1000;
-    const isExpired = Date.now() > expiresAt;
+    const isExpired = Date.now() > expiresAt - 5 * 60 * 1000; // Consider it expired if less than 5 mins left
 
-    // Only refresh if token is expired or about to expire
-    if (isExpired || expiresAt - Date.now() < 5 * 60 * 1000) {
+    if (isExpired) {
+      console.log(
+        "[SpotifyApi] Token expired or about to expire, refreshing...",
+      );
       try {
         await this.refreshToken();
       } catch (error) {
@@ -64,11 +74,9 @@ class SpotifyApi {
           "Token refresh failed, but continuing with existing token:",
           error.message,
         );
-        // Continue with the existing token instead of failing
       }
     }
 
-    // Instead of setting up a recurring timer, just continue
     this.user_id = await this.getUserId();
   }
 
@@ -330,67 +338,314 @@ class SpotifyApi {
     }
 
     try {
-      const song_uri_promises = [];
-      playlist_uf.tracks.forEach((track) => {
-        song_uri_promises.push(this.findSong(track));
-      });
-      const song_uris = await Promise.all(song_uri_promises);
+      console.log(
+        `[SpotifyApi] Starting population of playlist: ${playlist_id}`,
+      );
 
-      var null_songs = 0;
-      for (let i = song_uris.length - 1; i >= 0; i--) {
-        if (song_uris[i] === null) {
-          song_uris.splice(i, 1);
-          null_songs++;
+      // Normalize tracks to ensure we have an array
+      let tracksToProcess = [];
+      if (Array.isArray(playlist_uf.tracks)) {
+        tracksToProcess = playlist_uf.tracks;
+      } else if (playlist_uf.tracks && typeof playlist_uf.tracks === "object") {
+        // Convert object to array if needed
+        tracksToProcess = Object.values(playlist_uf.tracks);
+      }
+
+      const totalTracks = tracksToProcess.length;
+      console.log(`[SpotifyApi] Processing ${totalTracks} tracks`);
+
+      // Track both successful and failed songs
+      const song_uris = [];
+      const failedSongs = [];
+
+      // Helper function to delay execution
+      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      // Helper function to retry a function with exponential backoff
+      const retryWithBackoff = async (
+        fn,
+        maxRetries = 3,
+        initialDelay = 2000,
+      ) => {
+        let retries = 0;
+        while (true) {
+          try {
+            return await fn();
+          } catch (error) {
+            retries++;
+            if (retries > maxRetries || error.response?.status !== 429) {
+              throw error; // Either too many retries or not a rate limit error
+            }
+
+            // Get retry-after header or use exponential backoff
+            const retryAfter = error.response.headers["retry-after"]
+              ? parseInt(error.response.headers["retry-after"]) * 1000
+              : initialDelay * Math.pow(2, retries);
+
+            console.log(
+              `[SpotifyApi] Rate limited. Retrying after ${retryAfter}ms (retry ${retries}/${maxRetries})`,
+            );
+            await delay(retryAfter);
+          }
+        }
+      };
+
+      // Process songs in batches to avoid rate limiting
+      const BATCH_SIZE = 3; // Process only 3 songs at a time
+      const DELAY_MS = 1200; // Wait 1.2 seconds between batches
+
+      for (let i = 0; i < tracksToProcess.length; i += BATCH_SIZE) {
+        const batchTracks = tracksToProcess.slice(i, i + BATCH_SIZE);
+        console.log(
+          `[SpotifyApi] Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(tracksToProcess.length / BATCH_SIZE)}`,
+        );
+
+        // Process each track in the batch
+        const batchPromises = batchTracks.map(async (track) => {
+          try {
+            // Use enhanced findSong method with match_scoring
+            const result = await retryWithBackoff(
+              () => this.findSong(track),
+              3, // max retries
+              2000, // initial delay
+            );
+
+            if (result && result.uri) {
+              song_uris.push(result.uri);
+              console.log(
+                `[SpotifyApi] Found match for: ${track.name} by ${track.artist} (Score: ${result.score.toFixed(2)})`,
+              );
+            } else {
+              failedSongs.push({
+                ...track,
+                reason: result?.reason || "No match found",
+              });
+              console.log(
+                `[SpotifyApi] No match found for: ${track.name} by ${track.artist}`,
+              );
+            }
+          } catch (error) {
+            console.error(
+              `[SpotifyApi] Error finding song: ${track.name}`,
+              error.message,
+            );
+            failedSongs.push({ ...track, reason: `Error: ${error.message}` });
+          }
+        });
+
+        // Wait for all tracks in this batch to be processed
+        await Promise.all(batchPromises);
+
+        // Add delay before processing the next batch (except for the last batch)
+        if (i + BATCH_SIZE < tracksToProcess.length) {
+          console.log(
+            `[SpotifyApi] Waiting ${DELAY_MS}ms before next batch...`,
+          );
+          await delay(DELAY_MS);
         }
       }
 
-      const response = await axios.post(
-        `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`,
-        { uris: song_uris },
-        {
-          headers: {
-            Authorization: `Bearer ${this.auth_token}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
+      const null_songs = failedSongs.length;
+      console.log(`[SpotifyApi] Found ${song_uris.length} valid songs`);
+      console.log(`[SpotifyApi] Failed to find ${null_songs} songs`);
 
-      console.log(`${null_songs} songs were not found.`);
-      console.log(response.data);
+      // Only make API call if we have songs to add
+      let apiResponse = null;
+
+      if (song_uris.length > 0) {
+        // Add tracks to playlist in batches of 100 (Spotify API limit)
+        const SPOTIFY_BATCH_SIZE = 100;
+
+        for (let i = 0; i < song_uris.length; i += SPOTIFY_BATCH_SIZE) {
+          const uriBatch = song_uris.slice(i, i + SPOTIFY_BATCH_SIZE);
+          console.log(
+            `[SpotifyApi] Adding batch of ${uriBatch.length} tracks to playlist`,
+          );
+
+          // Use retry logic for the API call
+          apiResponse = await retryWithBackoff(async () => {
+            return await axios.post(
+              `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`,
+              { uris: uriBatch },
+              {
+                headers: {
+                  Authorization: `Bearer ${this.auth_token}`,
+                  "Content-Type": "application/json",
+                },
+              },
+            );
+          });
+
+          console.log(`[SpotifyApi] Successfully added batch to playlist`);
+
+          // Add delay between batches to avoid rate limiting
+          if (i + SPOTIFY_BATCH_SIZE < song_uris.length) {
+            console.log(`[SpotifyApi] Waiting before adding next batch...`);
+            await delay(1000);
+          }
+        }
+
+        console.log(
+          `[SpotifyApi] Successfully added all ${song_uris.length} tracks to playlist`,
+        );
+      } else {
+        console.log(`[SpotifyApi] No tracks to add to playlist`);
+      }
+
+      // Return detailed result with proper error tracking
+      return {
+        success: true,
+        response: apiResponse ? apiResponse.data : null,
+        tracksAdded: song_uris.length,
+        totalTracks: totalTracks,
+        failedCount: null_songs,
+        failedSongs: failedSongs,
+        null_songs: null_songs, // Keep for backward compatibility
+      };
     } catch (error) {
       console.error(
-        "Error populating playlist:",
+        "[SpotifyApi] Error populating playlist:",
         error.response ? error.response.data : error.message,
       );
-      throw new Error("Failed to populate playlist");
+      throw new Error(
+        "Failed to populate playlist: " + (error.message || "Unknown error"),
+      );
     }
   }
 
+  // Updated findSong method that uses match_scoring.js
   async findSong(song_uf) {
     if (!this.auth_token) {
       await this.initialize();
     }
 
     try {
-      const song_title = song_uf.name.split(" ").join("%20");
-      const song_artist = song_uf.artist.split(" ").join("%20");
-      const song_album = song_uf.album.split(" ").join("%20");
+      // Normalize the search query
+      const normalizedTitle = normalizeTrackTitle(song_uf.name);
+      const normalizedArtist = normalizeArtistName(song_uf.artist);
 
-      const response = await axios.get(
-        `https://api.spotify.com/v1/search?q=track:${song_title}%20artist:${song_artist}%20album:${song_album}&type=track`,
+      // Build the search query - try different strategies
+      // Strategy 1: Use Spotify's field-specific search (most accurate)
+      const encodeSafeComponent = (str) => {
+        if (!str) return "";
+        return encodeURIComponent(str.trim())
+          .replace(/\(/g, "%28")
+          .replace(/\)/g, "%29")
+          .replace(/\'/g, "%27");
+      };
+
+      const fieldSearchQuery = `track:${encodeSafeComponent(normalizedTitle)} artist:${encodeSafeComponent(normalizedArtist)}`;
+
+      // Strategy 2: Plain text search (sometimes catches things field search misses)
+      const plainSearchQuery = `${encodeSafeComponent(normalizedTitle)} ${encodeSafeComponent(normalizedArtist)}`;
+
+      // First try field search
+      console.log(
+        `[SpotifyApi] Searching for "${normalizedTitle}" by "${normalizedArtist}"`,
+      );
+      let response = await axios.get(
+        `https://api.spotify.com/v1/search?q=${fieldSearchQuery}&type=track&limit=5`,
         {
           headers: { Authorization: `Bearer ${this.auth_token}` },
         },
       );
 
-      if (response.data.tracks.items.length === 0) {
-        return null;
+      let tracks = response.data?.tracks?.items || [];
+
+      // If no results, try plan text search
+      if (tracks.length === 0) {
+        console.log(
+          `[SpotifyApi] No results with field search, trying plain text search`,
+        );
+        response = await axios.get(
+          `https://api.spotify.com/v1/search?q=${plainSearchQuery}&type=track&limit=10`,
+          {
+            headers: { Authorization: `Bearer ${this.auth_token}` },
+          },
+        );
+        tracks = response.data?.tracks?.items || [];
       }
 
-      return response.data.tracks.items[0].uri;
+      if (tracks.length === 0) {
+        return {
+          uri: null,
+          score: 0,
+          reason: "No matches found in Spotify catalog",
+        };
+      }
+
+      // Convert Spotify tracks to format for scoring
+      const candidates = tracks.map((track) => ({
+        name: track.name,
+        artist: track.artists[0].name,
+        album: track.album.name,
+        duration: track.duration_ms,
+        uri: track.uri,
+        id: track.id,
+        popularity: track.popularity,
+      }));
+
+      // Score each candidate
+      const scoredCandidates = candidates.map((candidate) => {
+        const result = scoreSongMatch(candidate, song_uf, {
+          nameWeight: 0.45,
+          artistWeight: 0.4,
+          durationWeight: 0.05,
+          albumWeight: 0.1,
+        });
+
+        return {
+          ...result,
+          uri: candidate.uri,
+          id: candidate.id,
+          popularity: candidate.popularity,
+        };
+      });
+
+      // Sort by score
+      scoredCandidates.sort((a, b) => b.score - a.score);
+
+      // Find the best match with a score above threshold
+      const bestMatch = scoredCandidates[0];
+
+      if (bestMatch && bestMatch.score >= 0.6) {
+        return {
+          uri: bestMatch.uri,
+          id: bestMatch.id,
+          score: bestMatch.score,
+          matchDetails: bestMatch.details,
+        };
+      }
+
+      // If we have a high popularity match with decent score, use it
+      const popularMatch = scoredCandidates.find(
+        (c) => c.popularity > 60 && c.score > 0.5,
+      );
+      if (popularMatch) {
+        return {
+          uri: popularMatch.uri,
+          id: popularMatch.id,
+          score: popularMatch.score,
+          matchDetails: popularMatch.details,
+        };
+      }
+
+      // No good matches
+      return {
+        uri: null,
+        score: bestMatch ? bestMatch.score : 0,
+        reason: bestMatch
+          ? `Best match score (${bestMatch.score.toFixed(2)}) below threshold`
+          : "No matches found",
+      };
     } catch (error) {
-      console.log(error);
-      throw new Error("Failed to find song");
+      // If error is rate limiting (429), let caller handle it for retry
+      if (error.response && error.response.status === 429) {
+        throw error;
+      }
+
+      console.error("Failed to find song:", error.message);
+      return { uri: null, score: 0, reason: `Search error: ${error.message}` };
     }
   }
 

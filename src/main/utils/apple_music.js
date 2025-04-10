@@ -842,65 +842,96 @@ class AppleMusicApi {
 
     // Handle both object format and array format for tracks
     let trackEntries;
+    let totalTracks = 0;
+
     if (Array.isArray(unifiedFormat.tracks)) {
       trackEntries = unifiedFormat.tracks.map((track) => ["track_id", track]);
+      totalTracks = unifiedFormat.tracks.length;
       console.log(
         `[PopulatePlaylist] Number of tracks to process: ${trackEntries.length}`,
       );
     } else {
       trackEntries = Object.entries(unifiedFormat.tracks);
+      totalTracks = trackEntries.length;
       console.log(
         `[PopulatePlaylist] Number of tracks to process: ${trackEntries.length}`,
       );
     }
 
     try {
+      // Track both successful and failed songs
+      const successfulTracks = [];
+      const failedTracks = [];
+
       // Process tracks in batches of 5 with 1 second delay between batches
-      const processedTracks = await processBatch(
-        trackEntries,
-        5,
-        1000,
-        async ([_, trackInfo]) => {
-          try {
-            // console.log(
-            //   `[PopulatePlaylist] Processing track: ${trackInfo.name} by ${trackInfo.artist}`,
-            // );
-            const catalogId = await this.findSong(trackInfo);
-            if (catalogId) {
-              return {
-                id: catalogId,
-                type: "songs",
-              };
+      for (let i = 0; i < trackEntries.length; i += 5) {
+        const batch = trackEntries.slice(
+          i,
+          Math.min(i + 5, trackEntries.length),
+        );
+        console.log(`[PopulatePlaylist] Processing batch ${i / 5 + 1}`);
+
+        await Promise.all(
+          batch.map(async ([_, trackInfo]) => {
+            try {
+              const catalogId = await this.findSong(trackInfo);
+              if (catalogId) {
+                // Found the song in catalog
+                successfulTracks.push({
+                  id: catalogId,
+                  type: "songs",
+                });
+                console.log(
+                  `[PopulatePlaylist] Found match for: ${trackInfo.name}`,
+                );
+              } else {
+                // No match found
+                failedTracks.push(trackInfo);
+                console.log(
+                  `[PopulatePlaylist] No match found for: ${trackInfo.name}`,
+                );
+              }
+            } catch (error) {
+              // Error during search
+              failedTracks.push(trackInfo);
+              console.error(
+                `[PopulatePlaylist] Error finding song: ${trackInfo.name}`,
+                error,
+              );
             }
-            console.log(
-              `[PopulatePlaylist] No match found for: ${trackInfo.name} by ${trackInfo.artist}`,
-            );
-            return null;
-          } catch (error) {
-            console.error(
-              `[PopulatePlaylist] Error finding song: ${trackInfo.name}`,
-              error,
-            );
-            return null;
-          }
-        },
-      );
+          }),
+        );
 
-      // Filter out null results and prepare the tracks array
-      const validTracks = processedTracks.filter((track) => track !== null);
+        // Add delay between batches
+        if (i + 5 < trackEntries.length) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+
       console.log(
-        `[PopulatePlaylist] Found ${validTracks.length} matching tracks in Apple Music catalog`,
+        `[PopulatePlaylist] Found ${successfulTracks.length} matching tracks`,
+      );
+      console.log(
+        `[PopulatePlaylist] Failed to find ${failedTracks.length} tracks`,
       );
 
-      if (validTracks.length === 0) {
-        throw new Error("No matching tracks found in Apple Music catalog");
+      // Now add the successful tracks to the playlist
+      if (successfulTracks.length === 0) {
+        console.log("[PopulatePlaylist] No matching tracks found in catalog");
+        // Return result even when no matches found
+        return {
+          tracksAdded: 0,
+          totalTracks: totalTracks,
+          failedCount: failedTracks.length,
+          failedSongs: failedTracks,
+        };
       }
 
       // Add tracks to playlist in batches of 25
-      for (let i = 0; i < validTracks.length; i += 25) {
-        const batch = validTracks.slice(
+      for (let i = 0; i < successfulTracks.length; i += 25) {
+        const batch = successfulTracks.slice(
           i,
-          Math.min(i + 25, validTracks.length),
+          Math.min(i + 25, successfulTracks.length),
         );
         console.log(
           `[PopulatePlaylist] Adding batch of ${batch.length} tracks (${i + 1}-${i + batch.length})`,
@@ -911,18 +942,19 @@ class AppleMusicApi {
         });
 
         // Add delay between batches
-        if (i + 25 < validTracks.length) {
-          await delay(1000);
+        if (i + 25 < successfulTracks.length) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
 
       console.log(
-        `[PopulatePlaylist] Successfully added ${validTracks.length} tracks to playlist`,
+        `[PopulatePlaylist] Successfully added ${successfulTracks.length} tracks to playlist`,
       );
       return {
-        success: true,
-        tracksAdded: validTracks.length,
-        totalTracks: trackEntries.length,
+        tracksAdded: successfulTracks.length,
+        totalTracks: totalTracks,
+        failedCount: failedTracks.length,
+        failedSongs: failedTracks,
       };
     } catch (error) {
       console.error("[PopulatePlaylist] Error:", error.response?.data || error);
