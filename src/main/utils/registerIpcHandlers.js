@@ -10,6 +10,7 @@ import { configManager } from "./config.js";
 import {
   authenticateWithFirebase,
   updateConnectedSerives,
+  updateFriendsList,
 } from "./firebase.js";
 import {
   writePlaylistToFirestore,
@@ -65,6 +66,10 @@ export function registerIpcHandlers() {
 
   ipcMain.handle("firebase:setAppleMusicConnected", async () => {
     return await updateConnectedSerives("appleMusic");
+  });
+
+  ipcMain.handle("firebase:addFriend", async (event, friendId) => {
+    return await updateFriendsList(friendId);
   });
 
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {

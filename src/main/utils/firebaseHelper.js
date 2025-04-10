@@ -77,6 +77,7 @@ function validateUser(user) {
     createdAt: "timestamp",
     lastLoginAt: "timestamp",
     connectedServices: "object",
+    friends: "array",
   };
 
   function validateObject(obj, schema) {

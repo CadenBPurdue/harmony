@@ -95,6 +95,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("firebase:getUsers");
   },
 
+  addFriendToUser: (friendId) => {
+    console.log("Calling addFriendToUser from preload");
+    return ipcRenderer.invoke("firebase:addFriend", friendId);
+  },
+
   setSpotifyConnected: () => {
     console.log("Calling updateConnectedServices from preload");
     return ipcRenderer.invoke("firebase:setSpotifyConnected");

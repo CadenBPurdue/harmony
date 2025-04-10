@@ -168,7 +168,12 @@ async function updateUserInFirestore(user) {
 
 async function updateConnectedSerives(service) {
   try {
-    const existingUser = await getUserFromFirestore(user.uid);
+
+    const user = getAuthInstance().currentUser;
+    if (!user) {
+      console.error("[Firebase] User is not authenticated");
+      return;
+    }
 
     var spotifyConnected = false;
     var appleMusicConnected = false;
@@ -178,10 +183,10 @@ async function updateConnectedSerives(service) {
       spotifyConnected = true;
     }
 
-    if (existingUser) {
+    if (user) {
       // User exists, update the last logged in timestamp
       const updatedUser = {
-        ...existingUser,
+        ...user,
         connectedServices: {
           appleMusic: appleMusicConnected,
           spotify: spotifyConnected,
@@ -204,6 +209,38 @@ async function updateConnectedSerives(service) {
   }
 }
 
+async function updateFriendsList(friendId) {
+  try {
+    const user = getAuthInstance().currentUser;
+    if (!user) {
+      console.error("[Firebase] User is not authenticated");
+      return;
+    }
+
+    const existingUser = await getUserFromFirestore(user.uid);
+    if (!existingUser) {
+      console.error("[Firebase] User does not exist in Firestore");
+      return;
+    }
+
+    var friendsList = existingUser.friends;
+    if (!friendsList.includes(friendId)) {
+      friendsList.push(friendId);
+    }
+
+    const updatedUser = {
+      ...existingUser,
+      friends: friendsList,
+    };
+
+    await writeUserToFirestore(updatedUser);
+    console.log(`[Firebase] Updated friends list for user ${user.uid}`);
+  } catch (error) {
+    console.error("[Firebase] Error updating friends list:", error);
+    throw error;
+  }
+}
+
 function getNewUser(user) {
   return {
     userId: user.uid,
@@ -215,6 +252,7 @@ function getNewUser(user) {
       appleMusic: false,
       spotify: false,
     },
+    friends: [],
   };
 }
 
@@ -231,4 +269,5 @@ export {
   getDbInstance,
   getAuthInstance,
   updateConnectedSerives,
+  updateFriendsList,
 };

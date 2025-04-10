@@ -212,6 +212,21 @@ function Homepage() {
   const handleConnectFriend = (userId) => {
     // write this function
     console.log("Connecting to friend with ID:", userId);
+
+    window.electronAPI.addFriendToUser(userId).then((result) => {
+      if (result.success) {
+        setConnectingId(userId);
+        addNotification({
+          type: "friend_request_sent",
+          message: `Friend request sent to ${userId}.`,
+          details: {
+            userId: userId,
+          },
+        });
+      } else {
+        console.error("Error sending friend request:", result.error);
+      }
+    });
   };
 
   const handleRemoveFriend = (userId) => {
