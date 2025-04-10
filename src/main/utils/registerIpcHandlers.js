@@ -161,26 +161,59 @@ export function registerIpcHandlers() {
     try {
       await spotifyApi.initialize();
       console.log(`Transferring "${playlist.name}" to Spotify`);
+      
+      // First create the empty playlist
       const playlistId = await spotifyApi.createEmptyPlaylist(
         playlist.name,
         playlist.description,
       );
-      await spotifyApi.populatePlaylist(playlistId, playlist);
-      return { success: true };
+      
+      // Then populate it
+      const result = await spotifyApi.populatePlaylist(playlistId, playlist);
+      
+      // Return complete result to the renderer
+      return { 
+        success: true,
+        playlistId: playlistId,
+        tracksAdded: result.tracksAdded || 0,
+        totalTracks: result.totalTracks || 0,
+        failedCount: result.failedCount || 0,
+        failedSongs: result.failedSongs || []
+      };
     } catch (error) {
       console.error("Failed to transfer playlist:", error);
-      throw error;
+      return { 
+        success: false, 
+        error: error.message 
+      };
     }
   });
 
   ipcMain.handle("transfer:appleMusic", async (event, playlist) => {
     await appleMusicApi.initialize();
     console.log(`Transferring "${playlist.name}" to Apple Music`);
-    const playlistId = await appleMusicApi.createEmptyPlaylist(
-      playlist.name,
-      playlist.description,
-    );
-    await appleMusicApi.populatePlaylist(playlistId, playlist);
-    return { success: true };
+    try {
+      const playlistId = await appleMusicApi.createEmptyPlaylist(
+        playlist.name,
+        playlist.description,
+      );
+      const result = await appleMusicApi.populatePlaylist(playlistId, playlist);
+      
+      // Make sure we're passing ALL information back to the renderer
+      return {
+        success: true,
+        playlistId: playlistId,
+        tracksAdded: result.tracksAdded,
+        totalTracks: result.totalTracks,
+        failedCount: result.failedCount,
+        failedSongs: result.failedSongs
+      };
+    } catch (error) {
+      console.error("Failed to transfer to Apple Music:", error);
+      return { 
+        success: false, 
+        error: error.message 
+      };
+    }
   });
 }

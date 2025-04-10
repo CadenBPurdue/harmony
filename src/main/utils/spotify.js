@@ -14,19 +14,18 @@ class SpotifyApi {
   }
 
   async initialize() {
-    dotenv.config();
     const token = getSpotifyToken();
-
+  
     if (!token) {
       throw new Error("No Spotify token found");
     }
-
+  
     this.auth_token = token.accessToken;
     this.refresh_token = token.refreshToken;
-
+  
     this.client_id = process.env.SPOTIFY_CLIENT_ID;
     this.client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-
+  
     // Add this safety check that works in both dev and production
     if (process.env.NODE_ENV !== "development") {
       try {
@@ -50,13 +49,13 @@ class SpotifyApi {
         // Continue with original values
       }
     }
-
-    // Instead of calling refreshToken and tokenHandler, just check if we need to refresh
+  
+    // Check if token is expired or about to expire (within 5 minutes)
     const expiresAt = token.timestamp + token.expiresIn * 1000;
-    const isExpired = Date.now() > expiresAt;
-
-    // Only refresh if token is expired or about to expire
-    if (isExpired || expiresAt - Date.now() < 5 * 60 * 1000) {
+    const isExpired = Date.now() > expiresAt - 5 * 60 * 1000; // Consider it expired if less than 5 mins left
+  
+    if (isExpired) {
+      console.log("[SpotifyApi] Token expired or about to expire, refreshing...");
       try {
         await this.refreshToken();
       } catch (error) {
@@ -64,11 +63,9 @@ class SpotifyApi {
           "Token refresh failed, but continuing with existing token:",
           error.message,
         );
-        // Continue with the existing token instead of failing
       }
     }
-
-    // Instead of setting up a recurring timer, just continue
+  
     this.user_id = await this.getUserId();
   }
 
@@ -92,7 +89,7 @@ class SpotifyApi {
         console.warn("[SpotifyApi] Missing credentials for token refresh");
         return false;
       }
-
+  
       const response = await axios.post(
         "https://accounts.spotify.com/api/token",
         `grant_type=refresh_token&refresh_token=${encodeURIComponent(this.refresh_token)}`,
@@ -105,15 +102,15 @@ class SpotifyApi {
           },
         },
       );
-
+  
       this.auth_token = response.data.access_token;
-
+  
       // Update token in storage with new values
       try {
         // Import the function if it's not available
         const safeStorage = await import("./safe_storage.js");
         const setToken = safeStorage.setSpotifyToken;
-
+  
         const currentToken = getSpotifyToken();
         const updatedToken = {
           ...currentToken,
@@ -124,7 +121,7 @@ class SpotifyApi {
           expiresIn: response.data.expires_in || 3600,
           timestamp: Date.now(),
         };
-
+  
         setToken(updatedToken);
       } catch (storageError) {
         console.error(
@@ -133,7 +130,7 @@ class SpotifyApi {
         );
         // Continue anyway - we've updated the in-memory token
       }
-
+  
       return true;
     } catch (error) {
       console.error("Failed to refresh token:", error.message);
@@ -328,41 +325,153 @@ class SpotifyApi {
     if (!this.auth_token) {
       await this.initialize();
     }
-
+  
     try {
-      const song_uri_promises = [];
-      playlist_uf.tracks.forEach((track) => {
-        song_uri_promises.push(this.findSong(track));
-      });
-      const song_uris = await Promise.all(song_uri_promises);
-
-      var null_songs = 0;
-      for (let i = song_uris.length - 1; i >= 0; i--) {
-        if (song_uris[i] === null) {
-          song_uris.splice(i, 1);
-          null_songs++;
+      console.log(`[SpotifyApi] Starting population of playlist: ${playlist_id}`);
+      
+      // Normalize tracks to ensure we have an array
+      let tracksToProcess = [];
+      if (Array.isArray(playlist_uf.tracks)) {
+        tracksToProcess = playlist_uf.tracks;
+      } else if (playlist_uf.tracks && typeof playlist_uf.tracks === 'object') {
+        // Convert object to array if needed
+        tracksToProcess = Object.values(playlist_uf.tracks);
+      }
+      
+      const totalTracks = tracksToProcess.length;
+      console.log(`[SpotifyApi] Processing ${totalTracks} tracks`);
+      
+      // Track both successful and failed songs
+      const song_uris = [];
+      const failedSongs = [];
+      
+      // Process tracks in smaller batches with delay to avoid rate limiting
+      const BATCH_SIZE = 3; // Process only 3 songs at a time
+      const DELAY_MS = 1200; // Wait 1.2 seconds between batches
+      
+      // Helper function to delay execution
+      const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+      
+      // Helper function to retry a function with exponential backoff
+      const retryWithBackoff = async (fn, maxRetries = 3, initialDelay = 2000) => {
+        let retries = 0;
+        while (true) {
+          try {
+            return await fn();
+          } catch (error) {
+            retries++;
+            if (retries > maxRetries || error.response?.status !== 429) {
+              throw error; // Either too many retries or not a rate limit error
+            }
+            
+            // Get retry-after header or use exponential backoff
+            const retryAfter = error.response.headers['retry-after'] 
+              ? parseInt(error.response.headers['retry-after']) * 1000 
+              : initialDelay * Math.pow(2, retries);
+            
+            console.log(`[SpotifyApi] Rate limited. Retrying after ${retryAfter}ms (retry ${retries}/${maxRetries})`);
+            await delay(retryAfter);
+          }
+        }
+      };
+  
+      // Process songs in batches
+      for (let i = 0; i < tracksToProcess.length; i += BATCH_SIZE) {
+        const batchTracks = tracksToProcess.slice(i, i + BATCH_SIZE);
+        console.log(`[SpotifyApi] Processing batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(tracksToProcess.length/BATCH_SIZE)}`);
+        
+        // Process each track in the batch
+        const batchPromises = batchTracks.map(async (track) => {
+          try {
+            // Use retry logic for findSong to handle rate limiting
+            const uri = await retryWithBackoff(
+              () => this.findSong(track), 
+              3,  // max retries
+              2000 // initial delay
+            );
+            
+            if (uri) {
+              song_uris.push(uri);
+              console.log(`[SpotifyApi] Found match for: ${track.name} by ${track.artist}`);
+            } else {
+              failedSongs.push(track);
+              console.log(`[SpotifyApi] No match found for: ${track.name} by ${track.artist}`);
+            }
+          } catch (error) {
+            console.error(`[SpotifyApi] Error finding song: ${track.name}`, error.message);
+            failedSongs.push(track);
+          }
+        });
+        
+        // Wait for all tracks in this batch to be processed
+        await Promise.all(batchPromises);
+        
+        // Add delay before processing the next batch (except for the last batch)
+        if (i + BATCH_SIZE < tracksToProcess.length) {
+          console.log(`[SpotifyApi] Waiting ${DELAY_MS}ms before next batch...`);
+          await delay(DELAY_MS);
         }
       }
-
-      const response = await axios.post(
-        `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`,
-        { uris: song_uris },
-        {
-          headers: {
-            Authorization: `Bearer ${this.auth_token}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      console.log(`${null_songs} songs were not found.`);
-      console.log(response.data);
+      
+      const null_songs = failedSongs.length;
+      console.log(`[SpotifyApi] Found ${song_uris.length} valid songs`);
+      console.log(`[SpotifyApi] Failed to find ${null_songs} songs`);
+  
+      // Only make API call if we have songs to add
+      let apiResponse = null;
+      
+      if (song_uris.length > 0) {
+        // Add tracks to playlist in batches of 100 (Spotify API limit)
+        const SPOTIFY_BATCH_SIZE = 100;
+        
+        for (let i = 0; i < song_uris.length; i += SPOTIFY_BATCH_SIZE) {
+          const uriBatch = song_uris.slice(i, i + SPOTIFY_BATCH_SIZE);
+          console.log(`[SpotifyApi] Adding batch of ${uriBatch.length} tracks to playlist`);
+          
+          // Use retry logic for the API call
+          apiResponse = await retryWithBackoff(async () => {
+            return await axios.post(
+              `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`,
+              { uris: uriBatch },
+              {
+                headers: {
+                  Authorization: `Bearer ${this.auth_token}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+          });
+          
+          console.log(`[SpotifyApi] Successfully added batch to playlist`);
+          
+          // Add delay between batches to avoid rate limiting
+          if (i + SPOTIFY_BATCH_SIZE < song_uris.length) {
+            console.log(`[SpotifyApi] Waiting before adding next batch...`);
+            await delay(1000);
+          }
+        }
+        
+        console.log(`[SpotifyApi] Successfully added all ${song_uris.length} tracks to playlist`);
+      } else {
+        console.log(`[SpotifyApi] No tracks to add to playlist`);
+      }
+  
+      // Return detailed result with proper error tracking
+      return {
+        success: true,
+        response: apiResponse ? apiResponse.data : null,
+        tracksAdded: song_uris.length,
+        totalTracks: totalTracks,
+        failedCount: null_songs,
+        failedSongs: failedSongs,
+        null_songs: null_songs // Keep for backward compatibility
+      };
     } catch (error) {
       console.error(
-        "Error populating playlist:",
+        "[SpotifyApi] Error populating playlist:",
         error.response ? error.response.data : error.message,
       );
-      throw new Error("Failed to populate playlist");
+      throw new Error("Failed to populate playlist: " + (error.message || "Unknown error"));
     }
   }
 
@@ -370,27 +479,54 @@ class SpotifyApi {
     if (!this.auth_token) {
       await this.initialize();
     }
-
+  
     try {
-      const song_title = song_uf.name.split(" ").join("%20");
-      const song_artist = song_uf.artist.split(" ").join("%20");
-      const song_album = song_uf.album.split(" ").join("%20");
-
+      // Improved search query formatting
+      const encodeSafeComponent = (str) => {
+        if (!str) return '';
+        return encodeURIComponent(str.trim())
+          .replace(/\(/g, '%28')
+          .replace(/\)/g, '%29')
+          .replace(/\'/g, '%27');
+      };
+      
+      // Build the search query
+      let searchQuery = '';
+      if (song_uf.name) {
+        searchQuery += `track:${encodeSafeComponent(song_uf.name)}`;
+      }
+      if (song_uf.artist) {
+        searchQuery += ` artist:${encodeSafeComponent(song_uf.artist)}`;
+      }
+      if (song_uf.album) {
+        searchQuery += ` album:${encodeSafeComponent(song_uf.album)}`;
+      }
+  
+      // For very short queries, add more context
+      if (searchQuery.length < 15 && song_uf.name && song_uf.artist) {
+        searchQuery = `${encodeSafeComponent(song_uf.name)} ${encodeSafeComponent(song_uf.artist)}`;
+      }
+  
       const response = await axios.get(
-        `https://api.spotify.com/v1/search?q=track:${song_title}%20artist:${song_artist}%20album:${song_album}&type=track`,
+        `https://api.spotify.com/v1/search?q=${searchQuery}&type=track&limit=1`,
         {
           headers: { Authorization: `Bearer ${this.auth_token}` },
-        },
+        }
       );
-
-      if (response.data.tracks.items.length === 0) {
+  
+      if (!response.data.tracks || response.data.tracks.items.length === 0) {
         return null;
       }
-
+  
       return response.data.tracks.items[0].uri;
     } catch (error) {
-      console.log(error);
-      throw new Error("Failed to find song");
+      // If error is rate limiting (429), let caller handle it for retry
+      if (error.response && error.response.status === 429) {
+        throw error;
+      }
+      
+      console.error("Failed to find song:", error.message);
+      return null;
     }
   }
 
