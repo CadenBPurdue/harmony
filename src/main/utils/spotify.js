@@ -25,6 +25,7 @@ class SpotifyApi {
     dotenv.config();
     const token = getSpotifyToken();
 
+
     if (!token) {
       throw new Error("No Spotify token found");
     }
@@ -64,7 +65,9 @@ class SpotifyApi {
     const isExpired = Date.now() > expiresAt - 5 * 60 * 1000; // Consider it expired if less than 5 mins left
 
     if (isExpired) {
-      console.log("[SpotifyApi] Token expired or about to expire, refreshing...");
+      console.log(
+        "[SpotifyApi] Token expired or about to expire, refreshing...",
+      );
       try {
         await this.refreshToken();
       } catch (error) {
@@ -336,29 +339,35 @@ class SpotifyApi {
     }
 
     try {
-      console.log(`[SpotifyApi] Starting population of playlist: ${playlist_id}`);
-      
+      console.log(
+        `[SpotifyApi] Starting population of playlist: ${playlist_id}`,
+      );
+
       // Normalize tracks to ensure we have an array
       let tracksToProcess = [];
       if (Array.isArray(playlist_uf.tracks)) {
         tracksToProcess = playlist_uf.tracks;
-      } else if (playlist_uf.tracks && typeof playlist_uf.tracks === 'object') {
+      } else if (playlist_uf.tracks && typeof playlist_uf.tracks === "object") {
         // Convert object to array if needed
         tracksToProcess = Object.values(playlist_uf.tracks);
       }
-      
+
       const totalTracks = tracksToProcess.length;
       console.log(`[SpotifyApi] Processing ${totalTracks} tracks`);
-      
+
       // Track both successful and failed songs
       const song_uris = [];
       const failedSongs = [];
       
       // Helper function to delay execution
-      const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-      
+      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
       // Helper function to retry a function with exponential backoff
-      const retryWithBackoff = async (fn, maxRetries = 3, initialDelay = 2000) => {
+      const retryWithBackoff = async (
+        fn,
+        maxRetries = 3,
+        initialDelay = 2000,
+      ) => {
         let retries = 0;
         while (true) {
           try {
@@ -368,13 +377,15 @@ class SpotifyApi {
             if (retries > maxRetries || error.response?.status !== 429) {
               throw error; // Either too many retries or not a rate limit error
             }
-            
+
             // Get retry-after header or use exponential backoff
-            const retryAfter = error.response.headers['retry-after'] 
-              ? parseInt(error.response.headers['retry-after']) * 1000 
+            const retryAfter = error.response.headers["retry-after"]
+              ? parseInt(error.response.headers["retry-after"]) * 1000
               : initialDelay * Math.pow(2, retries);
-            
-            console.log(`[SpotifyApi] Rate limited. Retrying after ${retryAfter}ms (retry ${retries}/${maxRetries})`);
+
+            console.log(
+              `[SpotifyApi] Rate limited. Retrying after ${retryAfter}ms (retry ${retries}/${maxRetries})`,
+            );
             await delay(retryAfter);
           }
         }
@@ -386,8 +397,10 @@ class SpotifyApi {
       
       for (let i = 0; i < tracksToProcess.length; i += BATCH_SIZE) {
         const batchTracks = tracksToProcess.slice(i, i + BATCH_SIZE);
-        console.log(`[SpotifyApi] Processing batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(tracksToProcess.length/BATCH_SIZE)}`);
-        
+        console.log(
+          `[SpotifyApi] Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(tracksToProcess.length / BATCH_SIZE)}`,
+        );
+
         // Process each track in the batch
         const batchPromises = batchTracks.map(async (track) => {
           try {
@@ -410,32 +423,36 @@ class SpotifyApi {
             failedSongs.push({...track, reason: `Error: ${error.message}`});
           }
         });
-        
+
         // Wait for all tracks in this batch to be processed
         await Promise.all(batchPromises);
-        
+
         // Add delay before processing the next batch (except for the last batch)
         if (i + BATCH_SIZE < tracksToProcess.length) {
-          console.log(`[SpotifyApi] Waiting ${DELAY_MS}ms before next batch...`);
+          console.log(
+            `[SpotifyApi] Waiting ${DELAY_MS}ms before next batch...`,
+          );
           await delay(DELAY_MS);
         }
       }
-      
+
       const null_songs = failedSongs.length;
       console.log(`[SpotifyApi] Found ${song_uris.length} valid songs`);
       console.log(`[SpotifyApi] Failed to find ${null_songs} songs`);
 
       // Only make API call if we have songs to add
       let apiResponse = null;
-      
+
       if (song_uris.length > 0) {
         // Add tracks to playlist in batches of 100 (Spotify API limit)
         const SPOTIFY_BATCH_SIZE = 100;
-        
+
         for (let i = 0; i < song_uris.length; i += SPOTIFY_BATCH_SIZE) {
           const uriBatch = song_uris.slice(i, i + SPOTIFY_BATCH_SIZE);
-          console.log(`[SpotifyApi] Adding batch of ${uriBatch.length} tracks to playlist`);
-          
+          console.log(
+            `[SpotifyApi] Adding batch of ${uriBatch.length} tracks to playlist`,
+          );
+
           // Use retry logic for the API call
           apiResponse = await retryWithBackoff(async () => {
             return await axios.post(
@@ -446,20 +463,22 @@ class SpotifyApi {
                   Authorization: `Bearer ${this.auth_token}`,
                   "Content-Type": "application/json",
                 },
-              }
+              },
             );
           });
-          
+
           console.log(`[SpotifyApi] Successfully added batch to playlist`);
-          
+
           // Add delay between batches to avoid rate limiting
           if (i + SPOTIFY_BATCH_SIZE < song_uris.length) {
             console.log(`[SpotifyApi] Waiting before adding next batch...`);
             await delay(1000);
           }
         }
-        
-        console.log(`[SpotifyApi] Successfully added all ${song_uris.length} tracks to playlist`);
+
+        console.log(
+          `[SpotifyApi] Successfully added all ${song_uris.length} tracks to playlist`,
+        );
       } else {
         console.log(`[SpotifyApi] No tracks to add to playlist`);
       }
@@ -472,14 +491,16 @@ class SpotifyApi {
         totalTracks: totalTracks,
         failedCount: null_songs,
         failedSongs: failedSongs,
-        null_songs: null_songs // Keep for backward compatibility
+        null_songs: null_songs, // Keep for backward compatibility
       };
     } catch (error) {
       console.error(
         "[SpotifyApi] Error populating playlist:",
         error.response ? error.response.data : error.message,
       );
-      throw new Error("Failed to populate playlist: " + (error.message || "Unknown error"));
+      throw new Error(
+        "Failed to populate playlist: " + (error.message || "Unknown error"),
+      );
     }
   }
 
@@ -497,11 +518,11 @@ class SpotifyApi {
       // Build the search query - try different strategies
       // Strategy 1: Use Spotify's field-specific search (most accurate)
       const encodeSafeComponent = (str) => {
-        if (!str) return '';
+        if (!str) return "";
         return encodeURIComponent(str.trim())
-          .replace(/\(/g, '%28')
-          .replace(/\)/g, '%29')
-          .replace(/\'/g, '%27');
+          .replace(/\(/g, "%28")
+          .replace(/\)/g, "%29")
+          .replace(/\'/g, "%27");
       };
       
       const fieldSearchQuery = `track:${encodeSafeComponent(normalizedTitle)} artist:${encodeSafeComponent(normalizedArtist)}`;
@@ -515,7 +536,7 @@ class SpotifyApi {
         `https://api.spotify.com/v1/search?q=${fieldSearchQuery}&type=track&limit=5`,
         {
           headers: { Authorization: `Bearer ${this.auth_token}` },
-        }
+        },
       );
       
       let tracks = response.data?.tracks?.items || [];
@@ -609,7 +630,7 @@ class SpotifyApi {
       if (error.response && error.response.status === 429) {
         throw error;
       }
-      
+
       console.error("Failed to find song:", error.message);
       return { uri: null, score: 0, reason: `Search error: ${error.message}` };
     }
