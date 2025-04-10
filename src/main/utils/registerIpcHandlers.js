@@ -161,30 +161,30 @@ export function registerIpcHandlers() {
     try {
       await spotifyApi.initialize();
       console.log(`Transferring "${playlist.name}" to Spotify`);
-      
+
       // First create the empty playlist
       const playlistId = await spotifyApi.createEmptyPlaylist(
         playlist.name,
         playlist.description,
       );
-      
+
       // Then populate it
       const result = await spotifyApi.populatePlaylist(playlistId, playlist);
-      
+
       // Return complete result to the renderer
-      return { 
+      return {
         success: true,
         playlistId: playlistId,
         tracksAdded: result.tracksAdded || 0,
         totalTracks: result.totalTracks || 0,
         failedCount: result.failedCount || 0,
-        failedSongs: result.failedSongs || []
+        failedSongs: result.failedSongs || [],
       };
     } catch (error) {
       console.error("Failed to transfer playlist:", error);
-      return { 
-        success: false, 
-        error: error.message 
+      return {
+        success: false,
+        error: error.message,
       };
     }
   });
@@ -198,7 +198,7 @@ export function registerIpcHandlers() {
         playlist.description,
       );
       const result = await appleMusicApi.populatePlaylist(playlistId, playlist);
-      
+
       // Make sure we're passing ALL information back to the renderer
       return {
         success: true,
@@ -206,13 +206,13 @@ export function registerIpcHandlers() {
         tracksAdded: result.tracksAdded,
         totalTracks: result.totalTracks,
         failedCount: result.failedCount,
-        failedSongs: result.failedSongs
+        failedSongs: result.failedSongs,
       };
     } catch (error) {
       console.error("Failed to transfer to Apple Music:", error);
-      return { 
-        success: false, 
-        error: error.message 
+      return {
+        success: false,
+        error: error.message,
       };
     }
   });
