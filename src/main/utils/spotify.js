@@ -2,7 +2,15 @@
 import axios from "axios";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
+import {
+  normalizeTrackTitle,
+  normalizeArtistName,
+  calculateSimilarity,
+  scoreSongMatch,
+  findBestMatch
+} from "./match_scoring.js";
 import { getSpotifyToken } from "./safe_storage.js";
+// Import match_scoring utilities
 
 class SpotifyApi {
   constructor() {
@@ -14,18 +22,19 @@ class SpotifyApi {
   }
 
   async initialize() {
+    dotenv.config();
     const token = getSpotifyToken();
-  
+
     if (!token) {
       throw new Error("No Spotify token found");
     }
-  
+
     this.auth_token = token.accessToken;
     this.refresh_token = token.refreshToken;
-  
+
     this.client_id = process.env.SPOTIFY_CLIENT_ID;
     this.client_secret = process.env.SPOTIFY_CLIENT_SECRET;
-  
+
     // Add this safety check that works in both dev and production
     if (process.env.NODE_ENV !== "development") {
       try {
@@ -49,11 +58,11 @@ class SpotifyApi {
         // Continue with original values
       }
     }
-  
+
     // Check if token is expired or about to expire (within 5 minutes)
     const expiresAt = token.timestamp + token.expiresIn * 1000;
     const isExpired = Date.now() > expiresAt - 5 * 60 * 1000; // Consider it expired if less than 5 mins left
-  
+
     if (isExpired) {
       console.log("[SpotifyApi] Token expired or about to expire, refreshing...");
       try {
@@ -65,7 +74,7 @@ class SpotifyApi {
         );
       }
     }
-  
+
     this.user_id = await this.getUserId();
   }
 
@@ -89,7 +98,7 @@ class SpotifyApi {
         console.warn("[SpotifyApi] Missing credentials for token refresh");
         return false;
       }
-  
+
       const response = await axios.post(
         "https://accounts.spotify.com/api/token",
         `grant_type=refresh_token&refresh_token=${encodeURIComponent(this.refresh_token)}`,
@@ -102,15 +111,15 @@ class SpotifyApi {
           },
         },
       );
-  
+
       this.auth_token = response.data.access_token;
-  
+
       // Update token in storage with new values
       try {
         // Import the function if it's not available
         const safeStorage = await import("./safe_storage.js");
         const setToken = safeStorage.setSpotifyToken;
-  
+
         const currentToken = getSpotifyToken();
         const updatedToken = {
           ...currentToken,
@@ -121,7 +130,7 @@ class SpotifyApi {
           expiresIn: response.data.expires_in || 3600,
           timestamp: Date.now(),
         };
-  
+
         setToken(updatedToken);
       } catch (storageError) {
         console.error(
@@ -130,7 +139,7 @@ class SpotifyApi {
         );
         // Continue anyway - we've updated the in-memory token
       }
-  
+
       return true;
     } catch (error) {
       console.error("Failed to refresh token:", error.message);
@@ -325,7 +334,7 @@ class SpotifyApi {
     if (!this.auth_token) {
       await this.initialize();
     }
-  
+
     try {
       console.log(`[SpotifyApi] Starting population of playlist: ${playlist_id}`);
       
@@ -344,10 +353,6 @@ class SpotifyApi {
       // Track both successful and failed songs
       const song_uris = [];
       const failedSongs = [];
-      
-      // Process tracks in smaller batches with delay to avoid rate limiting
-      const BATCH_SIZE = 3; // Process only 3 songs at a time
-      const DELAY_MS = 1200; // Wait 1.2 seconds between batches
       
       // Helper function to delay execution
       const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -374,8 +379,11 @@ class SpotifyApi {
           }
         }
       };
-  
-      // Process songs in batches
+
+      // Process songs in batches to avoid rate limiting
+      const BATCH_SIZE = 3; // Process only 3 songs at a time
+      const DELAY_MS = 1200; // Wait 1.2 seconds between batches
+      
       for (let i = 0; i < tracksToProcess.length; i += BATCH_SIZE) {
         const batchTracks = tracksToProcess.slice(i, i + BATCH_SIZE);
         console.log(`[SpotifyApi] Processing batch ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(tracksToProcess.length/BATCH_SIZE)}`);
@@ -383,23 +391,23 @@ class SpotifyApi {
         // Process each track in the batch
         const batchPromises = batchTracks.map(async (track) => {
           try {
-            // Use retry logic for findSong to handle rate limiting
-            const uri = await retryWithBackoff(
+            // Use enhanced findSong method with match_scoring
+            const result = await retryWithBackoff(
               () => this.findSong(track), 
               3,  // max retries
               2000 // initial delay
             );
             
-            if (uri) {
-              song_uris.push(uri);
-              console.log(`[SpotifyApi] Found match for: ${track.name} by ${track.artist}`);
+            if (result && result.uri) {
+              song_uris.push(result.uri);
+              console.log(`[SpotifyApi] Found match for: ${track.name} by ${track.artist} (Score: ${result.score.toFixed(2)})`);
             } else {
-              failedSongs.push(track);
+              failedSongs.push({...track, reason: result?.reason || "No match found"});
               console.log(`[SpotifyApi] No match found for: ${track.name} by ${track.artist}`);
             }
           } catch (error) {
             console.error(`[SpotifyApi] Error finding song: ${track.name}`, error.message);
-            failedSongs.push(track);
+            failedSongs.push({...track, reason: `Error: ${error.message}`});
           }
         });
         
@@ -416,7 +424,7 @@ class SpotifyApi {
       const null_songs = failedSongs.length;
       console.log(`[SpotifyApi] Found ${song_uris.length} valid songs`);
       console.log(`[SpotifyApi] Failed to find ${null_songs} songs`);
-  
+
       // Only make API call if we have songs to add
       let apiResponse = null;
       
@@ -455,7 +463,7 @@ class SpotifyApi {
       } else {
         console.log(`[SpotifyApi] No tracks to add to playlist`);
       }
-  
+
       // Return detailed result with proper error tracking
       return {
         success: true,
@@ -475,13 +483,19 @@ class SpotifyApi {
     }
   }
 
+  // Updated findSong method that uses match_scoring.js
   async findSong(song_uf) {
     if (!this.auth_token) {
       await this.initialize();
     }
-  
+
     try {
-      // Improved search query formatting
+      // Normalize the search query
+      const normalizedTitle = normalizeTrackTitle(song_uf.name);
+      const normalizedArtist = normalizeArtistName(song_uf.artist);
+      
+      // Build the search query - try different strategies
+      // Strategy 1: Use Spotify's field-specific search (most accurate)
       const encodeSafeComponent = (str) => {
         if (!str) return '';
         return encodeURIComponent(str.trim())
@@ -490,35 +504,106 @@ class SpotifyApi {
           .replace(/\'/g, '%27');
       };
       
-      // Build the search query
-      let searchQuery = '';
-      if (song_uf.name) {
-        searchQuery += `track:${encodeSafeComponent(song_uf.name)}`;
-      }
-      if (song_uf.artist) {
-        searchQuery += ` artist:${encodeSafeComponent(song_uf.artist)}`;
-      }
-      if (song_uf.album) {
-        searchQuery += ` album:${encodeSafeComponent(song_uf.album)}`;
-      }
-  
-      // For very short queries, add more context
-      if (searchQuery.length < 15 && song_uf.name && song_uf.artist) {
-        searchQuery = `${encodeSafeComponent(song_uf.name)} ${encodeSafeComponent(song_uf.artist)}`;
-      }
-  
-      const response = await axios.get(
-        `https://api.spotify.com/v1/search?q=${searchQuery}&type=track&limit=1`,
+      const fieldSearchQuery = `track:${encodeSafeComponent(normalizedTitle)} artist:${encodeSafeComponent(normalizedArtist)}`;
+      
+      // Strategy 2: Plain text search (sometimes catches things field search misses)
+      const plainSearchQuery = `${encodeSafeComponent(normalizedTitle)} ${encodeSafeComponent(normalizedArtist)}`;
+      
+      // First try field search
+      console.log(`[SpotifyApi] Searching for "${normalizedTitle}" by "${normalizedArtist}"`);
+      let response = await axios.get(
+        `https://api.spotify.com/v1/search?q=${fieldSearchQuery}&type=track&limit=5`,
         {
           headers: { Authorization: `Bearer ${this.auth_token}` },
         }
       );
-  
-      if (!response.data.tracks || response.data.tracks.items.length === 0) {
-        return null;
+      
+      let tracks = response.data?.tracks?.items || [];
+      
+      // If no results, try plan text search
+      if (tracks.length === 0) {
+        console.log(`[SpotifyApi] No results with field search, trying plain text search`);
+        response = await axios.get(
+          `https://api.spotify.com/v1/search?q=${plainSearchQuery}&type=track&limit=10`,
+          {
+            headers: { Authorization: `Bearer ${this.auth_token}` },
+          }
+        );
+        tracks = response.data?.tracks?.items || [];
       }
-  
-      return response.data.tracks.items[0].uri;
+      
+      if (tracks.length === 0) {
+        return { 
+          uri: null,
+          score: 0,
+          reason: "No matches found in Spotify catalog" 
+        };
+      }
+      
+      // Convert Spotify tracks to format for scoring
+      const candidates = tracks.map(track => ({
+        name: track.name,
+        artist: track.artists[0].name,
+        album: track.album.name,
+        duration: track.duration_ms,
+        uri: track.uri,
+        id: track.id,
+        popularity: track.popularity
+      }));
+      
+      // Score each candidate
+      const scoredCandidates = candidates.map(candidate => {
+        const result = scoreSongMatch(
+          candidate, 
+          song_uf,
+          {
+            nameWeight: 0.45,
+            artistWeight: 0.4,
+            durationWeight: 0.05,
+            albumWeight: 0.1
+          }
+        );
+        
+        return {
+          ...result,
+          uri: candidate.uri,
+          id: candidate.id,
+          popularity: candidate.popularity
+        };
+      });
+      
+      // Sort by score
+      scoredCandidates.sort((a, b) => b.score - a.score);
+      
+      // Find the best match with a score above threshold
+      const bestMatch = scoredCandidates[0];
+      
+      if (bestMatch && bestMatch.score >= 0.6) {
+        return {
+          uri: bestMatch.uri,
+          id: bestMatch.id,
+          score: bestMatch.score,
+          matchDetails: bestMatch.details
+        };
+      }
+      
+      // If we have a high popularity match with decent score, use it
+      const popularMatch = scoredCandidates.find(c => c.popularity > 60 && c.score > 0.5);
+      if (popularMatch) {
+        return {
+          uri: popularMatch.uri,
+          id: popularMatch.id,
+          score: popularMatch.score,
+          matchDetails: popularMatch.details
+        };
+      }
+      
+      // No good matches
+      return { 
+        uri: null, 
+        score: bestMatch ? bestMatch.score : 0,
+        reason: bestMatch ? `Best match score (${bestMatch.score.toFixed(2)}) below threshold` : "No matches found"
+      };
     } catch (error) {
       // If error is rate limiting (429), let caller handle it for retry
       if (error.response && error.response.status === 429) {
@@ -526,7 +611,7 @@ class SpotifyApi {
       }
       
       console.error("Failed to find song:", error.message);
-      return null;
+      return { uri: null, score: 0, reason: `Search error: ${error.message}` };
     }
   }
 
