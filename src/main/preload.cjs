@@ -110,6 +110,10 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("firebase:getFriends");
   },
 
+  debug: (message) => {
+    return ipcRenderer.invoke("debug:message", message);
+  },
+
   setSpotifyConnected: () => {
     console.log("Calling updateConnectedServices from preload");
     return ipcRenderer.invoke("firebase:setSpotifyConnected");

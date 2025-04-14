@@ -83,42 +83,39 @@ export function registerIpcHandlers() {
       console.error("[Firebase] User is not authenticated");
       return [];
     }
-    if (!user.friends) {
+    if (!user.friends || !Array.isArray(user.friends) || user.friends.length === 0) {
       console.warn("[Firebase] No friends found for user");
       return [];
     }
-
-    var friendsInfo = [];
-
-    console.log("User friends:", user.friends);
-    console.log("NR$JUINDJKNDJKENDJKENDJIO#NIUDNEJDINJNJDKNEJENDJKENJDKENJDKNEJKDN");
-
-    user.friends.forEach((friend) => {
-      console.log("Friend ID:", friend);
-      // Fetch user data for each friend
-      getUserFromFirestore(friend)
-        .then((friendData) => {
-          if (friendData) {
-            console.log("Friend data:", friendData);
-            friendsInfo.push(friendData);
-          } else {
-            console.warn("No data found for friend ID:", friend);
+      
+    try {
+      const friendsInfo = await Promise.all(
+        user.friends.map(async (friendId) => {
+          try {
+            const friendData = await getUserFromFirestore(friendId);
+            if (friendData) {
+              return friendData;
+            } else {
+              console.warn("No data found for friend ID:", friendId);
+              return null;
+            }
+          } catch (error) {
+            console.error("Error fetching friend data for ID", friendId, ":", error);
+            return null;
           }
-          // Return the friendsInfo array after all promises are resolved
-          console.log("Friends info:", friendsInfo);
-          if (Array.isArray(friendsInfo)) {
-            console.log("Friends info is an array");
-          } else {
-            console.error("Friends info is not an array");
-          }
-          return friendsInfo;
         })
-        .catch((error) => {
-          console.error("Error fetching friend data:", error);
-        });
+      );
+      
+      const validFriendsInfo = friendsInfo.filter(friend => friend !== null);
+      return validFriendsInfo;
+    } catch (error) {
+      console.error("Error fetching friends data:", error);
+      return [];
     }
-    );
-    return friendsInfo;
+  });
+
+  ipcMain.handle("debug:message", (event, message) => {
+    console.log(message);
   });
 
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {

@@ -294,20 +294,17 @@ function Homepage() {
   // Function to fetch friends list
   const fetchFriends = () => {
     setFriendsLoading(true);
-    setFriendsList([]); // Clear current list while loading
+    setFriendsList([]);
     
     window.electronAPI.getFriendsFromFirebase()
-      .then((response) => {
-        console.log("Raw friends response:", response);
-        
-        // Ensure we're working with an array and it has content
-        if (Array.isArray(response) && response.length > 0) {
-          // Map the response to ensure consistent data structure
+      .then((response) => {   
+        window.electronAPI.debug("Fetching friends list");
+        window.electronAPI.debug(response);     
+        if (response.length > 0) {
           const processedFriends = response.map(friend => ({
             id: friend.id || friend.userId,
             displayName: friend.displayName || "Unknown User",
             email: friend.email || "No email provided",
-            // Add any other needed properties
           }));
           
           console.log("Processed friends:", processedFriends);
@@ -1228,7 +1225,7 @@ function Homepage() {
                   sx={{ textAlign: "center", py: 4 }}
                 >
                   You haven't connected with any friends yet. Use the search
-                  above to find friends.
+                  above to find friends. {friendsList.length}
                 </Typography>
               )}
             </Paper>
