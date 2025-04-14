@@ -100,6 +100,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("firebase:addFriend", friendId);
   },
 
+  removeFriendFromUser: (friendId) => {
+    console.log("Calling removeFriendFromUser from preload");
+    return ipcRenderer.invoke("firebase:removeFriend", friendId);
+  },
+
+  getFriendsFromFirebase: () => {
+    console.log("Calling getFriendsFromFirebase from preload");
+    return ipcRenderer.invoke("firebase:getFriends");
+  },
+
   setSpotifyConnected: () => {
     console.log("Calling updateConnectedServices from preload");
     return ipcRenderer.invoke("firebase:setSpotifyConnected");

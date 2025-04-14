@@ -209,7 +209,7 @@ async function updateConnectedSerives(service) {
   }
 }
 
-async function updateFriendsList(friendId) {
+async function updateFriendsList(friendId, remove = false) {
   try {
     const user = getAuthInstance().currentUser;
     if (!user) {
@@ -223,11 +223,18 @@ async function updateFriendsList(friendId) {
       return;
     }
 
-    var friendsList = existingUser.friends;
-    if (!friendsList.includes(friendId)) {
-      friendsList.push(friendId);
+    if (remove) {
+      // Remove friendId from friends list
+      var friendsList = existingUser.friends.filter((friend) => friend !== friendId);
     }
-
+    else {
+      // Add friendId to friends list
+      var friendsList = existingUser.friends;
+      if (!friendsList.includes(friendId)) {
+        friendsList.push(friendId);
+      }
+    }
+    
     const updatedUser = {
       ...existingUser,
       friends: friendsList,
@@ -240,6 +247,8 @@ async function updateFriendsList(friendId) {
     throw error;
   }
 }
+
+
 
 function getNewUser(user) {
   return {

@@ -18,6 +18,7 @@ import {
   getSharedPlaylistsFromFirestore,
   getPlaylistFromFirestore,
   getUsersFromFirestore,
+  getUserFromFirestore,
   getCurrentUserFromFirestore,
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
@@ -69,7 +70,55 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("firebase:addFriend", async (event, friendId) => {
-    return await updateFriendsList(friendId);
+    return await updateFriendsList(friendId, false);
+  });
+
+  ipcMain.handle("firebase:removeFriend", async (event, friendId) => {
+     return await updateFriendsList(friendId, true);
+  });
+
+  ipcMain.handle("firebase:getFriends", async () => {
+    const user = await getCurrentUserFromFirestore();
+    if (!user) {
+      console.error("[Firebase] User is not authenticated");
+      return [];
+    }
+    if (!user.friends) {
+      console.warn("[Firebase] No friends found for user");
+      return [];
+    }
+
+    var friendsInfo = [];
+
+    console.log("User friends:", user.friends);
+    console.log("NR$JUINDJKNDJKENDJKENDJIO#NIUDNEJDINJNJDKNEJENDJKENJDKENJDKNEJKDN");
+
+    user.friends.forEach((friend) => {
+      console.log("Friend ID:", friend);
+      // Fetch user data for each friend
+      getUserFromFirestore(friend)
+        .then((friendData) => {
+          if (friendData) {
+            console.log("Friend data:", friendData);
+            friendsInfo.push(friendData);
+          } else {
+            console.warn("No data found for friend ID:", friend);
+          }
+          // Return the friendsInfo array after all promises are resolved
+          console.log("Friends info:", friendsInfo);
+          if (Array.isArray(friendsInfo)) {
+            console.log("Friends info is an array");
+          } else {
+            console.error("Friends info is not an array");
+          }
+          return friendsInfo;
+        })
+        .catch((error) => {
+          console.error("Error fetching friend data:", error);
+        });
+    }
+    );
+    return friendsInfo;
   });
 
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {

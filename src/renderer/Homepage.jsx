@@ -210,34 +210,120 @@ function Homepage() {
   };
 
   const handleConnectFriend = (userId) => {
-    // write this function
-    console.log("Connecting to friend with ID:", userId);
-
-    window.electronAPI.addFriendToUser(userId).then((result) => {
-      if (result.success) {
-        setConnectingId(userId);
+    setConnectingId(userId);
+    window.electronAPI.addFriendToUser(userId)
+      .then((result) => {
+        if (result.success) {
+          // Add notification
+          addNotification({
+            type: "friend_request_sent",
+            message: `Friend request sent to ${userId}.`,
+            details: {
+              userId: userId,
+            },
+          });
+          
+          // Clear search result and query after successful connection
+          setSearchResult(null);
+          setSearchQuery("");
+          
+          // Reload the friends list to reflect the new connection
+          fetchFriends();
+        } else {
+          console.error("Error sending friend request:", result.error);
+          addNotification({
+            type: "error",
+            message: `Failed to send friend request: ${result.error || "Unknown error"}`,
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("Exception sending friend request:", error);
         addNotification({
-          type: "friend_request_sent",
-          message: `Friend request sent to ${userId}.`,
-          details: {
-            userId: userId,
-          },
+          type: "error",
+          message: "Failed to send friend request due to an error",
         });
-      } else {
-        console.error("Error sending friend request:", result.error);
-      }
-    });
+      })
+      .finally(() => {
+        setConnectingId(null);
+      });
   };
 
   const handleRemoveFriend = (userId) => {
-    // write this function
-    console.log("Removing friend with ID:", userId);
+    if (!userId) {
+      console.error("Cannot remove friend: Invalid user ID");
+      return;
+    }
+    
+    setRemovingId(userId);
+    
+    window.electronAPI.removeFriendFromUser(userId)
+      .then((result) => {
+        if (result.success) {
+          addNotification({
+            type: "friend_request_removed",
+            message: `Friend removed successfully.`,
+            details: {
+              userId: userId,
+            },
+          });
+          
+          // Reload the complete friends list instead of just filtering the local state
+          // This ensures our UI is in sync with the backend
+          fetchFriends();
+        } else {
+          console.error("Error removing friend:", result.error);
+          addNotification({
+            type: "error",
+            message: `Failed to remove friend: ${result.error || "Unknown error"}`,
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("Exception removing friend:", error);
+        addNotification({
+          type: "error",
+          message: "Failed to remove friend due to an error",
+        });
+      })
+      .finally(() => {
+        setRemovingId(null);
+      });
   };
 
   // Function to fetch friends list
   const fetchFriends = () => {
-    // Fetch the friends list from Firebase
-    console.log("Fetching friends list...");
+    setFriendsLoading(true);
+    setFriendsList([]); // Clear current list while loading
+    
+    window.electronAPI.getFriendsFromFirebase()
+      .then((response) => {
+        console.log("Raw friends response:", response);
+        
+        // Ensure we're working with an array and it has content
+        if (Array.isArray(response) && response.length > 0) {
+          // Map the response to ensure consistent data structure
+          const processedFriends = response.map(friend => ({
+            id: friend.id || friend.userId,
+            displayName: friend.displayName || "Unknown User",
+            email: friend.email || "No email provided",
+            // Add any other needed properties
+          }));
+          
+          console.log("Processed friends:", processedFriends);
+          setFriendsList(processedFriends);
+        } else {
+          console.log("No friends found or invalid response format");
+          setFriendsList([]);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching friends list:", error);
+        setFriendsList([]);
+      })
+      .finally(() => {
+        setFriendsLoading(false);
+      });
   };
 
   // Fetch friends when navigating to the friends page
