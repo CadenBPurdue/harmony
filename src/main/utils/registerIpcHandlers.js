@@ -10,6 +10,7 @@ import { configManager } from "./config.js";
 import {
   authenticateWithFirebase,
   updateConnectedSerives,
+  updateFriendsList,
 } from "./firebase.js";
 import {
   writePlaylistToFirestore,
@@ -17,6 +18,7 @@ import {
   getSharedPlaylistsFromFirestore,
   getPlaylistFromFirestore,
   getUsersFromFirestore,
+  getUserFromFirestore,
   getCurrentUserFromFirestore,
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
@@ -65,6 +67,65 @@ export function registerIpcHandlers() {
 
   ipcMain.handle("firebase:setAppleMusicConnected", async () => {
     return await updateConnectedSerives("appleMusic");
+  });
+
+  ipcMain.handle("firebase:addFriend", async (event, friendId) => {
+    return await updateFriendsList(friendId, false);
+  });
+
+  ipcMain.handle("firebase:removeFriend", async (event, friendId) => {
+    return await updateFriendsList(friendId, true);
+  });
+
+  ipcMain.handle("firebase:getFriends", async () => {
+    const user = await getCurrentUserFromFirestore();
+    if (!user) {
+      console.error("[Firebase] User is not authenticated");
+      return [];
+    }
+    if (
+      !user.friends ||
+      !Array.isArray(user.friends) ||
+      user.friends.length === 0
+    ) {
+      console.warn("[Firebase] No friends found for user");
+      return [];
+    }
+
+    console.log("User friends:", user.friends);
+
+    try {
+      const friendsInfo = await Promise.all(
+        user.friends.map(async (friendId) => {
+          console.log("Fetching friend ID:", friendId);
+          try {
+            const friendData = await getUserFromFirestore(friendId);
+            if (friendData) {
+              console.log("Friend data fetched:", friendData);
+              return friendData;
+            } else {
+              console.warn("No data found for friend ID:", friendId);
+              return null;
+            }
+          } catch (error) {
+            console.error(
+              "Error fetching friend data for ID",
+              friendId,
+              ":",
+              error,
+            );
+            return null;
+          }
+        }),
+      );
+
+      // Filter out any null values (failed fetches)
+      const validFriendsInfo = friendsInfo.filter((friend) => friend !== null);
+      return validFriendsInfo;
+    } catch (error) {
+      console.error("Error fetching friends data:", error);
+      return [];
+    }
   });
 
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
