@@ -211,7 +211,8 @@ function Homepage() {
 
   const handleConnectFriend = (userId) => {
     setConnectingId(userId);
-    window.electronAPI.addFriendToUser(userId)
+    window.electronAPI
+      .addFriendToUser(userId)
       .then((result) => {
         if (result.success) {
           // Add notification
@@ -222,11 +223,11 @@ function Homepage() {
               userId: userId,
             },
           });
-          
+
           // Clear search result and query after successful connection
           setSearchResult(null);
           setSearchQuery("");
-          
+
           // Reload the friends list to reflect the new connection
           fetchFriends();
         } else {
@@ -254,10 +255,11 @@ function Homepage() {
       console.error("Cannot remove friend: Invalid user ID");
       return;
     }
-    
+
     setRemovingId(userId);
-    
-    window.electronAPI.removeFriendFromUser(userId)
+
+    window.electronAPI
+      .removeFriendFromUser(userId)
       .then((result) => {
         if (result.success) {
           addNotification({
@@ -267,7 +269,7 @@ function Homepage() {
               userId: userId,
             },
           });
-          
+
           // Reload the complete friends list instead of just filtering the local state
           // This ensures our UI is in sync with the backend
           fetchFriends();
@@ -297,16 +299,13 @@ function Homepage() {
     setFriendsList([]);
     
     window.electronAPI.getFriendsFromFirebase()
-      .then((response) => {   
-        window.electronAPI.debug("Fetching friends list");
-        window.electronAPI.debug(response);     
+      .then((response) => {      
         if (response.length > 0) {
           const processedFriends = response.map(friend => ({
             id: friend.id || friend.userId,
             displayName: friend.displayName || "Unknown User",
             email: friend.email || "No email provided",
           }));
-          
           console.log("Processed friends:", processedFriends);
           setFriendsList(processedFriends);
         } else {
