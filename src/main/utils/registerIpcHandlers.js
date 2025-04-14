@@ -83,13 +83,17 @@ export function registerIpcHandlers() {
       console.error("[Firebase] User is not authenticated");
       return [];
     }
-    if (!user.friends || !Array.isArray(user.friends) || user.friends.length === 0) {
+    if (
+      !user.friends ||
+      !Array.isArray(user.friends) ||
+      user.friends.length === 0
+    ) {
       console.warn("[Firebase] No friends found for user");
       return [];
     }
-  
+
     console.log("User friends:", user.friends);
-    
+
     try {
       const friendsInfo = await Promise.all(
         user.friends.map(async (friendId) => {
@@ -104,14 +108,19 @@ export function registerIpcHandlers() {
               return null;
             }
           } catch (error) {
-            console.error("Error fetching friend data for ID", friendId, ":", error);
+            console.error(
+              "Error fetching friend data for ID",
+              friendId,
+              ":",
+              error,
+            );
             return null;
           }
-        })
+        }),
       );
-      
+
       // Filter out any null values (failed fetches)
-      const validFriendsInfo = friendsInfo.filter(friend => friend !== null);
+      const validFriendsInfo = friendsInfo.filter((friend) => friend !== null);
       return validFriendsInfo;
     } catch (error) {
       console.error("Error fetching friends data:", error);
