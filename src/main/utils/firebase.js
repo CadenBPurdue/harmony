@@ -168,7 +168,6 @@ async function updateUserInFirestore(user) {
 
 async function updateConnectedSerives(service) {
   try {
-
     const user = getAuthInstance().currentUser;
     if (!user) {
       console.error("[Firebase] User is not authenticated");
