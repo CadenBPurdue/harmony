@@ -320,52 +320,65 @@ async function sendFriendRequest(targetUserId) {
     if (targetUserId === auth.currentUser.uid) {
       throw new Error("Cannot send friend request to yourself");
     }
-    
+
     // Get target user and check if they exist
     const targetUserRef = doc(db, collectionName, targetUserId);
     const targetUserSnap = await getDoc(targetUserRef);
-    
+
     if (!targetUserSnap.exists()) {
       throw new Error("Target user does not exist");
     }
-    
+
     const targetUser = targetUserSnap.data();
-    
+
     // Get current user data
-    const currentUserSnap = await getDoc(doc(db, collectionName, auth.currentUser.uid));
+    const currentUserSnap = await getDoc(
+      doc(db, collectionName, auth.currentUser.uid),
+    );
     if (!currentUserSnap.exists()) {
       throw new Error("Current user data not found in Firestore");
     }
     const currentUser = currentUserSnap.data();
-    
+
     // Check if already friends
-    if (targetUser.friends && targetUser.friends.includes(auth.currentUser.uid)) {
+    if (
+      targetUser.friends &&
+      targetUser.friends.includes(auth.currentUser.uid)
+    ) {
       throw new Error("You are already friends with this user");
     }
-    
+
     // Check if friend request already sent
-    if (targetUser.incomingFriendRequests && targetUser.incomingFriendRequests.includes(auth.currentUser.uid)) {
+    if (
+      targetUser.incomingFriendRequests &&
+      targetUser.incomingFriendRequests.includes(auth.currentUser.uid)
+    ) {
       throw new Error("Friend request already sent to this user");
     }
-    
+
     // Check if they've sent you a request (accept it instead)
-    if (currentUser.incomingFriendRequests && currentUser.incomingFriendRequests.includes(targetUserId)) {
+    if (
+      currentUser.incomingFriendRequests &&
+      currentUser.incomingFriendRequests.includes(targetUserId)
+    ) {
       // Accept their request instead
       return await acceptFriendRequest(targetUserId);
     }
-    
+
     // Add current user to target user's incomingFriendRequests
     const updatedIncomingRequests = targetUser.incomingFriendRequests || [];
     updatedIncomingRequests.push(auth.currentUser.uid);
-    
+
     // Update the target user document
     await setDoc(
       targetUserRef,
       { incomingFriendRequests: updatedIncomingRequests },
-      { merge: true }
+      { merge: true },
     );
-    
-    console.log(`[Firebase Helper] Friend request sent to user ${targetUserId}`);
+
+    console.log(
+      `[Firebase Helper] Friend request sent to user ${targetUserId}`,
+    );
     return { success: true };
   } catch (error) {
     console.error("Error sending friend request:", error);
@@ -392,60 +405,61 @@ async function acceptFriendRequest(requesterId) {
     // Get current user data
     const currentUserRef = doc(db, collectionName, auth.currentUser.uid);
     const currentUserSnap = await getDoc(currentUserRef);
-    
+
     if (!currentUserSnap.exists()) {
       throw new Error("Current user data not found in Firestore");
     }
-    
+
     const currentUser = currentUserSnap.data();
-    
+
     // Check if the request exists
-    if (!currentUser.incomingFriendRequests || !currentUser.incomingFriendRequests.includes(requesterId)) {
+    if (
+      !currentUser.incomingFriendRequests ||
+      !currentUser.incomingFriendRequests.includes(requesterId)
+    ) {
       throw new Error("No friend request found from this user");
     }
-    
+
     // Get requester user data
     const requesterRef = doc(db, collectionName, requesterId);
     const requesterSnap = await getDoc(requesterRef);
-    
+
     if (!requesterSnap.exists()) {
       throw new Error("Requester user does not exist");
     }
-    
+
     // Update current user: remove from incoming requests and add to friends
     const updatedIncomingRequests = currentUser.incomingFriendRequests.filter(
-      id => id !== requesterId
+      (id) => id !== requesterId,
     );
-    
+
     const currentUserFriends = currentUser.friends || [];
     if (!currentUserFriends.includes(requesterId)) {
       currentUserFriends.push(requesterId);
     }
-    
+
     await setDoc(
       currentUserRef,
-      { 
+      {
         incomingFriendRequests: updatedIncomingRequests,
-        friends: currentUserFriends 
+        friends: currentUserFriends,
       },
-      { merge: true }
+      { merge: true },
     );
-    
+
     // Update requester: add current user to friends
     const requester = requesterSnap.data();
     const requesterFriends = requester.friends || [];
-    
+
     if (!requesterFriends.includes(auth.currentUser.uid)) {
       requesterFriends.push(auth.currentUser.uid);
     }
-    
-    await setDoc(
-      requesterRef,
-      { friends: requesterFriends },
-      { merge: true }
+
+    await setDoc(requesterRef, { friends: requesterFriends }, { merge: true });
+
+    console.log(
+      `[Firebase Helper] Friend request accepted from user ${requesterId}`,
     );
-    
-    console.log(`[Firebase Helper] Friend request accepted from user ${requesterId}`);
     return { success: true };
   } catch (error) {
     console.error("Error accepting friend request:", error);
