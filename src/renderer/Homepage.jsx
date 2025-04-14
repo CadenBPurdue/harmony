@@ -297,11 +297,12 @@ function Homepage() {
   const fetchFriends = () => {
     setFriendsLoading(true);
     setFriendsList([]);
-    
-    window.electronAPI.getFriendsFromFirebase()
-      .then((response) => {      
+
+    window.electronAPI
+      .getFriendsFromFirebase()
+      .then((response) => {
         if (response.length > 0) {
-          const processedFriends = response.map(friend => ({
+          const processedFriends = response.map((friend) => ({
             id: friend.id || friend.userId,
             displayName: friend.displayName || "Unknown User",
             email: friend.email || "No email provided",
