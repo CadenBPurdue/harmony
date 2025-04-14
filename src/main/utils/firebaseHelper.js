@@ -78,6 +78,7 @@ function validateUser(user) {
     lastLoginAt: "timestamp",
     connectedServices: "object",
     friends: "array",
+    incomingFriendRequests: "array",
   };
 
   function validateObject(obj, schema) {
@@ -299,6 +300,173 @@ async function getCurrentUserFromFirestore() {
   return await getUserFromFirestore(auth.currentUser.uid);
 }
 
+/**
+ * Sends a friend request from the current user to another user
+ * @param {string} targetUserId - The ID of the user to send the friend request to
+ * @returns {Promise<Object>} - Success indicator
+ */
+async function sendFriendRequest(targetUserId) {
+  const auth = getAuthInstance();
+  const db = getDbInstance();
+  const collectionName = "users";
+
+  // Check if user is authenticated
+  if (!auth.currentUser) {
+    throw new Error("User must be authenticated to send friend requests");
+  }
+
+  try {
+    // Don't allow sending friend request to yourself
+    if (targetUserId === auth.currentUser.uid) {
+      throw new Error("Cannot send friend request to yourself");
+    }
+
+    // Get target user and check if they exist
+    const targetUserRef = doc(db, collectionName, targetUserId);
+    const targetUserSnap = await getDoc(targetUserRef);
+
+    if (!targetUserSnap.exists()) {
+      throw new Error("Target user does not exist");
+    }
+
+    const targetUser = targetUserSnap.data();
+
+    // Get current user data
+    const currentUserSnap = await getDoc(
+      doc(db, collectionName, auth.currentUser.uid),
+    );
+    if (!currentUserSnap.exists()) {
+      throw new Error("Current user data not found in Firestore");
+    }
+    const currentUser = currentUserSnap.data();
+
+    // Check if already friends
+    if (
+      targetUser.friends &&
+      targetUser.friends.includes(auth.currentUser.uid)
+    ) {
+      throw new Error("You are already friends with this user");
+    }
+
+    // Check if friend request already sent
+    if (
+      targetUser.incomingFriendRequests &&
+      targetUser.incomingFriendRequests.includes(auth.currentUser.uid)
+    ) {
+      throw new Error("Friend request already sent to this user");
+    }
+
+    // Check if they've sent you a request (accept it instead)
+    if (
+      currentUser.incomingFriendRequests &&
+      currentUser.incomingFriendRequests.includes(targetUserId)
+    ) {
+      // Accept their request instead
+      return await acceptFriendRequest(targetUserId);
+    }
+
+    // Add current user to target user's incomingFriendRequests
+    const updatedIncomingRequests = targetUser.incomingFriendRequests || [];
+    updatedIncomingRequests.push(auth.currentUser.uid);
+
+    // Update the target user document
+    await setDoc(
+      targetUserRef,
+      { incomingFriendRequests: updatedIncomingRequests },
+      { merge: true },
+    );
+
+    console.log(
+      `[Firebase Helper] Friend request sent to user ${targetUserId}`,
+    );
+    return { success: true };
+  } catch (error) {
+    console.error("Error sending friend request:", error);
+    throw error;
+  }
+}
+
+/**
+ * Accepts a friend request from another user
+ * @param {string} requesterId - The ID of the user who sent the request
+ * @returns {Promise<Object>} - Success indicator
+ */
+async function acceptFriendRequest(requesterId) {
+  const auth = getAuthInstance();
+  const db = getDbInstance();
+  const collectionName = "users";
+
+  // Check if user is authenticated
+  if (!auth.currentUser) {
+    throw new Error("User must be authenticated to accept friend requests");
+  }
+
+  try {
+    // Get current user data
+    const currentUserRef = doc(db, collectionName, auth.currentUser.uid);
+    const currentUserSnap = await getDoc(currentUserRef);
+
+    if (!currentUserSnap.exists()) {
+      throw new Error("Current user data not found in Firestore");
+    }
+
+    const currentUser = currentUserSnap.data();
+
+    // Check if the request exists
+    if (
+      !currentUser.incomingFriendRequests ||
+      !currentUser.incomingFriendRequests.includes(requesterId)
+    ) {
+      throw new Error("No friend request found from this user");
+    }
+
+    // Get requester user data
+    const requesterRef = doc(db, collectionName, requesterId);
+    const requesterSnap = await getDoc(requesterRef);
+
+    if (!requesterSnap.exists()) {
+      throw new Error("Requester user does not exist");
+    }
+
+    // Update current user: remove from incoming requests and add to friends
+    const updatedIncomingRequests = currentUser.incomingFriendRequests.filter(
+      (id) => id !== requesterId,
+    );
+
+    const currentUserFriends = currentUser.friends || [];
+    if (!currentUserFriends.includes(requesterId)) {
+      currentUserFriends.push(requesterId);
+    }
+
+    await setDoc(
+      currentUserRef,
+      {
+        incomingFriendRequests: updatedIncomingRequests,
+        friends: currentUserFriends,
+      },
+      { merge: true },
+    );
+
+    // Update requester: add current user to friends
+    const requester = requesterSnap.data();
+    const requesterFriends = requester.friends || [];
+
+    if (!requesterFriends.includes(auth.currentUser.uid)) {
+      requesterFriends.push(auth.currentUser.uid);
+    }
+
+    await setDoc(requesterRef, { friends: requesterFriends }, { merge: true });
+
+    console.log(
+      `[Firebase Helper] Friend request accepted from user ${requesterId}`,
+    );
+    return { success: true };
+  } catch (error) {
+    console.error("Error accepting friend request:", error);
+    throw error;
+  }
+}
+
 export {
   validatePlaylist,
   writePlaylistToFirestore,
@@ -309,4 +477,6 @@ export {
   getUsersFromFirestore,
   getUserFromFirestore,
   getCurrentUserFromFirestore,
+  sendFriendRequest,
+  acceptFriendRequest,
 };
