@@ -1224,7 +1224,7 @@ function Homepage() {
                   sx={{ textAlign: "center", py: 4 }}
                 >
                   You haven't connected with any friends yet. Use the search
-                  above to find friends. {friendsList.length}
+                  above to find friends.
                 </Typography>
               )}
             </Paper>
