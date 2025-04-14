@@ -224,16 +224,17 @@ async function updateFriendsList(friendId, remove = false) {
 
     if (remove) {
       // Remove friendId from friends list
-      var friendsList = existingUser.friends.filter((friend) => friend !== friendId);
-    }
-    else {
+      var friendsList = existingUser.friends.filter(
+        (friend) => friend !== friendId,
+      );
+    } else {
       // Add friendId to friends list
       var friendsList = existingUser.friends;
       if (!friendsList.includes(friendId)) {
         friendsList.push(friendId);
       }
     }
-    
+
     const updatedUser = {
       ...existingUser,
       friends: friendsList,
@@ -246,8 +247,6 @@ async function updateFriendsList(friendId, remove = false) {
     throw error;
   }
 }
-
-
 
 function getNewUser(user) {
   return {

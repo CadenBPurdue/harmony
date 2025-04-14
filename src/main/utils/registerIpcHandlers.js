@@ -74,7 +74,7 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("firebase:removeFriend", async (event, friendId) => {
-     return await updateFriendsList(friendId, true);
+    return await updateFriendsList(friendId, true);
   });
 
   ipcMain.handle("firebase:getFriends", async () => {
@@ -91,7 +91,9 @@ export function registerIpcHandlers() {
     var friendsInfo = [];
 
     console.log("User friends:", user.friends);
-    console.log("NR$JUINDJKNDJKENDJKENDJIO#NIUDNEJDINJNJDKNEJENDJKENJDKENJDKNEJKDN");
+    console.log(
+      "NR$JUINDJKNDJKENDJKENDJIO#NIUDNEJDINJNJDKNEJENDJKENJDKENJDKNEJKDN",
+    );
 
     user.friends.forEach((friend) => {
       console.log("Friend ID:", friend);
@@ -116,8 +118,7 @@ export function registerIpcHandlers() {
         .catch((error) => {
           console.error("Error fetching friend data:", error);
         });
-    }
-    );
+    });
     return friendsInfo;
   });
 
