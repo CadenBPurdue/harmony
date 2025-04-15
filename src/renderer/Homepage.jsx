@@ -374,6 +374,7 @@ function Homepage() {
   useEffect(() => {
     const fetchIncomingFriendRequests = async () => {
       try {
+        await window.electronAPI.manageFriendRequests();
         const user = await window.electronAPI.getUserInfoFromFirebase();
         const users = await window.electronAPI.getUsersFromFirebase();
 

@@ -278,4 +278,5 @@ export {
   getAuthInstance,
   updateConnectedSerives,
   updateFriendsList,
+  updateUserInFirestore,
 };

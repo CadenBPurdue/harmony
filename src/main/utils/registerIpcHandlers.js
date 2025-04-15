@@ -24,6 +24,7 @@ import {
   getCurrentUserFromFirestore,
   acceptFriendRequest,
   denyFriendRequest,
+  manageFriendRequests,
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
 
@@ -142,6 +143,10 @@ export function registerIpcHandlers() {
 
   ipcMain.handle("firebase:sendFriendRequest", async (event, friendId) => {
     return await sendFriendRequest(friendId);
+  });
+
+  ipcMain.handle("firebase:manageFriendRequests", async () => {
+    return await manageFriendRequests();
   });
 
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
