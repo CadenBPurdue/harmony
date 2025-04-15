@@ -220,10 +220,10 @@ function Homepage() {
           message: `${notification.details.displayName || "A user"} is now your friend!`,
           read: false,
         });
-  
+
         // Mark current notification as read (this will hide buttons)
         markAsRead(notification.id);
-  
+
         // Optional: refresh friends list
         fetchFriends();
       }
@@ -231,7 +231,7 @@ function Homepage() {
       console.error("Failed to accept request:", error);
     }
   };
-  
+
   const handleDenyRequest = async (notification) => {
     const fromUserId = notification.details.fromUserId;
     try {
@@ -242,13 +242,13 @@ function Homepage() {
           message: `You declined a friend request from ${notification.details.displayName || "a user"}.`,
           read: false,
         });
-  
+
         markAsRead(notification.id);
       }
     } catch (error) {
       console.error("Failed to deny request:", error);
     }
-  };  
+  };
 
   const handleConnectFriend = (userId) => {
     setConnectingId(userId);
@@ -376,9 +376,9 @@ function Homepage() {
       try {
         const user = await window.electronAPI.getUserInfoFromFirebase();
         const users = await window.electronAPI.getUsersFromFirebase();
-  
+
         const requests = user.incomingFriendRequests || [];
-  
+
         requests.forEach((fromId) => {
           const sender = users.find((u) => u.userId === fromId);
           if (sender) {
@@ -397,9 +397,9 @@ function Homepage() {
         console.error("Failed to fetch friend requests:", err);
       }
     };
-  
+
     fetchIncomingFriendRequests();
-  }, []);  
+  }, []);
 
   // Poll Apple Music playlist loading status
   const pollAppleMusicStatus = useCallback(() => {
@@ -1473,7 +1473,6 @@ function Homepage() {
                           </Button>
                         </Box>
                       )}
-
                   </Paper>
                 ))}
               </Stack>

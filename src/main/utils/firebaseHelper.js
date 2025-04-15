@@ -497,7 +497,6 @@ async function acceptFriendRequest(requesterId) {
   }
 }
 
-
 export {
   validatePlaylist,
   writePlaylistToFirestore,
