@@ -145,7 +145,7 @@ function Homepage() {
   // Function to fetch user information
   const fetchUserInfo = () => {
     window.electronAPI
-      .getUserInfoFromFirebase()
+      .getCurrentUserFromFirebase()
       .then((info) => {
         setUserInfo(info);
       })
@@ -374,8 +374,29 @@ function Homepage() {
   useEffect(() => {
     const fetchIncomingFriendRequests = async () => {
       try {
+        const preUpdate = await window.electronAPI.getCurrentUserFromFirebase();
         await window.electronAPI.manageFriendRequests();
-        const user = await window.electronAPI.getUserInfoFromFirebase();
+        const user = await window.electronAPI.getCurrentUserFromFirebase();
+
+        user.friends.forEach(async (friend) => {
+          if (!preUpdate.friends.includes(friend)) {
+            const friendInfo = await window.electronAPI.getUserInfoFromFirebase(friend);
+            await window.electronAPI.debug("Friend info:");
+            await window.electronAPI.debug(friendInfo);
+            await window.electronAPI.debug(friend);
+            await window.electronAPI.debug(user);
+            addNotification({
+              type: "friend_request_accepted",
+              message: `${friendInfo.email} accepted your friend request.`,
+              details: {
+                userId: friend.userId,
+                displayName: friend.displayName,
+                email: friend.email,
+              },
+            });
+          }
+        });
+
         const users = await window.electronAPI.getUsersFromFirebase();
 
         const requests = user.incomingFriendRequests || [];

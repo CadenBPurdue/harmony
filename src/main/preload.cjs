@@ -90,6 +90,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("firebase:getUserInfo", userId);
   },
 
+  getCurrentUserFromFirebase: () => {
+    console.log("Calling getCurrentUserFromFirebase from preload");
+    return ipcRenderer.invoke("firebase:getCurrentUser");
+  },
+
   getUsersFromFirebase: () => {
     console.log("Calling getUsersFromFirebase from preload");
     return ipcRenderer.invoke("firebase:getUsers");
