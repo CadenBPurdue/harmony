@@ -19,9 +19,11 @@ import {
   getPlaylistFromFirestore,
   getUsersFromFirestore,
   getUserFromFirestore,
+  sendFriendRequest,
   getCurrentUserFromFirestore,
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
+import { send } from "vite";
 
 // Create instances that persist across calls
 const appleMusicApi = new AppleMusicApi();
@@ -126,6 +128,10 @@ export function registerIpcHandlers() {
       console.error("Error fetching friends data:", error);
       return [];
     }
+  });
+
+  ipcMain.handle("firebase:sendFriendRequest", async (event, friendId) => {
+    return await sendFriendRequest(friendId);
   });
 
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {

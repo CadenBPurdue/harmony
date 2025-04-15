@@ -110,6 +110,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("firebase:getFriends");
   },
 
+  sendFriendRequest: (friendId) => {
+    console.log("Calling sendFriendRequest from preload");
+    return ipcRenderer.invoke("firebase:sendFriendRequest", friendId);
+  },
+
   debug: (message) => {
     return ipcRenderer.invoke("debug:message", message);
   },
