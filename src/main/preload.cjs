@@ -115,6 +115,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("firebase:sendFriendRequest", friendId);
   },
 
+  acceptFriendRequest: (userId) =>
+    ipcRenderer.invoke("firebase:acceptFriendRequest", userId),
+
+  denyFriendRequest: (userId) =>
+    ipcRenderer.invoke("firebase:denyFriendRequest", userId),
+
   debug: (message) => {
     return ipcRenderer.invoke("debug:message", message);
   },

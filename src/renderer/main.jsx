@@ -61,7 +61,15 @@ const Router = () => {
   const router = createHashRouter([
     {
       path: "/",
-      element: <Navigate to="/create-account" />,
+      element:
+        authStatus.isGoogleAuthenticated &&
+        (authStatus.isSpotifyAuthenticated ||
+          authStatus.isAppleAuthenticated ||
+          authStatus.isGoogleAuthenticated) ? (
+          <Homepage />
+        ) : (
+          <Navigate to="/create-account" />
+        ),
       errorElement: <ErrorBoundary />,
     },
     {
