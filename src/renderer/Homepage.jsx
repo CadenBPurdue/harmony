@@ -214,13 +214,18 @@ function Homepage() {
     try {
       const result = await window.electronAPI.acceptFriendRequest(fromUserId);
       if (result.success) {
+        // Show success notification
         addNotification({
-          type: "friend_request_accepted",
-          message: `You are now friends with ${notification.details.displayName || "a user"}.`,
-          details: { fromUserId },
+          type: "info",
+          message: `${notification.details.displayName || "A user"} is now your friend!`,
+          read: false,
         });
+  
+        // Mark current notification as read (this will hide buttons)
         markAsRead(notification.id);
-        fetchFriends(); // Optional: if on friends page
+  
+        // Optional: refresh friends list
+        fetchFriends();
       }
     } catch (error) {
       console.error("Failed to accept request:", error);
@@ -232,6 +237,12 @@ function Homepage() {
     try {
       const result = await window.electronAPI.denyFriendRequest(fromUserId);
       if (result.success) {
+        addNotification({
+          type: "info",
+          message: `You declined a friend request from ${notification.details.displayName || "a user"}.`,
+          read: false,
+        });
+  
         markAsRead(notification.id);
       }
     } catch (error) {
@@ -1442,24 +1453,26 @@ function Homepage() {
                         </Typography>
                       )}
 
-                    {notification.type === "friend_request_received" && notification.details && (
-                      <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          onClick={() => handleAcceptRequest(notification)}
-                        >
-                          Accept
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => handleDenyRequest(notification)}
-                        >
-                          Deny
-                        </Button>
-                      </Box>
-                    )}
+                    {notification.type === "friend_request_received" &&
+                      notification.details &&
+                      !notification.read && (
+                        <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => handleAcceptRequest(notification)}
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => handleDenyRequest(notification)}
+                          >
+                            Deny
+                          </Button>
+                        </Box>
+                      )}
 
                   </Paper>
                 ))}
