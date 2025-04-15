@@ -250,9 +250,9 @@ async function updateFriendsList(friendId, remove = false) {
 
 function getNewUser(user) {
   return {
-    userId: user.uid,
-    displayName: user.displayName,
-    email: user.email,
+    userId: user?.uid || "unknown",
+    displayName: user?.displayName || "Unnamed User",
+    email: user?.email || "no-email@example.com",
     createdAt: Timestamp.fromDate(new Date()),
     lastLoginAt: Timestamp.fromDate(new Date()),
     connectedServices: {
@@ -260,6 +260,7 @@ function getNewUser(user) {
       spotify: false,
     },
     friends: [],
+    incomingFriendRequests: [],
   };
 }
 
