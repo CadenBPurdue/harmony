@@ -82,7 +82,7 @@ const Router = () => {
       path: "*",
       element: <Navigate to="/" />,
     },
-  ]);  
+  ]);
 
   return (
     <NotificationProvider>

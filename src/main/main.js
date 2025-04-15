@@ -151,7 +151,6 @@ app.on("open-url", (event, url) => {
   // Then send it to your webContents (or handle it directly)
 });
 
-
 app.on("open-url", (event, url) => {
   event.preventDefault();
   console.log("Received URL on macOS:", url);

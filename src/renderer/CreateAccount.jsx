@@ -23,19 +23,17 @@ const CreateAccount = () => {
     isSpotifyConnected: false,
     isAppleMusicConnected: false,
   });
-  
 
   console.log("[CreateAccount] Component rendered");
 
   useEffect(() => {
     checkAuthStatus();
-  
+
     // Force window into login mode
     if (window.electronAPI?.setWindowMode) {
       window.electronAPI.setWindowMode(true);
     }
   }, []);
-  
 
   const checkAuthStatus = async () => {
     console.log("[CreateAccount] Checking auth status...");
@@ -56,17 +54,17 @@ const CreateAccount = () => {
 
   const handleNext = async () => {
     console.log("[CreateAccount] Next button clicked");
-  
+
     if (!authStatus.isGoogleConnected) {
       setError("Please connect with Google before continuing");
       return;
     }
-  
+
     setLoading(true);
     try {
       // Resize the window
       await window.electronAPI.setWindowMode(false);
-  
+
       // Navigate to homepage
       window.location.hash = "#/homepage";
     } catch (err) {
@@ -75,7 +73,7 @@ const CreateAccount = () => {
     } finally {
       setLoading(false);
     }
-  };  
+  };
 
   const handleGoogleSignIn = async () => {
     console.log("[CreateAccount] Starting Google sign in...");
@@ -107,7 +105,7 @@ const CreateAccount = () => {
     try {
       const result = await window.electronAPI.connectSpotify();
       console.log("[CreateAccount] Spotify connect result:", result);
-  
+
       if (result.success) {
         await checkAuthStatus();
         const status = await window.electronAPI.getAuthStatus();
@@ -129,7 +127,7 @@ const CreateAccount = () => {
     } finally {
       setLoading(false);
     }
-  };  
+  };
 
   const handleAppleMusicConnect = async () => {
     setLoading(true);
@@ -137,7 +135,7 @@ const CreateAccount = () => {
     try {
       const result = await window.electronAPI.connectAppleMusic();
       console.log("[CreateAccount] Apple Music connect result:", result);
-  
+
       if (result.success) {
         await checkAuthStatus();
         const status = await window.electronAPI.getAuthStatus();
@@ -159,7 +157,7 @@ const CreateAccount = () => {
     } finally {
       setLoading(false);
     }
-  };  
+  };
 
   return (
     <ThemeProvider theme={theme}>

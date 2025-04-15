@@ -264,7 +264,6 @@ function getNewUser(user) {
   };
 }
 
-
 function getDbInstance() {
   return getFirestore();
 }
