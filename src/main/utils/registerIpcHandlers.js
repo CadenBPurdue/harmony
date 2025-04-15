@@ -1,5 +1,6 @@
 // src/main/utils/registerIpcHandlers.js
 import { ipcMain, shell } from "electron";
+import { send } from "vite";
 import { AppleMusicApi } from "./apple_music.js";
 import {
   initiateSpotifyAuth,
@@ -19,6 +20,7 @@ import {
   getPlaylistFromFirestore,
   getUsersFromFirestore,
   getUserFromFirestore,
+  sendFriendRequest,
   getCurrentUserFromFirestore,
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
@@ -126,6 +128,10 @@ export function registerIpcHandlers() {
       console.error("Error fetching friends data:", error);
       return [];
     }
+  });
+
+  ipcMain.handle("firebase:sendFriendRequest", async (event, friendId) => {
+    return await sendFriendRequest(friendId);
   });
 
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {

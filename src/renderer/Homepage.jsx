@@ -212,7 +212,7 @@ function Homepage() {
   const handleConnectFriend = (userId) => {
     setConnectingId(userId);
     window.electronAPI
-      .addFriendToUser(userId)
+      .sendFriendRequest(userId)
       .then((result) => {
         if (result.success) {
           // Add notification
