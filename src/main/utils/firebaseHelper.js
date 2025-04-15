@@ -477,15 +477,27 @@ async function acceptFriendRequest(requesterId) {
       { merge: true },
     );
 
-    // Update requester: add current user to friends
+    // Instead of directly adding to friends, send a friend request if not already friends
     const requester = requesterSnap.data();
+
+    // Check if the current user is already in requester's friends list
     const requesterFriends = requester.friends || [];
+    if (requesterFriends.includes(auth.currentUser.uid)) {
+      console.log("Users are already friends");
+    } else {
+      // Add current user to requester's incoming friend requests if not already there
+      const requesterIncomingRequests = requester.incomingFriendRequests || [];
 
-    if (!requesterFriends.includes(auth.currentUser.uid)) {
-      requesterFriends.push(auth.currentUser.uid);
+      if (!requesterIncomingRequests.includes(auth.currentUser.uid)) {
+        requesterIncomingRequests.push(auth.currentUser.uid);
+        await setDoc(
+          requesterRef,
+          { incomingFriendRequests: requesterIncomingRequests },
+          { merge: true },
+        );
+        console.log(`Friend request sent to user ${requesterId}`);
+      }
     }
-
-    await setDoc(requesterRef, { friends: requesterFriends }, { merge: true });
 
     console.log(
       `[Firebase Helper] Friend request accepted from user ${requesterId}`,
