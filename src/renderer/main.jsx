@@ -61,14 +61,7 @@ const Router = () => {
   const router = createHashRouter([
     {
       path: "/",
-      element:
-        authStatus.isGoogleAuthenticated &&
-        (authStatus.isSpotifyAuthenticated ||
-          authStatus.isAppleAuthenticated) ? (
-          <Homepage />
-        ) : (
-          <Navigate to="/create-account" />
-        ),
+      element: <Navigate to="/create-account" />,
       errorElement: <ErrorBoundary />,
     },
     {
@@ -77,10 +70,19 @@ const Router = () => {
       errorElement: <ErrorBoundary />,
     },
     {
+      path: "/homepage",
+      element: authStatus.isGoogleAuthenticated ? (
+        <Homepage />
+      ) : (
+        <Navigate to="/create-account" />
+      ),
+      errorElement: <ErrorBoundary />,
+    },
+    {
       path: "*",
       element: <Navigate to="/" />,
     },
-  ]);
+  ]);  
 
   return (
     <NotificationProvider>

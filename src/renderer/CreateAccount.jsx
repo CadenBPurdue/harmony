@@ -23,12 +23,19 @@ const CreateAccount = () => {
     isSpotifyConnected: false,
     isAppleMusicConnected: false,
   });
+  
 
   console.log("[CreateAccount] Component rendered");
 
   useEffect(() => {
     checkAuthStatus();
+  
+    // Force window into login mode
+    if (window.electronAPI?.setWindowMode) {
+      window.electronAPI.setWindowMode(true);
+    }
   }, []);
+  
 
   const checkAuthStatus = async () => {
     console.log("[CreateAccount] Checking auth status...");
@@ -48,34 +55,27 @@ const CreateAccount = () => {
   };
 
   const handleNext = async () => {
-    console.log(
-      "[CreateAccount] Next button clicked, auth status:",
-      authStatus.isGoogleConnected,
-    );
-
+    console.log("[CreateAccount] Next button clicked");
+  
     if (!authStatus.isGoogleConnected) {
       setError("Please connect with Google before continuing");
       return;
     }
-
+  
     setLoading(true);
     try {
-      // Resize window first
-      console.log("[CreateAccount] Resizing window...");
+      // Resize the window
       await window.electronAPI.setWindowMode(false);
-      console.log("[CreateAccount] Window resized successfully");
-
-      // Use direct navigation with a small delay
-      console.log("[CreateAccount] Reloading application...");
-      setTimeout(() => {
-        window.location.href = "./index.html";
-      }, 500);
+  
+      // Navigate to homepage
+      window.location.hash = "#/homepage";
     } catch (err) {
-      console.error("[CreateAccount] Error during transition:", err);
+      console.error("[CreateAccount] Error navigating to homepage:", err);
       setError("Failed to navigate to main app");
+    } finally {
       setLoading(false);
     }
-  };
+  };  
 
   const handleGoogleSignIn = async () => {
     console.log("[CreateAccount] Starting Google sign in...");
@@ -106,48 +106,60 @@ const CreateAccount = () => {
     setError(null);
     try {
       const result = await window.electronAPI.connectSpotify();
-      console.log(
-        "[CreateAccount] Spotify connect result:",
-        JSON.stringify(result, null, 2),
-      );
+      console.log("[CreateAccount] Spotify connect result:", result);
+  
       if (result.success) {
-        await checkAuthStatus(); // Refresh auth status
-        const authStatus = await getAuthStatus();
-        if (authStatus.isSpotifyAuthenticated) {
+        await checkAuthStatus();
+        const status = await window.electronAPI.getAuthStatus();
+        if (status.isSpotifyAuthenticated) {
           await window.electronAPI.updateConnectedServices("spotify");
         }
+      } else if (result.cancelled) {
+        setError("Spotify sign-in was cancelled");
+      } else {
+        setError("Failed to connect with Spotify. Please try again.");
       }
     } catch (err) {
-      console.error("[CreateAccount] Failed to connect to Spotify:", err);
-      setError("Failed to connect with Spotify. Please try again.");
+      console.error("[CreateAccount] Unexpected Spotify error:", err);
+      // Only show error if we truly failed, not if the token was already set
+      const status = await window.electronAPI.getAuthStatus();
+      if (!status.isSpotifyAuthenticated) {
+        setError("Failed to connect with Spotify. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   const handleAppleMusicConnect = async () => {
     setLoading(true);
     setError(null);
     try {
       const result = await window.electronAPI.connectAppleMusic();
-      console.log(
-        "[CreateAccount] Apple Music connect result:",
-        JSON.stringify(result, null, 2),
-      );
+      console.log("[CreateAccount] Apple Music connect result:", result);
+  
       if (result.success) {
-        await checkAuthStatus(); // Refresh auth status
-        const authStatus = await getAuthStatus();
-        if (authStatus.isAppleMusicAuthenticated) {
+        await checkAuthStatus();
+        const status = await window.electronAPI.getAuthStatus();
+        if (status.isAppleMusicAuthenticated) {
           await window.electronAPI.updateConnectedServices("appleMusic");
         }
+      } else if (result.cancelled) {
+        setError("Apple Music sign-in was cancelled");
+      } else {
+        setError("Failed to connect with Apple Music. Please try again.");
       }
     } catch (err) {
-      console.error("[CreateAccount] Failed to connect to Apple Music:", err);
-      setError("Failed to connect with Apple Music. Please try again.");
+      console.error("[CreateAccount] Unexpected Apple Music error:", err);
+      // Only show error if authentication didn't actually succeed
+      const status = await window.electronAPI.getAuthStatus();
+      if (!status.isAppleMusicAuthenticated) {
+        setError("Failed to connect with Apple Music. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   return (
     <ThemeProvider theme={theme}>

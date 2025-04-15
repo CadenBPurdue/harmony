@@ -141,6 +141,17 @@ app.whenReady().then(() => {
   mainWindow = createWindow();
 });
 
+app.setAsDefaultProtocolClient("harmony");
+
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  console.log("Received custom protocol URL:", url);
+
+  // Parse URL and extract the code/state
+  // Then send it to your webContents (or handle it directly)
+});
+
+
 app.on("open-url", (event, url) => {
   event.preventDefault();
   console.log("Received URL on macOS:", url);
