@@ -479,7 +479,7 @@ async function acceptFriendRequest(requesterId) {
 
     // Instead of directly adding to friends, send a friend request if not already friends
     const requester = requesterSnap.data();
-    
+
     // Check if the current user is already in requester's friends list
     const requesterFriends = requester.friends || [];
     if (requesterFriends.includes(auth.currentUser.uid)) {
@@ -487,15 +487,15 @@ async function acceptFriendRequest(requesterId) {
     } else {
       // Add current user to requester's incoming friend requests if not already there
       const requesterIncomingRequests = requester.incomingFriendRequests || [];
-      
+
       if (!requesterIncomingRequests.includes(auth.currentUser.uid)) {
-      requesterIncomingRequests.push(auth.currentUser.uid);
-      await setDoc(
-        requesterRef, 
-        { incomingFriendRequests: requesterIncomingRequests }, 
-        { merge: true }
-      );
-      console.log(`Friend request sent to user ${requesterId}`);
+        requesterIncomingRequests.push(auth.currentUser.uid);
+        await setDoc(
+          requesterRef,
+          { incomingFriendRequests: requesterIncomingRequests },
+          { merge: true },
+        );
+        console.log(`Friend request sent to user ${requesterId}`);
       }
     }
 
