@@ -90,6 +90,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("firebase:getUserInfo", userId);
   },
 
+  getCurrentUserFromFirebase: () => {
+    console.log("Calling getCurrentUserFromFirebase from preload");
+    return ipcRenderer.invoke("firebase:getCurrentUser");
+  },
+
   getUsersFromFirebase: () => {
     console.log("Calling getUsersFromFirebase from preload");
     return ipcRenderer.invoke("firebase:getUsers");
@@ -113,6 +118,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   sendFriendRequest: (friendId) => {
     console.log("Calling sendFriendRequest from preload");
     return ipcRenderer.invoke("firebase:sendFriendRequest", friendId);
+  },
+
+  manageFriendRequests: () => {
+    console.log("Calling manageFriendRequest from preload");
+    return ipcRenderer.invoke("firebase:manageFriendRequests");
   },
 
   acceptFriendRequest: (userId) =>

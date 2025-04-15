@@ -145,7 +145,7 @@ function Homepage() {
   // Function to fetch user information
   const fetchUserInfo = () => {
     window.electronAPI
-      .getUserInfoFromFirebase()
+      .getCurrentUserFromFirebase()
       .then((info) => {
         setUserInfo(info);
       })
@@ -253,13 +253,13 @@ function Homepage() {
   const handleConnectFriend = (userId) => {
     setConnectingId(userId);
     window.electronAPI
-      .addFriendToUser(userId)
+      .sendFriendRequest(userId)
       .then((result) => {
         if (result.success) {
           // Add notification
           addNotification({
             type: "friend_request_sent",
-            message: `Friend request sent to ${userId}.`,
+            message: `Friend request sent to ${searchQuery}.`,
             details: {
               userId: userId,
             },
@@ -374,7 +374,30 @@ function Homepage() {
   useEffect(() => {
     const fetchIncomingFriendRequests = async () => {
       try {
-        const user = await window.electronAPI.getUserInfoFromFirebase();
+        const preUpdate = await window.electronAPI.getCurrentUserFromFirebase();
+        await window.electronAPI.manageFriendRequests();
+        const user = await window.electronAPI.getCurrentUserFromFirebase();
+
+        user.friends.forEach(async (friend) => {
+          if (!preUpdate.friends.includes(friend)) {
+            const friendInfo =
+              await window.electronAPI.getUserInfoFromFirebase(friend);
+            await window.electronAPI.debug("Friend info:");
+            await window.electronAPI.debug(friendInfo);
+            await window.electronAPI.debug(friend);
+            await window.electronAPI.debug(user);
+            addNotification({
+              type: "friend_request_accepted",
+              message: `${friendInfo.email} accepted your friend request.`,
+              details: {
+                userId: friend.userId,
+                displayName: friend.displayName,
+                email: friend.email,
+              },
+            });
+          }
+        });
+
         const users = await window.electronAPI.getUsersFromFirebase();
 
         const requests = user.incomingFriendRequests || [];
@@ -1570,12 +1593,6 @@ function Homepage() {
             <Typography variant="h5" color="text.primary" sx={{ mb: 0.5 }}>
               {selectedPlaylist.name}
             </Typography>
-            {/* Only show user info if it's not empty */}
-            {selectedPlaylist.user && (
-              <Typography variant="body2" color="text.secondary">
-                User: {selectedPlaylist.user}
-              </Typography>
-            )}
             <Typography variant="body2" color="text.secondary">
               Tracks: {selectedPlaylist.numberOfTracks} • Duration:{" "}
               {formatDuration(selectedPlaylist.duration)}

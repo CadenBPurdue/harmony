@@ -24,6 +24,7 @@ import {
   getCurrentUserFromFirestore,
   acceptFriendRequest,
   denyFriendRequest,
+  manageFriendRequests,
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
 
@@ -58,11 +59,16 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("firebase:getUserInfo", async (event, userId) => {
-    return await getCurrentUserFromFirestore(userId);
+    console.log("Fetching user info for ID:", userId);
+    return await getUserFromFirestore(userId);
   });
 
   ipcMain.handle("firebase:getUsers", async () => {
     return await getUsersFromFirestore();
+  });
+
+  ipcMain.handle("firebase:getCurrentUser", async () => {
+    return await getCurrentUserFromFirestore();
   });
 
   ipcMain.handle("firebase:setSpotifyConnected", async () => {
@@ -144,6 +150,10 @@ export function registerIpcHandlers() {
     return await sendFriendRequest(friendId);
   });
 
+  ipcMain.handle("firebase:manageFriendRequests", async () => {
+    return await manageFriendRequests();
+  });
+
   ipcMain.handle("config:setSpotifyCredentials", async (event, credentials) => {
     try {
       configManager.setCredentials("spotify", credentials);
@@ -211,6 +221,10 @@ export function registerIpcHandlers() {
       console.error("Firebase auth failed:", error);
       throw error;
     }
+  });
+
+  ipcMain.handle("debug:message", (event, message) => {
+    console.log(message);
   });
 
   ipcMain.handle("library:spotify", async () => {

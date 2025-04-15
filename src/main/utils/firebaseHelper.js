@@ -252,6 +252,42 @@ async function writeUserToFirestore(user) {
   }
 }
 
+async function manageFriendRequests() {
+  const existingUser = await getCurrentUserFromFirestore();
+
+  if (
+    existingUser.incomingFriendRequests &&
+    existingUser.incomingFriendRequests.length > 0
+  ) {
+    const friendRequests = existingUser.incomingFriendRequests;
+    var newFriends = existingUser.friends || [];
+    var newfriendRequests = existingUser.incomingFriendRequests || [];
+    for (const requesterId of friendRequests) {
+      const requester = await getUserFromFirestore(requesterId);
+      if (requester.friends && requester.friends.includes(existingUser.id)) {
+        newFriends.push(requesterId);
+        newfriendRequests = newfriendRequests.filter(
+          (id) => id !== requesterId,
+        );
+      }
+    }
+
+    const updatedUser = {
+      ...existingUser,
+      friends: newFriends,
+      incomingFriendRequests: newfriendRequests,
+    };
+
+    await writeUserToFirestore(updatedUser);
+    console.log(
+      `[Firebase Helper] Friend requests managed for user ${existingUser.id}`,
+    );
+    return { success: true };
+  }
+
+  return { success: false, message: "No friend requests to manage" };
+}
+
 async function getUsersFromFirestore() {
   const db = getDbInstance();
   const collectionName = "users";
@@ -522,4 +558,5 @@ export {
   sendFriendRequest,
   acceptFriendRequest,
   denyFriendRequest,
+  manageFriendRequests,
 };
