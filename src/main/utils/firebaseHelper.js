@@ -386,6 +386,36 @@ async function sendFriendRequest(targetUserId) {
   }
 }
 
+async function denyFriendRequest(requesterId) {
+  const auth = getAuthInstance();
+  const db = getDbInstance();
+  const collectionName = "users";
+
+  if (!auth.currentUser) {
+    throw new Error("User must be authenticated to deny friend requests");
+  }
+
+  const currentUserRef = doc(db, collectionName, auth.currentUser.uid);
+  const currentUserSnap = await getDoc(currentUserRef);
+
+  if (!currentUserSnap.exists()) {
+    throw new Error("Current user data not found");
+  }
+
+  const currentUser = currentUserSnap.data();
+  const updatedRequests = currentUser.incomingFriendRequests.filter(
+    (id) => id !== requesterId,
+  );
+
+  await setDoc(
+    currentUserRef,
+    { incomingFriendRequests: updatedRequests },
+    { merge: true },
+  );
+
+  return { success: true };
+}
+
 /**
  * Accepts a friend request from another user
  * @param {string} requesterId - The ID of the user who sent the request
@@ -467,6 +497,7 @@ async function acceptFriendRequest(requesterId) {
   }
 }
 
+
 export {
   validatePlaylist,
   writePlaylistToFirestore,
@@ -479,4 +510,5 @@ export {
   getCurrentUserFromFirestore,
   sendFriendRequest,
   acceptFriendRequest,
+  denyFriendRequest,
 };

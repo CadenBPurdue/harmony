@@ -209,10 +209,40 @@ function Homepage() {
     }
   };
 
+  const handleAcceptRequest = async (notification) => {
+    const fromUserId = notification.details.fromUserId;
+    try {
+      const result = await window.electronAPI.acceptFriendRequest(fromUserId);
+      if (result.success) {
+        addNotification({
+          type: "friend_request_accepted",
+          message: `You are now friends with ${notification.details.displayName || "a user"}.`,
+          details: { fromUserId },
+        });
+        markAsRead(notification.id);
+        fetchFriends(); // Optional: if on friends page
+      }
+    } catch (error) {
+      console.error("Failed to accept request:", error);
+    }
+  };
+  
+  const handleDenyRequest = async (notification) => {
+    const fromUserId = notification.details.fromUserId;
+    try {
+      const result = await window.electronAPI.denyFriendRequest(fromUserId);
+      if (result.success) {
+        markAsRead(notification.id);
+      }
+    } catch (error) {
+      console.error("Failed to deny request:", error);
+    }
+  };  
+
   const handleConnectFriend = (userId) => {
     setConnectingId(userId);
     window.electronAPI
-      .sendFriendRequest(userId)
+      .addFriendToUser(userId)
       .then((result) => {
         if (result.success) {
           // Add notification
@@ -329,6 +359,36 @@ function Homepage() {
       fetchFriends();
     }
   }, [currentPage]);
+
+  useEffect(() => {
+    const fetchIncomingFriendRequests = async () => {
+      try {
+        const user = await window.electronAPI.getUserInfoFromFirebase();
+        const users = await window.electronAPI.getUsersFromFirebase();
+  
+        const requests = user.incomingFriendRequests || [];
+  
+        requests.forEach((fromId) => {
+          const sender = users.find((u) => u.userId === fromId);
+          if (sender) {
+            addNotification({
+              type: "friend_request_received",
+              message: `${sender.displayName || "Someone"} sent you a friend request.`,
+              details: {
+                fromUserId: sender.userId,
+                displayName: sender.displayName,
+                email: sender.email,
+              },
+            });
+          }
+        });
+      } catch (err) {
+        console.error("Failed to fetch friend requests:", err);
+      }
+    };
+  
+    fetchIncomingFriendRequests();
+  }, []);  
 
   // Poll Apple Music playlist loading status
   const pollAppleMusicStatus = useCallback(() => {
@@ -1381,6 +1441,26 @@ function Homepage() {
                           {notification.details.totalTracks} songs.
                         </Typography>
                       )}
+
+                    {notification.type === "friend_request_received" && notification.details && (
+                      <Box sx={{ mt: 2, display: "flex", gap: 1 }}>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={() => handleAcceptRequest(notification)}
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => handleDenyRequest(notification)}
+                        >
+                          Deny
+                        </Button>
+                      </Box>
+                    )}
+
                   </Paper>
                 ))}
               </Stack>

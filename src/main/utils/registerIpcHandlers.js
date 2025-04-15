@@ -22,6 +22,8 @@ import {
   getUserFromFirestore,
   sendFriendRequest,
   getCurrentUserFromFirestore,
+  acceptFriendRequest,
+  denyFriendRequest,
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
 
@@ -78,6 +80,15 @@ export function registerIpcHandlers() {
   ipcMain.handle("firebase:removeFriend", async (event, friendId) => {
     return await updateFriendsList(friendId, true);
   });
+
+  ipcMain.handle("firebase:acceptFriendRequest", async (event, requesterId) => {
+    return await acceptFriendRequest(requesterId);
+  });
+  
+  ipcMain.handle("firebase:denyFriendRequest", async (event, requesterId) => {
+    return await denyFriendRequest(requesterId);
+  });
+  
 
   ipcMain.handle("firebase:getFriends", async () => {
     const user = await getCurrentUserFromFirestore();
