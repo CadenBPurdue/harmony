@@ -1,5 +1,6 @@
 // src/main/utils/registerIpcHandlers.js
 import { ipcMain, shell } from "electron";
+import { send } from "vite";
 import { AppleMusicApi } from "./apple_music.js";
 import {
   initiateSpotifyAuth,
@@ -23,7 +24,6 @@ import {
   getCurrentUserFromFirestore,
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
-import { send } from "vite";
 
 // Create instances that persist across calls
 const appleMusicApi = new AppleMusicApi();
