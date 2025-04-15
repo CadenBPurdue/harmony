@@ -253,13 +253,13 @@ function Homepage() {
   const handleConnectFriend = (userId) => {
     setConnectingId(userId);
     window.electronAPI
-      .addFriendToUser(userId)
+      .sendFriendRequest(userId)
       .then((result) => {
         if (result.success) {
           // Add notification
           addNotification({
             type: "friend_request_sent",
-            message: `Friend request sent to ${userId}.`,
+            message: `Friend request sent to ${searchQuery}.`,
             details: {
               userId: userId,
             },
@@ -1570,12 +1570,6 @@ function Homepage() {
             <Typography variant="h5" color="text.primary" sx={{ mb: 0.5 }}>
               {selectedPlaylist.name}
             </Typography>
-            {/* Only show user info if it's not empty */}
-            {selectedPlaylist.user && (
-              <Typography variant="body2" color="text.secondary">
-                User: {selectedPlaylist.user}
-              </Typography>
-            )}
             <Typography variant="body2" color="text.secondary">
               Tracks: {selectedPlaylist.numberOfTracks} • Duration:{" "}
               {formatDuration(selectedPlaylist.duration)}

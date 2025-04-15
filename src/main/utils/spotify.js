@@ -10,6 +10,7 @@ import {
   findBestMatch,
 } from "./match_scoring.js";
 import { getSpotifyToken } from "./safe_storage.js";
+import { getCurrentUserFromFirestore } from "./firebaseHelper.js";
 // Import match_scoring utilities
 
 class SpotifyApi {
@@ -291,7 +292,7 @@ class SpotifyApi {
         },
       };
 
-      return SpotifyApi.convertToUniversalFormat(fullResponse);
+      return await SpotifyApi.convertToUniversalFormat(fullResponse);
     } catch (error) {
       console.error(
         `[SpotifyApi] Error fetching playlist ${id}:`,
@@ -650,15 +651,17 @@ class SpotifyApi {
   }
 
   // This is the fixed version of the convertToUniversalFormat static method
-  static convertToUniversalFormat(data) {
+  static async convertToUniversalFormat(data) {
     // First, make sure we have valid data
     if (!data) {
       throw new Error("Invalid playlist data received");
     }
 
+    const harmonyUser = await getCurrentUserFromFirestore();
+
     var playlist = {
       id: data.id,
-      user: data.owner?.display_name || "Unknown User",
+      user: harmonyUser.id,
       origin: "Spotify",
       name: data.name,
       numberOfTracks: data.tracks.total,
@@ -669,10 +672,8 @@ class SpotifyApi {
 
     var totalDuration = 0;
     playlist.tracks = [];
-    // Make sure tracks and items exist before trying to iterate
     if (data.tracks && Array.isArray(data.tracks.items)) {
       data.tracks.items.forEach((item) => {
-        // Check if track exists before accessing its properties
         if (item && item.track) {
           totalDuration += item.track.duration_ms;
           const track = {
@@ -683,7 +684,6 @@ class SpotifyApi {
                 : "Unknown Artist",
             album: item.track.album?.name || "Unknown Album",
             duration: item.track.duration_ms || 0,
-            // Check if album and images array exists and has entries
             image:
               item.track.album &&
               item.track.album.images &&
