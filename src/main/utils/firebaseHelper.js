@@ -255,7 +255,10 @@ async function writeUserToFirestore(user) {
 async function manageFriendRequests() {
   const existingUser = await getCurrentUserFromFirestore();
 
-  if (existingUser.incomingFriendRequests && existingUser.incomingFriendRequests.length > 0) {
+  if (
+    existingUser.incomingFriendRequests &&
+    existingUser.incomingFriendRequests.length > 0
+  ) {
     const friendRequests = existingUser.incomingFriendRequests;
     var newFriends = existingUser.friends || [];
     var newfriendRequests = existingUser.incomingFriendRequests || [];

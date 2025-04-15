@@ -380,7 +380,8 @@ function Homepage() {
 
         user.friends.forEach(async (friend) => {
           if (!preUpdate.friends.includes(friend)) {
-            const friendInfo = await window.electronAPI.getUserInfoFromFirebase(friend);
+            const friendInfo =
+              await window.electronAPI.getUserInfoFromFirebase(friend);
             await window.electronAPI.debug("Friend info:");
             await window.electronAPI.debug(friendInfo);
             await window.electronAPI.debug(friend);

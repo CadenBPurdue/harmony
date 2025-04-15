@@ -2,6 +2,7 @@
 import axios from "axios";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
+import { getCurrentUserFromFirestore } from "./firebaseHelper.js";
 import {
   normalizeTrackTitle,
   normalizeArtistName,
@@ -10,7 +11,6 @@ import {
   findBestMatch,
 } from "./match_scoring.js";
 import { getSpotifyToken } from "./safe_storage.js";
-import { getCurrentUserFromFirestore } from "./firebaseHelper.js";
 // Import match_scoring utilities
 
 class SpotifyApi {
