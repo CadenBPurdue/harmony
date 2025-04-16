@@ -34,7 +34,6 @@ import {
   Tooltip,
   Chip,
   Badge,
-  Divider,
 } from "@mui/material";
 import { useMediaQuery } from "@mui/material";
 import {
@@ -110,6 +109,7 @@ function Homepage() {
   const [transferDestination, setTransferDestination] = useState("");
   const [isTransferring, setIsTransferring] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [shareAsCopy, setShareAsCopy] = useState(false);
 
   // Loading state for both services
   const [loadingSpotify, setLoadingSpotify] = useState(false);
@@ -512,10 +512,8 @@ function Homepage() {
 
   // Open transfer dialog
   const openTransferDialog = () => {
-    // Set destination to the opposite of current playlist source
-    const destination =
-      selectedPlaylist?.origin === "Spotify" ? "Apple Music" : "Spotify";
-    setTransferDestination(destination);
+    setTransferDestination("");
+    setShareAsCopy(false); // Reset to default value
     fetchFriends();
     setShowTransferDialog(true);
   };
@@ -527,7 +525,7 @@ function Homepage() {
 
   useEffect(() => {
     if (showTransferDialog && friendsList.length > 0 && !transferDestination) {
-      setTransferDestination(friendsList[0].id);
+      setTransferDestination("Select a friend");
     }
   }, [showTransferDialog, friendsList]);
 
