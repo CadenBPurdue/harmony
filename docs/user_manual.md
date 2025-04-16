@@ -31,7 +31,7 @@ Welcome to Harmony, your cross-platform solution for managing and sharing music 
 ## Release Page
 The latest version of Harmony can be downloaded from the GitHub Releases page. Here you'll find versions for Windows, macOS, and Linux.
 
-![Release Page - Add screenshot here]
+![Release Page](images/release_page.png)
 
 ## Installation
 
@@ -42,8 +42,6 @@ The latest version of Harmony can be downloaded from the GitHub Releases page. H
 4. Follow the on-screen installation prompts
 5. After installation, Harmony will appear in your Start menu
 
-![Windows Installation - Add screenshot here]
-
 ### For macOS
 1. Navigate to the Harmony releases page
 2. Download the latest .dmg file
@@ -52,21 +50,19 @@ The latest version of Harmony can be downloaded from the GitHub Releases page. H
 5. If you receive a security warning, go to System Preferences > Security & Privacy and click "Open Anyway"
 6. Launch Harmony from your Applications folder
 
-![macOS Installation - Add screenshot here]
-
 ## Getting Started
 
 ### Login Page
 When you first launch Harmony, you'll be presented with the login page.
 
-![Login Page - Add screenshot here]
+![Login Page](images/google_login.png)
 
 **Sign in with Google:** Click the "Sign in with Google" button to authenticate using your Google account. This step is required before you can use the app.
 
 After signing in with Google, you'll have the option to connect your music services.
 
 ### Connecting Music Services
-![Music Services Connection - Add screenshot here]
+![Music Services Connection](images/music_login.png)
 
 - **Connect Spotify:** Click the "Connect Spotify" button to link your Spotify account. You'll be redirected to Spotify's login page.
 - **Connect Apple Music:** Click the "Connect Apple Music" button to link your Apple Music account. You'll be redirected to Apple's authentication page.
@@ -159,7 +155,6 @@ From the User Info page, you can see which music services are connected:
 
 ![Connected Services - Add screenshot here]
 
-- Connected services appear with colored badges (Green for Spotify, Red for Apple Music)
 - If a service is not connected, you can connect it by clicking the corresponding button
 
 ## Troubleshooting
