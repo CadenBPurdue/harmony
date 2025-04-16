@@ -76,7 +76,7 @@ Once you've connected at least one music service, click "Continue to App" to pro
 ### Viewing Playlists
 The main interface of Harmony shows your playlists from connected music services in the sidebar.
 
-![Main Interface - Add screenshot here]
+![Main Interface](images/main_interface.png)
 
 - **Spotify Playlists:** Click on the Spotify dropdown to view all your Spotify playlists
 - **Apple Music Playlists:** Click on the Apple Music dropdown to view all your Apple Music playlists
@@ -85,7 +85,7 @@ The main interface of Harmony shows your playlists from connected music services
 ### Transferring Playlists
 Harmony allows you to transfer playlists between Spotify and Apple Music.
 
-![Transfer Dialog - Add screenshot here]
+![Transfer Dialog](images/transfer.png)
 
 1. Select a playlist you want to transfer by clicking on it
 2. Click the Transfer button at the top of the playlist details view
@@ -101,7 +101,7 @@ Harmony allows you to transfer playlists between Spotify and Apple Music.
 ### Adding Friends
 Harmony allows you to connect with friends to share playlists.
 
-![Friends Page - Add screenshot here]
+![Friends Page](images/friends_page.png)
 
 1. Click on your profile picture in the top-right corner and select Friends
 2. In the Friends page, use the Find Friends search box to search for users by email
@@ -110,8 +110,6 @@ Harmony allows you to connect with friends to share playlists.
 
 ### Managing Friend Requests
 When someone sends you a friend request, you'll receive a notification.
-
-![Friend Requests - Add screenshot here]
 
 1. Click the Notifications bell icon in the top-right corner to view notifications
 2. Friend requests will appear with Accept and Deny buttons
@@ -123,7 +121,7 @@ When someone sends you a friend request, you'll receive a notification.
 ### Types of Notifications
 Harmony has a notification system that keeps you informed about various activities:
 
-![Notifications Panel - Add screenshot here]
+![Notifications Panel](images/notifications.png)
 
 - **Friend Requests:** Notifications when someone sends you a friend request
 - **Transfer Results:** Detailed reports when playlists are transferred
@@ -141,7 +139,7 @@ Harmony has a notification system that keeps you informed about various activiti
 ### Profile Information
 To view and manage your profile:
 
-![User Info Page - Add screenshot here]
+![User Info Page](images/user_info.png)
 
 1. Click your profile picture in the top-right corner and select User Info
 2. Here you can view your:
@@ -152,8 +150,6 @@ To view and manage your profile:
 
 ### Managing Connected Services
 From the User Info page, you can see which music services are connected:
-
-![Connected Services - Add screenshot here]
 
 - If a service is not connected, you can connect it by clicking the corresponding button
 
