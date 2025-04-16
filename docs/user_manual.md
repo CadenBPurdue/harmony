@@ -1,7 +1,5 @@
 # Harmony User Guide
 
-![Harmony Logo - Add screenshot here]
-
 ## Table of Contents
 - [Introduction](#introduction)
 - [Release Page](#release-page)
