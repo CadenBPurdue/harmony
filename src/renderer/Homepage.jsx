@@ -516,6 +516,7 @@ function Homepage() {
     const destination =
       selectedPlaylist?.origin === "Spotify" ? "Apple Music" : "Spotify";
     setTransferDestination(destination);
+    fetchFriends();
     setShowTransferDialog(true);
   };
 
@@ -524,64 +525,46 @@ function Homepage() {
     setShowTransferDialog(false);
   };
 
+  useEffect(() => {
+    if (showTransferDialog && friendsList.length > 0 && !transferDestination) {
+      setTransferDestination(friendsList[0].id);
+    }
+  }, [showTransferDialog, friendsList]);
+
   // Handle transfer function
   const handleTransfer = async () => {
     setIsTransferring(true);
-
+    
     try {
-      let result = null;
-      if (transferDestination === "Spotify") {
-        result = await window.electronAPI.transferToSpotify(selectedPlaylist);
-      } else if (transferDestination === "Apple Music") {
-        result =
-          await window.electronAPI.transferToAppleMusic(selectedPlaylist);
+      // Find the selected friend
+      const selectedFriend = friendsList.find(f => f.id === transferDestination);
+      
+      if (!selectedFriend) {
+        throw new Error("Selected friend not found");
       }
 
-      console.log("Transfer result:", result); // Log complete result for debugging
+      // Get the selected playlist from Firebase
+      const playlist = await window.electronAPI.getPlaylistFromFirebase(selectedPlaylist.id);
+      if (!playlist.sharedWith.includes(selectedFriend.id)) {
+        playlist.sharedWith.push(selectedFriend.id);
+      }
 
+      // Update the playlist in Firebase
+      const result = await window.electronAPI.transferPlaylistToFirebase(playlist);
+      console.log("Transfer result:", result);
+  
       if (result && result.success) {
-        // reload playlists from destination
-        if (transferDestination === "Spotify") {
-          refreshSpotifyPlaylists();
-        } else if (transferDestination === "Apple Music") {
-          refreshAppleMusicPlaylists();
-        }
-
-        // Extract transfer statistics
-        const totalTracks = result.totalTracks || 0;
-        const tracksAdded = result.tracksAdded || 0;
-        const failedCount = result.failedCount || 0;
-        const failedSongs = result.failedSongs || [];
-
-        // Create appropriate notification based on results
-        if (failedCount > 0) {
-          // Partial success notification
-          addNotification({
-            type: "playlist_transfer_partial",
-            message: `Playlist "${selectedPlaylist.name}" transferred to ${transferDestination}. ${failedCount} songs failed.`,
-            details: {
-              playlistName: selectedPlaylist.name,
-              destination: transferDestination,
-              totalTracks: totalTracks,
-              tracksAdded: tracksAdded,
-              failedCount: failedCount,
-              failedSongs: failedSongs,
-            },
-          });
-        } else {
-          // Full success notification
-          addNotification({
-            type: "playlist_transfer_success",
-            message: `Playlist "${selectedPlaylist.name}" transferred to ${transferDestination}.`,
-            details: {
-              playlistName: selectedPlaylist.name,
-              destination: transferDestination,
-              totalTracks: totalTracks,
-              tracksAdded: tracksAdded,
-            },
-          });
-        }
-
+        // Create appropriate notification
+        addNotification({
+          type: "playlist_transfer_success",
+          message: `Playlist "${selectedPlaylist.name}" sent to ${selectedFriend.displayName}.`,
+          details: {
+            playlistName: selectedPlaylist.name,
+            destination: selectedFriend.displayName,
+            friendId: selectedFriend.id,
+          },
+        });
+  
         setShowTransferDialog(false);
         setShowSuccessAlert(true);
         setTimeout(() => {
@@ -2087,17 +2070,21 @@ function Homepage() {
               >
                 Playlist
               </Typography>
-              <TextField
-                fullWidth
-                value={selectedPlaylist?.name || ""}
-                disabled
-                variant="outlined"
+              <Paper
+                elevation={0}
                 sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: theme.palette.text.secondary,
-                  },
+                  p: 2,
+                  bgcolor: "rgba(134, 97, 193, 0.05)",
+                  borderRadius: 1,
+                  display: "flex",
+                  alignItems: "center"
                 }}
-              />
+              >
+                <Typography variant="body1">
+                  {selectedPlaylist?.name || "No playlist selected"} 
+                  {selectedPlaylist?.origin ? ` (${selectedPlaylist.origin})` : ""}
+                </Typography>
+              </Paper>
             </Box>
 
             <Box>
@@ -2106,36 +2093,34 @@ function Homepage() {
                 color="text.secondary"
                 sx={{ mb: 1 }}
               >
-                Source
-              </Typography>
-              <TextField
-                fullWidth
-                value={selectedPlaylist?.origin || ""}
-                disabled
-                variant="outlined"
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: theme.palette.text.secondary,
-                  },
-                }}
-              />
-            </Box>
-
-            <Box>
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                sx={{ mb: 1 }}
-              >
-                Destination
+                Send To
               </Typography>
               <FormControl fullWidth>
                 <Select
                   value={transferDestination}
                   onChange={(e) => setTransferDestination(e.target.value)}
+                  displayEmpty
+                  renderValue={(selected) => {
+                    const friend = friendsList.find(f => f.id === selected);
+                    return friend ? friend.displayName : "Select a friend";
+                  }}
                 >
-                  <MenuItem value="Spotify">Spotify</MenuItem>
-                  <MenuItem value="Apple Music">Apple Music</MenuItem>
+                  {friendsLoading ? (
+                    <MenuItem disabled>
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <CircularProgress size={20} sx={{ mr: 1 }} />
+                        Loading friends...
+                      </Box>
+                    </MenuItem>
+                  ) : friendsList.length === 0 ? (
+                    <MenuItem disabled>No friends available</MenuItem>
+                  ) : (
+                    friendsList.map((friend) => (
+                      <MenuItem key={friend.id} value={friend.id}>
+                        {friend.displayName} ({friend.email})
+                      </MenuItem>
+                    ))
+                  )}
                 </Select>
               </FormControl>
             </Box>
@@ -2151,7 +2136,7 @@ function Homepage() {
           </Button>
           <Button
             onClick={handleTransfer}
-            disabled={isTransferring}
+            disabled={isTransferring || !transferDestination || friendsList.length === 0}
             variant="contained"
             sx={styles.continueButton}
           >

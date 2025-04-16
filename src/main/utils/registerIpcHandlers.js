@@ -109,17 +109,13 @@ export function registerIpcHandlers() {
       console.warn("[Firebase] No friends found for user");
       return [];
     }
-
-    console.log("User friends:", user.friends);
-
+    
     try {
       const friendsInfo = await Promise.all(
         user.friends.map(async (friendId) => {
-          console.log("Fetching friend ID:", friendId);
           try {
             const friendData = await getUserFromFirestore(friendId);
             if (friendData) {
-              console.log("Friend data fetched:", friendData);
               return friendData;
             } else {
               console.warn("No data found for friend ID:", friendId);
