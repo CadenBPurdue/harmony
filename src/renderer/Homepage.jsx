@@ -534,25 +534,30 @@ function Homepage() {
   // Handle transfer function
   const handleTransfer = async () => {
     setIsTransferring(true);
-    
+
     try {
       // Find the selected friend
-      const selectedFriend = friendsList.find(f => f.id === transferDestination);
-      
+      const selectedFriend = friendsList.find(
+        (f) => f.id === transferDestination,
+      );
+
       if (!selectedFriend) {
         throw new Error("Selected friend not found");
       }
 
       // Get the selected playlist from Firebase
-      const playlist = await window.electronAPI.getPlaylistFromFirebase(selectedPlaylist.id);
+      const playlist = await window.electronAPI.getPlaylistFromFirebase(
+        selectedPlaylist.id,
+      );
       if (!playlist.sharedWith.includes(selectedFriend.id)) {
         playlist.sharedWith.push(selectedFriend.id);
       }
 
       // Update the playlist in Firebase
-      const result = await window.electronAPI.transferPlaylistToFirebase(playlist);
+      const result =
+        await window.electronAPI.transferPlaylistToFirebase(playlist);
       console.log("Transfer result:", result);
-  
+
       if (result && result.success) {
         // Create appropriate notification
         addNotification({
@@ -564,7 +569,7 @@ function Homepage() {
             friendId: selectedFriend.id,
           },
         });
-  
+
         setShowTransferDialog(false);
         setShowSuccessAlert(true);
         setTimeout(() => {
@@ -2077,12 +2082,14 @@ function Homepage() {
                   bgcolor: "rgba(134, 97, 193, 0.05)",
                   borderRadius: 1,
                   display: "flex",
-                  alignItems: "center"
+                  alignItems: "center",
                 }}
               >
                 <Typography variant="body1">
-                  {selectedPlaylist?.name || "No playlist selected"} 
-                  {selectedPlaylist?.origin ? ` (${selectedPlaylist.origin})` : ""}
+                  {selectedPlaylist?.name || "No playlist selected"}
+                  {selectedPlaylist?.origin
+                    ? ` (${selectedPlaylist.origin})`
+                    : ""}
                 </Typography>
               </Paper>
             </Box>
@@ -2101,7 +2108,7 @@ function Homepage() {
                   onChange={(e) => setTransferDestination(e.target.value)}
                   displayEmpty
                   renderValue={(selected) => {
-                    const friend = friendsList.find(f => f.id === selected);
+                    const friend = friendsList.find((f) => f.id === selected);
                     return friend ? friend.displayName : "Select a friend";
                   }}
                 >
@@ -2136,7 +2143,9 @@ function Homepage() {
           </Button>
           <Button
             onClick={handleTransfer}
-            disabled={isTransferring || !transferDestination || friendsList.length === 0}
+            disabled={
+              isTransferring || !transferDestination || friendsList.length === 0
+            }
             variant="contained"
             sx={styles.continueButton}
           >

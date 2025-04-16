@@ -109,7 +109,7 @@ export function registerIpcHandlers() {
       console.warn("[Firebase] No friends found for user");
       return [];
     }
-    
+
     try {
       const friendsInfo = await Promise.all(
         user.friends.map(async (friendId) => {
