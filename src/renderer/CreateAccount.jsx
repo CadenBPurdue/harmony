@@ -110,7 +110,7 @@ const CreateAccount = () => {
         await checkAuthStatus();
         const status = await window.electronAPI.getAuthStatus();
         if (status.isSpotifyAuthenticated) {
-          await window.electronAPI.updateConnectedServices("spotify");
+          await window.electronAPI.setSpotifyConnected();
         }
       } else if (result.cancelled) {
         setError("Spotify sign-in was cancelled");
@@ -140,7 +140,7 @@ const CreateAccount = () => {
         await checkAuthStatus();
         const status = await window.electronAPI.getAuthStatus();
         if (status.isAppleMusicAuthenticated) {
-          await window.electronAPI.updateConnectedServices("appleMusic");
+          await window.electronAPI.setAppleMusicConnected();
         }
       } else if (result.cancelled) {
         setError("Apple Music sign-in was cancelled");

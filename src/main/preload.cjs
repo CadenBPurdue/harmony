@@ -82,12 +82,17 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   getPlaylistsFromFirebase: () => {
     console.log("Calling getPlaylistFromFirebase from preload");
-    return ipcRenderer.invoke("firebase:getPlaylist");
+    return ipcRenderer.invoke("firebase:getPlaylists");
   },
 
   getPlaylistFromFirebase: (id) => {
     console.log("Calling getPlaylistFromFirebase from preload");
     return ipcRenderer.invoke("firebase:getPlaylist", id);
+  },
+
+  getSharedPlaylists: () => {
+    console.log("Calling getSharedPlaylists from preload");
+    return ipcRenderer.invoke("firebase:getSharedPlaylists");
   },
 
   getUserInfoFromFirebase: (userId) => {

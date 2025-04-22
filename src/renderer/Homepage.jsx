@@ -34,7 +34,6 @@ import {
   Tooltip,
   Chip,
   Badge,
-  Divider,
 } from "@mui/material";
 import { useMediaQuery } from "@mui/material";
 import {
@@ -48,6 +47,47 @@ import {
 import React, { useState, useEffect, useCallback } from "react";
 import { useNotifications } from "./NotificationContext";
 import { theme, styles, colors } from "./styles/theme";
+
+const fetchSharedPlaylists = async () => {
+  window.electronAPI.debug("Fetching shared playlists...");
+
+  const sharedPlaylistIds = await window.electronAPI.getSharedPlaylists();
+
+  if (!sharedPlaylistIds || sharedPlaylistIds.length === 0) {
+    return;
+  }
+  const currentUser = await window.electronAPI.getCurrentUserFromFirebase();
+
+  sharedPlaylistIds.forEach(async (playlistId) => {
+    const playlist =
+      await window.electronAPI.getPlaylistFromFirebase(playlistId);
+    const sharedPlaylistName = playlist.name;
+    const storedPlaylistIds =
+      await window.electronAPI.getPlaylistsFromFirebase();
+    if (!storedPlaylistIds || storedPlaylistIds.length === 0) {
+      return;
+    }
+
+    var storedPlaylistNames = [];
+    storedPlaylistIds.forEach(async (storedPlaylistId) => {
+      const storedPlaylist =
+        await window.electronAPI.getPlaylistFromFirebase(storedPlaylistId);
+      storedPlaylistNames.push(storedPlaylist.name);
+    });
+
+    const playlistExists = storedPlaylistNames.some(
+      (name) => name === sharedPlaylistName,
+    );
+
+    if (!playlistExists) {
+      if (currentUser.primaryService === "appleMusic") {
+        await window.electronAPI.transferToAppleMusic(playlist);
+      } else {
+        await window.electronAPI.transferToSpotify(playlist);
+      }
+    }
+  });
+};
 
 // Function to format duration from milliseconds to MM:SS format
 const formatDuration = (milliseconds) => {
@@ -116,6 +156,7 @@ function Homepage() {
   const [transferDestination, setTransferDestination] = useState("");
   const [isTransferring, setIsTransferring] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [shareAsCopy, setShareAsCopy] = useState(false);
 
   // Loading state for both services
   const [loadingSpotify, setLoadingSpotify] = useState(false);
@@ -137,6 +178,8 @@ function Homepage() {
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [connectingId, setConnectingId] = useState(null);
   const [removingId, setRemovingId] = useState(null);
+  const [unfollowDialogOpen, setUnfollowDialogOpen] = useState(false);
+  const [userToUnfollow, setUserToUnfollow] = useState(null);
 
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const {
@@ -340,6 +383,19 @@ function Homepage() {
       });
   };
 
+  const openUnfollowDialog = (friend) => {
+    setUserToUnfollow(friend);
+    setUnfollowDialogOpen(true);
+  };
+
+  const confirmUnfollow = () => {
+    if (userToUnfollow) {
+      handleRemoveFriend(userToUnfollow.id);
+      setUnfollowDialogOpen(false);
+      setUserToUnfollow(null);
+    }
+  };
+
   // Function to fetch friends list
   const fetchFriends = () => {
     setFriendsLoading(true);
@@ -428,6 +484,10 @@ function Homepage() {
     };
 
     fetchIncomingFriendRequests();
+  }, []);
+
+  useEffect(() => {
+    fetchSharedPlaylists();
   }, []);
 
   // Poll Apple Music playlist loading status
@@ -574,10 +634,9 @@ function Homepage() {
 
   // Open transfer dialog
   const openTransferDialog = () => {
-    // Set destination to the opposite of current playlist source
-    const destination =
-      selectedPlaylist?.origin === "Spotify" ? "Apple Music" : "Spotify";
-    setTransferDestination(destination);
+    setTransferDestination("");
+    setShareAsCopy(false); // Reset to default value
+    fetchFriends();
     setShowTransferDialog(true);
   };
 
@@ -585,6 +644,12 @@ function Homepage() {
   const closeTransferDialog = () => {
     setShowTransferDialog(false);
   };
+
+  useEffect(() => {
+    if (showTransferDialog && friendsList.length > 0 && !transferDestination) {
+      setTransferDestination("Select a friend");
+    }
+  }, [showTransferDialog, friendsList]);
 
   const refreshSpotifyPlaylists = () => {
     setLoadingSpotify(true);
@@ -633,58 +698,39 @@ function Homepage() {
     setIsTransferring(true);
 
     try {
-      let result = null;
-      if (transferDestination === "Spotify") {
-        result = await window.electronAPI.transferToSpotify(selectedPlaylist);
-      } else if (transferDestination === "Apple Music") {
-        result =
-          await window.electronAPI.transferToAppleMusic(selectedPlaylist);
+      // Find the selected friend
+      const selectedFriend = friendsList.find(
+        (f) => f.id === transferDestination,
+      );
+
+      if (!selectedFriend) {
+        throw new Error("Selected friend not found");
       }
 
-      console.log("Transfer result:", result); // Log complete result for debugging
+      // Get the selected playlist from Firebase
+      const playlist = await window.electronAPI.getPlaylistFromFirebase(
+        selectedPlaylist.id,
+      );
+      if (!playlist.sharedWith.includes(selectedFriend.id)) {
+        playlist.sharedWith.push(selectedFriend.id);
+      }
+
+      // Update the playlist in Firebase
+      const result =
+        await window.electronAPI.transferPlaylistToFirebase(playlist);
+      console.log("Transfer result:", result);
 
       if (result && result.success) {
-        // reload playlists from destination
-        if (transferDestination === "Spotify") {
-          refreshSpotifyPlaylists();
-        } else if (transferDestination === "Apple Music") {
-          refreshAppleMusicPlaylists();
-        }
-
-        // Extract transfer statistics
-        const totalTracks = result.totalTracks || 0;
-        const tracksAdded = result.tracksAdded || 0;
-        const failedCount = result.failedCount || 0;
-        const failedSongs = result.failedSongs || [];
-
-        // Create appropriate notification based on results
-        if (failedCount > 0) {
-          // Partial success notification
-          addNotification({
-            type: "playlist_transfer_partial",
-            message: `Playlist "${selectedPlaylist.name}" transferred to ${transferDestination}. ${failedCount} songs failed.`,
-            details: {
-              playlistName: selectedPlaylist.name,
-              destination: transferDestination,
-              totalTracks: totalTracks,
-              tracksAdded: tracksAdded,
-              failedCount: failedCount,
-              failedSongs: failedSongs,
-            },
-          });
-        } else {
-          // Full success notification
-          addNotification({
-            type: "playlist_transfer_success",
-            message: `Playlist "${selectedPlaylist.name}" transferred to ${transferDestination}.`,
-            details: {
-              playlistName: selectedPlaylist.name,
-              destination: transferDestination,
-              totalTracks: totalTracks,
-              tracksAdded: tracksAdded,
-            },
-          });
-        }
+        // Create appropriate notification
+        addNotification({
+          type: "playlist_transfer_success",
+          message: `Playlist "${selectedPlaylist.name}" sent to ${selectedFriend.displayName}.`,
+          details: {
+            playlistName: selectedPlaylist.name,
+            destination: selectedFriend.displayName,
+            friendId: selectedFriend.id,
+          },
+        });
 
         setShowTransferDialog(false);
         setShowSuccessAlert(true);
@@ -1408,17 +1454,29 @@ function Homepage() {
                           {friend.email}
                         </Typography>
                       </Box>
-                      <IconButton
-                        onClick={() => handleRemoveFriend(friend.id)}
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => openUnfollowDialog(friend)}
                         disabled={removingId === friend.id}
-                        sx={{ color: "text.secondary" }}
+                        sx={{
+                          borderColor: colors.amethyst,
+                          color: colors.amethyst,
+                          "&:hover": {
+                            borderColor: colors.amethyst,
+                            bgcolor: "rgba(134, 97, 193, 0.1)",
+                          },
+                        }}
                       >
                         {removingId === friend.id ? (
-                          <CircularProgress size={20} />
+                          <CircularProgress
+                            size={16}
+                            sx={{ color: colors.amethyst }}
+                          />
                         ) : (
-                          <Typography>×</Typography>
+                          "Unfollow"
                         )}
-                      </IconButton>
+                      </Button>
                     </Paper>
                   ))}
                 </Stack>
@@ -2201,17 +2259,23 @@ function Homepage() {
               >
                 Playlist
               </Typography>
-              <TextField
-                fullWidth
-                value={selectedPlaylist?.name || ""}
-                disabled
-                variant="outlined"
+              <Paper
+                elevation={0}
                 sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: theme.palette.text.secondary,
-                  },
+                  p: 2,
+                  bgcolor: "rgba(134, 97, 193, 0.05)",
+                  borderRadius: 1,
+                  display: "flex",
+                  alignItems: "center",
                 }}
-              />
+              >
+                <Typography variant="body1">
+                  {selectedPlaylist?.name || "No playlist selected"}
+                  {selectedPlaylist?.origin
+                    ? ` (${selectedPlaylist.origin})`
+                    : ""}
+                </Typography>
+              </Paper>
             </Box>
 
             <Box>
@@ -2220,36 +2284,34 @@ function Homepage() {
                 color="text.secondary"
                 sx={{ mb: 1 }}
               >
-                Source
-              </Typography>
-              <TextField
-                fullWidth
-                value={selectedPlaylist?.origin || ""}
-                disabled
-                variant="outlined"
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: theme.palette.text.secondary,
-                  },
-                }}
-              />
-            </Box>
-
-            <Box>
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                sx={{ mb: 1 }}
-              >
-                Destination
+                Send To
               </Typography>
               <FormControl fullWidth>
                 <Select
                   value={transferDestination}
                   onChange={(e) => setTransferDestination(e.target.value)}
+                  displayEmpty
+                  renderValue={(selected) => {
+                    const friend = friendsList.find((f) => f.id === selected);
+                    return friend ? friend.displayName : "Select a friend";
+                  }}
                 >
-                  <MenuItem value="Spotify">Spotify</MenuItem>
-                  <MenuItem value="Apple Music">Apple Music</MenuItem>
+                  {friendsLoading ? (
+                    <MenuItem disabled>
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <CircularProgress size={20} sx={{ mr: 1 }} />
+                        Loading friends...
+                      </Box>
+                    </MenuItem>
+                  ) : friendsList.length === 0 ? (
+                    <MenuItem disabled>No friends available</MenuItem>
+                  ) : (
+                    friendsList.map((friend) => (
+                      <MenuItem key={friend.id} value={friend.id}>
+                        {friend.displayName} ({friend.email})
+                      </MenuItem>
+                    ))
+                  )}
                 </Select>
               </FormControl>
             </Box>
@@ -2265,7 +2327,9 @@ function Homepage() {
           </Button>
           <Button
             onClick={handleTransfer}
-            disabled={isTransferring}
+            disabled={
+              isTransferring || !transferDestination || friendsList.length === 0
+            }
             variant="contained"
             sx={styles.continueButton}
           >
@@ -2289,6 +2353,46 @@ function Homepage() {
           Playlist transferred successfully!
         </Alert>
       </Snackbar>
+      {/* Unfollow Confirmation Dialog */}
+      <Dialog
+        open={unfollowDialogOpen}
+        onClose={() => setUnfollowDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            bgcolor: theme.palette.background.paper,
+            borderRadius: 3,
+            width: "100%",
+            maxWidth: "400px",
+          },
+        }}
+      >
+        <DialogTitle>Unfollow Friend</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to unfollow {userToUnfollow?.displayName}?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            onClick={() => setUnfollowDialogOpen(false)}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmUnfollow}
+            variant="contained"
+            sx={{
+              bgcolor: colors.amethyst,
+              "&:hover": {
+                bgcolor: "#8a67c2",
+              },
+            }}
+          >
+            Unfollow
+          </Button>
+        </DialogActions>
+      </Dialog>
     </ThemeProvider>
   );
 }
