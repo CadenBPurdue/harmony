@@ -48,8 +48,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("getAppleMusicStatus");
   },
 
+  getSpotifyStatus: () => {
+    console.log("Calling getSpotifyStatus from preload");
+    return ipcRenderer.invoke("getSpotifyStatus");
+  },
+
   onPlaylistLoaded: (callback) => {
-    ipcRenderer.on("playlist-loaded", (event, playlistInfo) => {
+    ipcRenderer.on('playlist-loaded', (event, playlistInfo) => {
       callback(playlistInfo);
     });
   },
