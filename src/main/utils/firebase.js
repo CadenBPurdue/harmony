@@ -12,6 +12,7 @@ import { initiateGoogleAuth } from "./auth_manager.js";
 import {
   getUserFromFirestore,
   writeUserToFirestore,
+  getCurrentUserFromFirestore,
 } from "./firebaseHelper.js";
 import { getGoogleToken, clearGoogleToken } from "./safe_storage.js";
 
@@ -166,13 +167,15 @@ async function updateUserInFirestore(user) {
   }
 }
 
-async function updateConnectedSerives(service) {
+async function updateConnectedServices(service) {
   try {
-    const user = getAuthInstance().currentUser;
+    const user = await getCurrentUserFromFirestore();
     if (!user) {
       console.error("[Firebase] User is not authenticated");
       return;
     }
+    console.log("NJEIKNDJEKNDJEKNDJEKNDEJKDNEJKDJKNDJEKNDJEKNDJEKNDJEKNDJ");
+    console.log(user);
 
     var spotifyConnected = false;
     var appleMusicConnected = false;
@@ -276,7 +279,7 @@ export {
   authenticateWithFirebase,
   getDbInstance,
   getAuthInstance,
-  updateConnectedSerives,
+  updateConnectedServices,
   updateFriendsList,
   updateUserInFirestore,
 };

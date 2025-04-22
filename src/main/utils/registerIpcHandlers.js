@@ -10,7 +10,7 @@ import {
 import { configManager } from "./config.js";
 import {
   authenticateWithFirebase,
-  updateConnectedSerives,
+  updateConnectedServices,
   updateFriendsList,
 } from "./firebase.js";
 import {
