@@ -131,6 +131,8 @@ function Homepage() {
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [connectingId, setConnectingId] = useState(null);
   const [removingId, setRemovingId] = useState(null);
+  const [unfollowDialogOpen, setUnfollowDialogOpen] = useState(false);
+  const [userToUnfollow, setUserToUnfollow] = useState(null);
 
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const {
@@ -332,6 +334,19 @@ function Homepage() {
       .finally(() => {
         setRemovingId(null);
       });
+  };
+
+  const openUnfollowDialog = (friend) => {
+    setUserToUnfollow(friend);
+    setUnfollowDialogOpen(true);
+  };
+
+  const confirmUnfollow = () => {
+    if (userToUnfollow) {
+      handleRemoveFriend(userToUnfollow.id);
+      setUnfollowDialogOpen(false);
+      setUserToUnfollow(null);
+    }
   };
 
   // Function to fetch friends list
@@ -1280,17 +1295,26 @@ function Homepage() {
                           {friend.email}
                         </Typography>
                       </Box>
-                      <IconButton
-                        onClick={() => handleRemoveFriend(friend.id)}
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => openUnfollowDialog(friend)}
                         disabled={removingId === friend.id}
-                        sx={{ color: "text.secondary" }}
+                        sx={{
+                          borderColor: colors.amethyst,
+                          color: colors.amethyst,
+                          "&:hover": {
+                            borderColor: colors.amethyst,
+                            bgcolor: "rgba(134, 97, 193, 0.1)",
+                          },
+                        }}
                       >
                         {removingId === friend.id ? (
-                          <CircularProgress size={20} />
+                          <CircularProgress size={16} sx={{ color: colors.amethyst }} />
                         ) : (
-                          <Typography>×</Typography>
+                          "Unfollow"
                         )}
-                      </IconButton>
+                      </Button>
                     </Paper>
                   ))}
                 </Stack>
@@ -2167,6 +2191,48 @@ function Homepage() {
           Playlist transferred successfully!
         </Alert>
       </Snackbar>
+      {/* Unfollow Confirmation Dialog */}
+      <Dialog
+        open={unfollowDialogOpen}
+        onClose={() => setUnfollowDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            bgcolor: theme.palette.background.paper,
+            borderRadius: 3,
+            width: "100%",
+            maxWidth: "400px",
+          },
+        }}
+      >
+        <DialogTitle>
+          Unfollow Friend
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to unfollow {userToUnfollow?.displayName}?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            onClick={() => setUnfollowDialogOpen(false)}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmUnfollow}
+            variant="contained"
+            sx={{
+              bgcolor: colors.amethyst,
+              "&:hover": {
+                bgcolor: "#8a67c2",
+              },
+            }}
+          >
+            Unfollow
+          </Button>
+        </DialogActions>
+      </Dialog>
     </ThemeProvider>
   );
 }
