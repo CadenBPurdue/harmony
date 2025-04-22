@@ -49,21 +49,12 @@ import { useNotifications } from "./NotificationContext";
 import { theme, styles, colors } from "./styles/theme";
 
 const fetchSharedPlaylists = async () => {
-
-  window.electronAPI.debug("Fetching shared playlists...");
-
   const sharedPlaylistIds = await window.electronAPI.getSharedPlaylists();
-
-  window.electronAPI.debug("Shared playlist IDs:");
-  window.electronAPI.debug(sharedPlaylistIds);
 
   if (!sharedPlaylistIds || sharedPlaylistIds.length === 0) {
     return;
   }
-
   const currentUser = await window.electronAPI.getCurrentUserFromFirebase();
-
-  window.electronAPI.debug(currentUser);
 
   sharedPlaylistIds.forEach(async (playlistId) => {
     const playlist = await window.electronAPI.getPlaylistFromFirebase(playlistId);
