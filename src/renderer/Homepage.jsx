@@ -145,6 +145,12 @@ function Homepage() {
     isComplete: false,
   });
 
+  const [spotifyStatus, setSpotifyStatus] = useState({
+    loaded: 0,
+    total: 0,
+    isComplete: false,
+  });
+
   // Transfer dialog state
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [transferDestination, setTransferDestination] = useState("");
@@ -535,6 +541,54 @@ function Homepage() {
     return cleanup;
   }, [pollAppleMusicStatus]);
 
+  const pollSpotifyStatus = useCallback(() => {
+    // Only poll if we have Spotify playlists that may still be loading
+    if (spotifyPlaylists.length === 0 || spotifyStatus.isComplete) {
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        // Check the loading status
+        const status = await window.electronAPI.getSpotifyStatus();
+        setSpotifyStatus(status);
+
+        if (status.isComplete) {
+          console.log(
+            "[Homepage] Spotify loading complete, refreshing playlists",
+          );
+          clearInterval(pollInterval);
+
+          // Refresh the playlists to get final data
+          const updatedPlaylists = await window.electronAPI.getSpotifyLibrary();
+          setSpotifyPlaylists(updatedPlaylists);
+
+          // If we have a selected Spotify playlist, update it
+          if (selectedPlaylist && selectedPlaylist.origin === "Spotify") {
+            const updatedSelected = updatedPlaylists.find(
+              (p) => p.playlist_id === selectedPlaylist.playlist_id,
+            );
+
+            if (updatedSelected) {
+              setSelectedPlaylist(updatedSelected);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error polling Spotify status:", error);
+        clearInterval(pollInterval);
+      }
+    }, 3000); // Poll every 3 seconds
+
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(pollInterval);
+  }, [spotifyPlaylists, spotifyStatus.isComplete, selectedPlaylist]);
+
+  useEffect(() => {
+    const cleanup = pollSpotifyStatus();
+    return cleanup;
+  }, [pollSpotifyStatus]);
+
   // Set up listener for when individual playlists finish loading
   useEffect(() => {
     const handlePlaylistLoaded = (playlistInfo) => {
@@ -548,14 +602,22 @@ function Homepage() {
               : playlist,
           ),
         );
+      } else if (playlistInfo.origin === "Spotify") {
+        setSpotifyPlaylists((prevPlaylists) =>
+          prevPlaylists.map((playlist) =>
+            playlist.playlist_id === playlistInfo.id
+              ? { ...playlist, isLoading: false }
+              : playlist,
+          ),
+        );
+      }
 
-        // Also update selected playlist if it's the one that just loaded
-        if (
-          selectedPlaylist &&
-          selectedPlaylist.playlist_id === playlistInfo.id
-        ) {
-          setSelectedPlaylist((prev) => ({ ...prev, isLoading: false }));
-        }
+      // Also update selected playlist if it's the one that just loaded
+      if (
+        selectedPlaylist &&
+        selectedPlaylist.playlist_id === playlistInfo.id
+      ) {
+        setSelectedPlaylist((prev) => ({ ...prev, isLoading: false }));
       }
     };
 
@@ -588,6 +650,48 @@ function Homepage() {
       setTransferDestination("Select a friend");
     }
   }, [showTransferDialog, friendsList]);
+  
+  const refreshSpotifyPlaylists = () => {
+    setLoadingSpotify(true);
+    window.electronAPI
+      .getSpotifyLibrary()
+      .then((playlists) => {
+        setSpotifyPlaylists(playlists);
+
+        // Check if any playlists are still loading
+        const hasLoadingPlaylists = playlists.some((p) => p.isLoading);
+        if (hasLoadingPlaylists) {
+          // Get initial status
+          window.electronAPI
+            .getSpotifyStatus()
+            .then((status) => {
+              setSpotifyStatus(status);
+            })
+            .catch((error) => {
+              console.error("Error getting Spotify status:", error);
+            });
+        } else {
+          setSpotifyStatus({
+            loaded: playlists.length,
+            total: playlists.length,
+            isComplete: true,
+          });
+        }
+
+        // Added from main version: Send playlists to Firebase if needed
+        if (window.electronAPI.transferPlaylistToFirebase) {
+          playlists.forEach((playlist) => {
+            window.electronAPI.transferPlaylistToFirebase(playlist);
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching Spotify playlists:", error);
+      })
+      .finally(() => {
+        setLoadingSpotify(false);
+      });
+  };
 
   // Handle transfer function
   const handleTransfer = async () => {
@@ -646,28 +750,6 @@ function Homepage() {
   const handleNotificationClick = () => {
     setNotificationsOpen(!notificationsOpen);
     setUserDropdownOpen(false); // Close user dropdown if open
-  };
-
-  const refreshSpotifyPlaylists = () => {
-    setLoadingSpotify(true);
-    window.electronAPI
-      .getSpotifyLibrary()
-      .then((playlists) => {
-        setSpotifyPlaylists(playlists);
-
-        // Added from main version: Send playlists to Firebase if needed
-        if (window.electronAPI.transferPlaylistToFirebase) {
-          playlists.forEach((playlist) => {
-            window.electronAPI.transferPlaylistToFirebase(playlist);
-          });
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching Spotify playlists:", error);
-      })
-      .finally(() => {
-        setLoadingSpotify(false);
-      });
   };
 
   const refreshAppleMusicPlaylists = () => {
@@ -874,6 +956,38 @@ function Homepage() {
               color: "white",
             }}
           />
+          {!spotifyStatus.isComplete && spotifyStatus.total > 0 ? (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                mr: 1,
+                position: "relative",
+              }}
+            >
+              {/* Background track (lighter color) */}
+              <CircularProgress
+                size={20}
+                variant="determinate"
+                value={100}
+                sx={{
+                  color: "rgba(255, 255, 255, 0.3)",
+                  position: "absolute",
+                }}
+              />
+              {/* Foreground progress (filled portion) */}
+              <CircularProgress
+                size={20}
+                variant="determinate"
+                value={(spotifyStatus.loaded / spotifyStatus.total) * 100}
+                sx={{ color: "white" }}
+              />
+              <Typography variant="caption" sx={{ ml: 1.5, color: "white" }}>
+                {Math.round((spotifyStatus.loaded / spotifyStatus.total) * 100)}
+                %
+              </Typography>
+            </Box>
+          ) : null}
           {spotifyOpen ? (
             <ChevronUp color="white" size={18} />
           ) : (
