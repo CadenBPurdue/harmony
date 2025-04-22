@@ -242,6 +242,10 @@ export function registerIpcHandlers() {
     return appleMusicApi.getPlaylistLoadingStatus();
   });
 
+  ipcMain.handle("getSpotifyStatus", async () => {
+    return spotifyApi.getPlaylistLoadingStatus();
+  });
+
   // Add a handler to get a specific Apple Music playlist
   ipcMain.handle("getAppleMusicPlaylist", async (event, playlistId) => {
     await appleMusicApi.initialize();

@@ -20,6 +20,15 @@ class SpotifyApi {
     this.client_id = null;
     this.client_secret = null;
     this.user_id = null;
+
+    // Added loading tracking
+    this.isLoadingDetails = false;
+    this.loadedPlaylists = new Map();
+    this.loadingProgress = {
+      total: 0,
+      loaded: 0,
+      isComplete: false,
+    };
   }
 
   async initialize() {
@@ -181,6 +190,15 @@ class SpotifyApi {
     }
   }
 
+  getPlaylistLoadingStatus() {
+    return {
+      total: this.loadingProgress.total,
+      loaded: this.loadingProgress.loaded,
+      isComplete: this.loadingProgress.isComplete,
+      isLoading: this.isLoadingDetails,
+    };
+  }
+
   async getPlaylistLibrary() {
     try {
       // Make sure we have a valid auth token
@@ -209,32 +227,208 @@ class SpotifyApi {
         return []; // Return empty array instead of throwing
       }
 
-      // Process playlists safely with error handling for each one
-      const playlistPromises = response.data.items.map(async (item) => {
-        try {
-          const playlist_id = item.id;
-          return await this.getPlaylist(playlist_id);
-        } catch (error) {
-          console.error(
-            `[SpotifyApi] Error fetching playlist ${item.id}:`,
-            error.message,
-          );
-          return null; // Return null for failed playlists
+      // Set up loading progress tracking
+      const playlists = response.data.items;
+      this.loadingProgress = {
+        total: playlists.length,
+        loaded: 0,
+        isComplete: false,
+      };
+
+      // Process playlists
+      const playlistObjects = playlists.map((item) => {
+        const playlistId = item.id;
+
+        // Check if we've already loaded this playlist
+        if (this.loadedPlaylists.has(playlistId)) {
+          const loadedData = this.loadedPlaylists.get(playlistId);
+          this.loadingProgress.loaded += 1;
+
+          // Return cached playlist with tracks as array (convert from object if needed)
+          let tracksArray = [];
+          if (loadedData.tracksArray && Array.isArray(loadedData.tracksArray)) {
+            tracksArray = loadedData.tracksArray;
+          } else if (
+            loadedData.tracks &&
+            typeof loadedData.tracks === "object"
+          ) {
+            tracksArray = Object.values(loadedData.tracks);
+          }
+
+          return {
+            id: playlistId,
+            user: this.user_id,
+            origin: "Spotify",
+            name: item.name || "",
+            playlist_id: playlistId,
+            numberOfTracks: loadedData.trackCount || 0,
+            number_of_tracks: loadedData.trackCount || 0,
+            duration: loadedData.duration || 0,
+            description: item.description || "",
+            image:
+              item.images && item.images.length > 0 ? item.images[0].url : "",
+            tracks: tracksArray, // Use array instead of object
+            isLoading: false,
+            loadError: false,
+            sharedWith: [],
+          };
         }
+
+        // Return basic info for unloaded playlists
+        return {
+          id: playlistId,
+          user: this.user_id,
+          origin: "Spotify",
+          name: item.name || "",
+          playlist_id: playlistId,
+          numberOfTracks: item.tracks?.total || 0,
+          number_of_tracks: item.tracks?.total || 0,
+          duration: 0,
+          description: item.description || "",
+          image:
+            item.images && item.images.length > 0 ? item.images[0].url : "",
+          tracks: [], // Initialize as array not object
+          isLoading: true,
+          loadError: false,
+          sharedWith: [],
+        };
       });
 
-      const results = await Promise.all(playlistPromises);
+      // Update completion status
+      if (this.loadingProgress.loaded === this.loadingProgress.total) {
+        this.loadingProgress.isComplete = true;
+      }
 
-      // Filter out null results (failed playlists)
-      const playlists = results.filter((p) => p !== null);
+      // Start background loading immediately
+      if (!this.isLoadingDetails) {
+        console.log("[SpotifyApi] Starting immediate background load process");
+        this.loadPlaylistDetailsInBackground(playlists);
+      }
 
-      return playlists;
+      return playlistObjects;
     } catch (error) {
       console.error(
         "[SpotifyApi] Failed to fetch user playlists:",
         error.response?.data || error.message,
       );
       return []; // Return empty array instead of throwing
+    }
+  }
+
+  async loadPlaylistDetailsInBackground(playlists) {
+    if (this.isLoadingDetails) {
+      console.log("[SpotifyApi] Background loading already in progress");
+      return;
+    }
+
+    this.isLoadingDetails = true;
+    console.log(
+      `[SpotifyApi] Starting background loading for ${playlists.length} playlists`,
+    );
+
+    try {
+      // Filter out already loaded playlists
+      const playlistsToLoad = playlists.filter(
+        (p) => !this.loadedPlaylists.has(p.id),
+      );
+      console.log(
+        `[SpotifyApi] Need to load ${playlistsToLoad.length} playlists`,
+      );
+
+      if (playlistsToLoad.length === 0) {
+        console.log("[SpotifyApi] No playlists to load, all complete");
+        this.loadingProgress.isComplete = true;
+        this.isLoadingDetails = false;
+        return;
+      }
+
+      // Process playlists in small batches to avoid rate limiting
+      for (let i = 0; i < playlistsToLoad.length; i += 2) {
+        const batch = playlistsToLoad.slice(i, i + 2);
+        console.log(
+          `[SpotifyApi] Processing batch ${i / 2 + 1}: ${batch.map((p) => p.name).join(", ")}`,
+        );
+
+        await Promise.all(
+          batch.map(async (playlist) => {
+            try {
+              const playlistId = playlist.id;
+              console.log(
+                `[SpotifyApi] Loading tracks for playlist: ${playlist.name} (${playlistId})`,
+              );
+
+              // Get the playlist with full details
+              const fullPlaylist = await this.getPlaylist(playlistId);
+
+              // Make sure the tracks are always in array format
+              const tracksArray = Array.isArray(fullPlaylist.tracks)
+                ? fullPlaylist.tracks
+                : Object.values(fullPlaylist.tracks);
+
+              // Calculate duration
+              let totalDuration = 0;
+              tracksArray.forEach((track) => {
+                totalDuration += track.duration || 0;
+              });
+
+              // Store loaded playlist data
+              this.loadedPlaylists.set(playlistId, {
+                tracks: {}, // Keep an object version for internal use if needed
+                tracksArray: tracksArray, // Store the array version for Firebase
+                trackCount: tracksArray.length,
+                duration: totalDuration,
+              });
+
+              // Update progress
+              this.loadingProgress.loaded += 1;
+
+              console.log(
+                `[SpotifyApi] Successfully loaded playlist "${playlist.name}" with ${tracksArray.length} tracks (Progress: ${this.loadingProgress.loaded}/${this.loadingProgress.total})`,
+              );
+
+              // Notify UI that playlist is loaded
+              if (global.mainWindow && !global.mainWindow.isDestroyed()) {
+                global.mainWindow.webContents.send("playlist-loaded", {
+                  id: playlistId,
+                  origin: "Spotify",
+                });
+              }
+            } catch (error) {
+              console.error(
+                `[SpotifyApi] Error loading playlist ${playlist.id}:`,
+                error.message,
+              );
+
+              // Store error state
+              this.loadedPlaylists.set(playlist.id, {
+                tracks: {},
+                tracksArray: [], // Empty array for tracks
+                trackCount: 0,
+                duration: 0,
+                error: true,
+                errorMessage: error.message,
+              });
+
+              // Update progress anyway
+              this.loadingProgress.loaded += 1;
+            }
+          }),
+        );
+
+        // Add delay between batches to avoid rate limiting
+        if (i + 2 < playlistsToLoad.length) {
+          console.log(`[SpotifyApi] Waiting before processing next batch...`);
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+
+      console.log(`[SpotifyApi] Background loading completed.`);
+      this.loadingProgress.isComplete =
+        this.loadingProgress.loaded >= this.loadingProgress.total;
+    } catch (error) {
+      console.error("[SpotifyApi] Error in background loading process:", error);
+    } finally {
+      this.isLoadingDetails = false;
     }
   }
 

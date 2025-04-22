@@ -323,9 +323,9 @@ class AppleMusicApi {
               this.loadingProgress.loaded += 1;
               processedCount += 1;
 
-              console.log(
-                `[AppleMusicApi] Successfully loaded playlist "${playlist.attributes?.name}" with ${Object.keys(tracks).length} tracks (Progress: ${this.loadingProgress.loaded}/${this.loadingProgress.total})`,
-              );
+              // console.log(
+              //   `[AppleMusicApi] Successfully loaded playlist "${playlist.attributes?.name}" with ${Object.keys(tracks).length} tracks (Progress: ${this.loadingProgress.loaded}/${this.loadingProgress.total})`,
+              // );
 
               // Emit event for anyone listening for playlist loaded events
               if (global.playlistLoadedCallback) {
