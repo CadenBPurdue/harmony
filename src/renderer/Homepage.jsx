@@ -650,7 +650,7 @@ function Homepage() {
       setTransferDestination("Select a friend");
     }
   }, [showTransferDialog, friendsList]);
-  
+
   const refreshSpotifyPlaylists = () => {
     setLoadingSpotify(true);
     window.electronAPI
