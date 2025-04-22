@@ -1310,7 +1310,10 @@ function Homepage() {
                         }}
                       >
                         {removingId === friend.id ? (
-                          <CircularProgress size={16} sx={{ color: colors.amethyst }} />
+                          <CircularProgress
+                            size={16}
+                            sx={{ color: colors.amethyst }}
+                          />
                         ) : (
                           "Unfollow"
                         )}
@@ -2204,9 +2207,7 @@ function Homepage() {
           },
         }}
       >
-        <DialogTitle>
-          Unfollow Friend
-        </DialogTitle>
+        <DialogTitle>Unfollow Friend</DialogTitle>
         <DialogContent>
           <Typography>
             Are you sure you want to unfollow {userToUnfollow?.displayName}?
