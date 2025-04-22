@@ -177,7 +177,7 @@ function handleSpotifyNavigation(url, expectedState, resolve, reject) {
 
   exchangeSpotifyCodeForToken(code)
     .then(async () => {
-      await updateConnectedServices('spotify');
+      await updateConnectedServices("spotify");
       resolve({ success: true });
     })
     .catch(reject)
@@ -423,7 +423,7 @@ async function initiateAppleMusicAuth() {
 
             await setAppleMusicToken(appleMusicToken);
 
-            await updateConnectedService('appleMusic');
+            await updateConnectedService("appleMusic");
 
             // Store the success state
             const success = { success: true };
