@@ -49,7 +49,6 @@ import { useNotifications } from "./NotificationContext";
 import { theme, styles, colors } from "./styles/theme";
 
 const fetchSharedPlaylists = async () => {
-
   window.electronAPI.debug("Fetching shared playlists...");
 
   const sharedPlaylistIds = await window.electronAPI.getSharedPlaylists();
@@ -66,16 +65,19 @@ const fetchSharedPlaylists = async () => {
   window.electronAPI.debug(currentUser);
 
   sharedPlaylistIds.forEach(async (playlistId) => {
-    const playlist = await window.electronAPI.getPlaylistFromFirebase(playlistId);
+    const playlist =
+      await window.electronAPI.getPlaylistFromFirebase(playlistId);
     const sharedPlaylistName = playlist.name;
-    const storedPlaylistIds = await window.electronAPI.getPlaylistsFromFirebase();
+    const storedPlaylistIds =
+      await window.electronAPI.getPlaylistsFromFirebase();
     if (!storedPlaylistIds || storedPlaylistIds.length === 0) {
       return;
     }
 
     var storedPlaylistNames = [];
     storedPlaylistIds.forEach(async (storedPlaylistId) => {
-      const storedPlaylist = await window.electronAPI.getPlaylistFromFirebase(storedPlaylistId);
+      const storedPlaylist =
+        await window.electronAPI.getPlaylistFromFirebase(storedPlaylistId);
       storedPlaylistNames.push(storedPlaylist.name);
     });
 
@@ -90,7 +92,7 @@ const fetchSharedPlaylists = async () => {
         await window.electronAPI.transferToSpotify(playlist);
       }
     }
-  })
+  });
 };
 
 // Function to format duration from milliseconds to MM:SS format
