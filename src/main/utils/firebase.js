@@ -173,7 +173,7 @@ async function updateConnectedSerives(service) {
       console.error("[Firebase] User is not authenticated");
       return;
     }
-    
+
     var spotifyConnected = false;
     var appleMusicConnected = false;
     if (service == "appleMusic") {
