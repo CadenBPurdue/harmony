@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import { BrowserWindow } from "electron";
 import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
-import { getAuthInstance } from "./firebase.js";
+import { getAuthInstance, updateUserInFirestore } from "./firebase.js";
 import {
   getSpotifyToken,
   setSpotifyToken,
@@ -430,6 +430,11 @@ async function initiateAppleMusicAuth() {
               appleMusicAuthWindow.destroy();
               appleMusicAuthWindow = null;
             }
+
+            // Update user connected services
+            const user = getAuthInstance().currentUser;
+            console.log("FNJENRJFKNJRKFNF");
+            console.log(user);
 
             // Resolve with the success state
             resolve(success);

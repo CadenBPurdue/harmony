@@ -58,6 +58,10 @@ export function registerIpcHandlers() {
     return await getPlaylistsFromFirestore();
   });
 
+  ipcMain.handle("firebase:getSharedPlaylists", async () => {
+    return await getSharedPlaylistsFromFirestore();
+  });
+
   ipcMain.handle("firebase:getUserInfo", async (event, userId) => {
     console.log("Fetching user info for ID:", userId);
     return await getUserFromFirestore(userId);

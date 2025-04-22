@@ -48,6 +48,51 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNotifications } from "./NotificationContext";
 import { theme, styles, colors } from "./styles/theme";
 
+const fetchSharedPlaylists = async () => {
+
+  window.electronAPI.debug("Fetching shared playlists...");
+
+  const sharedPlaylistIds = await window.electronAPI.getSharedPlaylists();
+
+  window.electronAPI.debug("Shared playlist IDs:");
+  window.electronAPI.debug(sharedPlaylistIds);
+
+  if (!sharedPlaylistIds || sharedPlaylistIds.length === 0) {
+    return;
+  }
+
+  const currentUser = await window.electronAPI.getCurrentUserFromFirebase();
+
+  window.electronAPI.debug(currentUser);
+
+  sharedPlaylistIds.forEach(async (playlistId) => {
+    const playlist = await window.electronAPI.getPlaylistFromFirebase(playlistId);
+    const sharedPlaylistName = playlist.name;
+    const storedPlaylistIds = await window.electronAPI.getPlaylistsFromFirebase();
+    if (!storedPlaylistIds || storedPlaylistIds.length === 0) {
+      return;
+    }
+
+    var storedPlaylistNames = [];
+    storedPlaylistIds.forEach(async (storedPlaylistId) => {
+      const storedPlaylist = await window.electronAPI.getPlaylistFromFirebase(storedPlaylistId);
+      storedPlaylistNames.push(storedPlaylist.name);
+    });
+
+    const playlistExists = storedPlaylistNames.some(
+      (name) => name === sharedPlaylistName,
+    );
+
+    if (!playlistExists) {
+      if (currentUser.primaryService === "appleMusic") {
+        await window.electronAPI.transferToAppleMusic(playlist);
+      } else {
+        await window.electronAPI.transferToSpotify(playlist);
+      }
+    }
+  })
+};
+
 // Function to format duration from milliseconds to MM:SS format
 const formatDuration = (milliseconds) => {
   if (!milliseconds) return "--:--";
@@ -437,6 +482,10 @@ function Homepage() {
     };
 
     fetchIncomingFriendRequests();
+  }, []);
+
+  useEffect(() => {
+    fetchSharedPlaylists();
   }, []);
 
   // Poll Apple Music playlist loading status
