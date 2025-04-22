@@ -108,7 +108,7 @@ function Homepage() {
   const [spotifyStatus, setSpotifyStatus] = useState({
     loaded: 0,
     total: 0,
-    isComplete: false
+    isComplete: false,
   });
 
   // Transfer dialog state
@@ -486,27 +486,29 @@ function Homepage() {
     if (spotifyPlaylists.length === 0 || spotifyStatus.isComplete) {
       return;
     }
-  
+
     const pollInterval = setInterval(async () => {
       try {
         // Check the loading status
         const status = await window.electronAPI.getSpotifyStatus();
         setSpotifyStatus(status);
-  
+
         if (status.isComplete) {
-          console.log("[Homepage] Spotify loading complete, refreshing playlists");
+          console.log(
+            "[Homepage] Spotify loading complete, refreshing playlists",
+          );
           clearInterval(pollInterval);
-  
+
           // Refresh the playlists to get final data
           const updatedPlaylists = await window.electronAPI.getSpotifyLibrary();
           setSpotifyPlaylists(updatedPlaylists);
-  
+
           // If we have a selected Spotify playlist, update it
           if (selectedPlaylist && selectedPlaylist.origin === "Spotify") {
             const updatedSelected = updatedPlaylists.find(
-              (p) => p.playlist_id === selectedPlaylist.playlist_id
+              (p) => p.playlist_id === selectedPlaylist.playlist_id,
             );
-  
+
             if (updatedSelected) {
               setSelectedPlaylist(updatedSelected);
             }
@@ -517,7 +519,7 @@ function Homepage() {
         clearInterval(pollInterval);
       }
     }, 3000); // Poll every 3 seconds
-  
+
     // Clean up the interval when the component unmounts
     return () => clearInterval(pollInterval);
   }, [spotifyPlaylists, spotifyStatus.isComplete, selectedPlaylist]);
@@ -531,25 +533,25 @@ function Homepage() {
   useEffect(() => {
     const handlePlaylistLoaded = (playlistInfo) => {
       console.log("Playlist loaded:", playlistInfo);
-  
+
       if (playlistInfo.origin === "Apple Music") {
         setAppleMusicPlaylists((prevPlaylists) =>
           prevPlaylists.map((playlist) =>
             playlist.playlist_id === playlistInfo.id
               ? { ...playlist, isLoading: false }
-              : playlist
-          )
+              : playlist,
+          ),
         );
       } else if (playlistInfo.origin === "Spotify") {
         setSpotifyPlaylists((prevPlaylists) =>
           prevPlaylists.map((playlist) =>
             playlist.playlist_id === playlistInfo.id
               ? { ...playlist, isLoading: false }
-              : playlist
-          )
+              : playlist,
+          ),
         );
       }
-  
+
       // Also update selected playlist if it's the one that just loaded
       if (
         selectedPlaylist &&
@@ -558,12 +560,12 @@ function Homepage() {
         setSelectedPlaylist((prev) => ({ ...prev, isLoading: false }));
       }
     };
-  
+
     // Check if onPlaylistLoaded is available in the API
     if (window.electronAPI.onPlaylistLoaded) {
       window.electronAPI.onPlaylistLoaded(handlePlaylistLoaded);
     }
-  
+
     // Clean up on unmount
     return () => {
       // Ideally, unregister the listener here if your preload script supports it
@@ -590,26 +592,27 @@ function Homepage() {
       .getSpotifyLibrary()
       .then((playlists) => {
         setSpotifyPlaylists(playlists);
-  
+
         // Check if any playlists are still loading
-        const hasLoadingPlaylists = playlists.some(p => p.isLoading);
+        const hasLoadingPlaylists = playlists.some((p) => p.isLoading);
         if (hasLoadingPlaylists) {
           // Get initial status
-          window.electronAPI.getSpotifyStatus()
-            .then(status => {
+          window.electronAPI
+            .getSpotifyStatus()
+            .then((status) => {
               setSpotifyStatus(status);
             })
-            .catch(error => {
+            .catch((error) => {
               console.error("Error getting Spotify status:", error);
             });
         } else {
           setSpotifyStatus({
             loaded: playlists.length,
             total: playlists.length,
-            isComplete: true
+            isComplete: true,
           });
         }
-        
+
         // Added from main version: Send playlists to Firebase if needed
         if (window.electronAPI.transferPlaylistToFirebase) {
           playlists.forEach((playlist) => {
@@ -908,40 +911,42 @@ function Homepage() {
             }}
           />
           {!spotifyStatus.isComplete && spotifyStatus.total > 0 ? (
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              mr: 1,
-              position: 'relative' 
-            }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                mr: 1,
+                position: "relative",
+              }}
+            >
               {/* Background track (lighter color) */}
-              <CircularProgress 
-                size={20} 
-                variant="determinate" 
+              <CircularProgress
+                size={20}
+                variant="determinate"
                 value={100}
-                sx={{ 
-                  color: 'rgba(255, 255, 255, 0.3)',
-                  position: 'absolute'
+                sx={{
+                  color: "rgba(255, 255, 255, 0.3)",
+                  position: "absolute",
                 }}
               />
               {/* Foreground progress (filled portion) */}
-              <CircularProgress 
-                size={20} 
-                variant="determinate" 
+              <CircularProgress
+                size={20}
+                variant="determinate"
                 value={(spotifyStatus.loaded / spotifyStatus.total) * 100}
                 sx={{ color: "white" }}
               />
               <Typography variant="caption" sx={{ ml: 1.5, color: "white" }}>
-                {Math.round(
-                  (spotifyStatus.loaded / spotifyStatus.total) * 100
-                )}%
+                {Math.round((spotifyStatus.loaded / spotifyStatus.total) * 100)}
+                %
               </Typography>
             </Box>
           ) : null}
-          {spotifyOpen ? 
-            <ChevronUp color="white" size={18} /> : 
+          {spotifyOpen ? (
+            <ChevronUp color="white" size={18} />
+          ) : (
             <ChevronDown color="white" size={18} />
-          }
+          )}
         </ListItem>
 
         <Collapse in={spotifyOpen} timeout="auto" unmountOnExit>

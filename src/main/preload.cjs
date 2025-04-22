@@ -54,7 +54,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   },
 
   onPlaylistLoaded: (callback) => {
-    ipcRenderer.on('playlist-loaded', (event, playlistInfo) => {
+    ipcRenderer.on("playlist-loaded", (event, playlistInfo) => {
       callback(playlistInfo);
     });
   },
