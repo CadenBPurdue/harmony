@@ -64,8 +64,7 @@ const Router = () => {
       element:
         authStatus.isGoogleAuthenticated &&
         (authStatus.isSpotifyAuthenticated ||
-          authStatus.isAppleAuthenticated ||
-          authStatus.isGoogleAuthenticated) ? (
+          authStatus.isAppleAuthenticated) ? (
           <Homepage />
         ) : (
           <Navigate to="/create-account" />
