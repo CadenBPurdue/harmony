@@ -1341,7 +1341,11 @@ function Homepage() {
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Find Friends
               </Typography>
-              <Box sx={{ display: "flex", mb: 2 }}>
+              <Box sx={{ 
+                  display: "flex", 
+                  mb: 2,
+                  alignItems: "center"
+                }}>
                 <TextField
                   fullWidth
                   placeholder="Search by email or username"
