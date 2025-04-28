@@ -1175,152 +1175,152 @@ function Homepage() {
             </Button>
           </Paper>
         );
-        case "settings":
-          return (
-            <Paper sx={{ ...styles.paper, p: 3 }}>
-              <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
-                Settings
-              </Typography>
-              {userInfo ? (
-                <Stack spacing={3}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      bgcolor: "rgba(134, 97, 193, 0.05)",
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Typography variant="h6" sx={{ mb: 2 }}>
-                      Connected Services
-                    </Typography>
-                    <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-                      <Chip
-                        label="Spotify"
-                        icon={
-                          userInfo.spotifyConnected ? (
-                            <ChevronDown size={16} style={{ opacity: 0 }} />
-                          ) : null
-                        }
-                        deleteIcon={
-                          userInfo.spotifyConnected ? (
-                            <ChevronDown size={16} style={{ opacity: 0 }} />
-                          ) : null
-                        }
-                        onDelete={
-                          userInfo.spotifyConnected ? () => {} : undefined
+      case "settings":
+        return (
+          <Paper sx={{ ...styles.paper, p: 3 }}>
+            <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
+              Settings
+            </Typography>
+            {userInfo ? (
+              <Stack spacing={3}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    bgcolor: "rgba(134, 97, 193, 0.05)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Connected Services
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                    <Chip
+                      label="Spotify"
+                      icon={
+                        userInfo.spotifyConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      deleteIcon={
+                        userInfo.spotifyConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      onDelete={
+                        userInfo.spotifyConnected ? () => {} : undefined
+                      }
+                      sx={{
+                        bgcolor: userInfo.spotifyConnected
+                          ? "#1DB954"
+                          : "rgba(134, 97, 193, 0.1)",
+                        color: userInfo.spotifyConnected
+                          ? "white"
+                          : "text.primary",
+                        "& .MuiChip-icon": { color: "inherit" },
+                        "& .MuiChip-deleteIcon": { color: "inherit" },
+                      }}
+                    />
+                    <Chip
+                      label="Apple Music"
+                      icon={
+                        userInfo.appleMusicConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      deleteIcon={
+                        userInfo.appleMusicConnected ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      onDelete={
+                        userInfo.appleMusicConnected ? () => {} : undefined
+                      }
+                      sx={{
+                        bgcolor: userInfo.appleMusicConnected
+                          ? "#FC3C44"
+                          : "rgba(134, 97, 193, 0.1)",
+                        color: userInfo.appleMusicConnected
+                          ? "white"
+                          : "text.primary",
+                        "& .MuiChip-icon": { color: "inherit" },
+                        "& .MuiChip-deleteIcon": { color: "inherit" },
+                      }}
+                    />
+                  </Box>
+
+                  <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
+                    {!userInfo.spotifyConnected && (
+                      <Button
+                        variant="contained"
+                        onClick={() =>
+                          window.electronAPI?.connectSpotify().then(() => {
+                            refreshSpotifyPlaylists();
+                          })
                         }
                         sx={{
-                          bgcolor: userInfo.spotifyConnected
-                            ? "#1DB954"
-                            : "rgba(134, 97, 193, 0.1)",
-                          color: userInfo.spotifyConnected
-                            ? "white"
-                            : "text.primary",
-                          "& .MuiChip-icon": { color: "inherit" },
-                          "& .MuiChip-deleteIcon": { color: "inherit" },
+                          bgcolor: "#1DB954",
+                          "&:hover": {
+                            bgcolor: "#19a34a",
+                          },
                         }}
-                      />
-                      <Chip
-                        label="Apple Music"
-                        icon={
-                          userInfo.appleMusicConnected ? (
-                            <ChevronDown size={16} style={{ opacity: 0 }} />
-                          ) : null
-                        }
-                        deleteIcon={
-                          userInfo.appleMusicConnected ? (
-                            <ChevronDown size={16} style={{ opacity: 0 }} />
-                          ) : null
-                        }
-                        onDelete={
-                          userInfo.appleMusicConnected ? () => {} : undefined
+                      >
+                        Connect Spotify
+                      </Button>
+                    )}
+                    {!userInfo.appleMusicConnected && (
+                      <Button
+                        variant="contained"
+                        onClick={() =>
+                          window.electronAPI.connectAppleMusic().then(() => {
+                            refreshAppleMusicPlaylists();
+                          })
                         }
                         sx={{
-                          bgcolor: userInfo.appleMusicConnected
-                            ? "#FC3C44"
-                            : "rgba(134, 97, 193, 0.1)",
-                          color: userInfo.appleMusicConnected
-                            ? "white"
-                            : "text.primary",
-                          "& .MuiChip-icon": { color: "inherit" },
-                          "& .MuiChip-deleteIcon": { color: "inherit" },
+                          bgcolor: "#FC3C44",
+                          "&:hover": {
+                            bgcolor: "#e02e38",
+                          },
                         }}
-                      />
-                    </Box>
-        
-                    <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
-                      {!userInfo.spotifyConnected && (
-                        <Button
-                          variant="contained"
-                          onClick={() =>
-                            window.electronAPI?.connectSpotify().then(() => {
-                              refreshSpotifyPlaylists();
-                            })
-                          }
-                          sx={{
-                            bgcolor: "#1DB954",
-                            "&:hover": {
-                              bgcolor: "#19a34a",
-                            },
-                          }}
-                        >
-                          Connect Spotify
-                        </Button>
-                      )}
-                      {!userInfo.appleMusicConnected && (
-                        <Button
-                          variant="contained"
-                          onClick={() =>
-                            window.electronAPI.connectAppleMusic().then(() => {
-                              refreshAppleMusicPlaylists();
-                            })
-                          }
-                          sx={{
-                            bgcolor: "#FC3C44",
-                            "&:hover": {
-                              bgcolor: "#e02e38",
-                            },
-                          }}
-                        >
-                          Connect Apple Music
-                        </Button>
-                      )}
-                    </Box>
-                  </Paper>
-                  
-                  {/* Other settings options could be added here */}
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      bgcolor: "rgba(134, 97, 193, 0.05)",
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Typography variant="h6" sx={{ mb: 2 }}>
-                      Application Settings
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                      Additional settings options can be placed here.
-                    </Typography>
-                  </Paper>
-                </Stack>
-              ) : (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                  <CircularProgress size={40} sx={{ color: "primary.main" }} />
-                </Box>
-              )}
-              
-              <Button
-                variant="contained"
-                onClick={() => setCurrentPage("main")}
-                sx={{ ...styles.continueButton, mt: 3 }}
-              >
-                Back to Main
-              </Button>
-            </Paper>
-          );
+                      >
+                        Connect Apple Music
+                      </Button>
+                    )}
+                  </Box>
+                </Paper>
+
+                {/* Other settings options could be added here */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    bgcolor: "rgba(134, 97, 193, 0.05)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Application Settings
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    Additional settings options can be placed here.
+                  </Typography>
+                </Paper>
+              </Stack>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress size={40} sx={{ color: "primary.main" }} />
+              </Box>
+            )}
+
+            <Button
+              variant="contained"
+              onClick={() => setCurrentPage("main")}
+              sx={{ ...styles.continueButton, mt: 3 }}
+            >
+              Back to Main
+            </Button>
+          </Paper>
+        );
       case "friends":
         return (
           <Paper sx={{ ...styles.paper, p: 3 }}>
