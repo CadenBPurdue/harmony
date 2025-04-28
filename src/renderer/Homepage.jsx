@@ -183,7 +183,6 @@ function Homepage() {
 
   const [primaryService, updatePrimaryService] = useState("");
 
-
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const {
     notifications,
@@ -656,10 +655,10 @@ function Homepage() {
   }, [showTransferDialog, friendsList]);
 
   useEffect(() => {
-  if (userInfo?.primaryService) {
-    window.electronAPI.updatePrimaryService(userInfo.primaryService);
-  }
-}, [userInfo]);
+    if (userInfo?.primaryService) {
+      window.electronAPI.updatePrimaryService(userInfo.primaryService);
+    }
+  }, [userInfo]);
 
   const refreshSpotifyPlaylists = () => {
     setLoadingSpotify(true);
@@ -1217,7 +1216,9 @@ function Homepage() {
                         ) : null
                       }
                       onDelete={
-                        userInfo.connectedServices.spotify ? () => {} : undefined
+                        userInfo.connectedServices.spotify
+                          ? () => {}
+                          : undefined
                       }
                       sx={{
                         bgcolor: userInfo.connectedServices.spotify
@@ -1243,7 +1244,9 @@ function Homepage() {
                         ) : null
                       }
                       onDelete={
-                        userInfo.connectedServices.appleMusic ? () => {} : undefined
+                        userInfo.connectedServices.appleMusic
+                          ? () => {}
+                          : undefined
                       }
                       sx={{
                         bgcolor: userInfo.connectedServices.appleMusic
@@ -1309,16 +1312,24 @@ function Homepage() {
                   <Typography variant="h6" sx={{ mb: 2 }}>
                     Primary Service
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Select which music service you want to use as your primary service.
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
+                    Select which music service you want to use as your primary
+                    service.
                   </Typography>
-                  
+
                   <Box sx={{ width: "100%", maxWidth: 400 }}>
                     <FormControl fullWidth sx={{ mb: 2 }}>
                       <Select
                         value={primaryService || userInfo.primaryService || ""}
                         onChange={(e) => updatePrimaryService(e.target.value)}
-                        disabled={!userInfo.connectedServices?.spotify && !userInfo.connectedServices?.appleMusic}
+                        disabled={
+                          !userInfo.connectedServices?.spotify &&
+                          !userInfo.connectedServices?.appleMusic
+                        }
                       >
                         <MenuItem value="" disabled>
                           Select a service
@@ -1331,11 +1342,12 @@ function Homepage() {
                         )}
                       </Select>
                     </FormControl>
-                    
+
                     <Button
                       variant="contained"
                       onClick={() => {
-                        window.electronAPI.updatePrimaryService(primaryService)
+                        window.electronAPI
+                          .updatePrimaryService(primaryService)
                           .then(() => {
                             // Refresh user info to show the change
                             fetchUserInfo();
@@ -1346,8 +1358,11 @@ function Homepage() {
                               read: false,
                             });
                           })
-                          .catch(error => {
-                            console.error("Failed to update primary service:", error);
+                          .catch((error) => {
+                            console.error(
+                              "Failed to update primary service:",
+                              error,
+                            );
                             addNotification({
                               type: "error",
                               message: "Failed to update primary service.",
@@ -1355,7 +1370,10 @@ function Homepage() {
                             });
                           });
                       }}
-                      disabled={!primaryService || primaryService === userInfo.primaryService}
+                      disabled={
+                        !primaryService ||
+                        primaryService === userInfo.primaryService
+                      }
                       sx={styles.continueButton}
                     >
                       Save Changes
@@ -1398,11 +1416,13 @@ function Homepage() {
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Find Friends
               </Typography>
-              <Box sx={{ 
-                  display: "flex", 
+              <Box
+                sx={{
+                  display: "flex",
                   mb: 2,
-                  alignItems: "center"
-                }}>
+                  alignItems: "center",
+                }}
+              >
                 <TextField
                   fullWidth
                   placeholder="Search by email or username"

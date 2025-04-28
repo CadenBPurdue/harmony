@@ -87,7 +87,7 @@ export function registerIpcHandlers() {
   ipcMain.handle("firebase:updatePrimaryService", async (event, service) => {
     return await updatePrimaryService(service);
   });
-  
+
   ipcMain.handle("firebase:addFriend", async (event, friendId) => {
     return await updateFriendsList(friendId, false);
   });
