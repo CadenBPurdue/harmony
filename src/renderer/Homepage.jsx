@@ -181,6 +181,8 @@ function Homepage() {
   const [unfollowDialogOpen, setUnfollowDialogOpen] = useState(false);
   const [userToUnfollow, setUserToUnfollow] = useState(null);
 
+  const [primaryService, updatePrimaryService] = useState("");
+
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const {
     notifications,
@@ -207,11 +209,7 @@ function Homepage() {
   const navigateTo = (page) => {
     setCurrentPage(page);
     setUserDropdownOpen(false); // Close the dropdown after selection
-
-    // Fetch user info when navigating to the user info page
-    if (page === "userInfo") {
-      fetchUserInfo();
-    }
+    fetchUserInfo();
   };
 
   // Function to handle friend search
@@ -433,6 +431,11 @@ function Homepage() {
     }
   }, [currentPage]);
 
+  // Fetch user info when the component mounts
+  useEffect(() => {
+    fetchUserInfo();
+  }, []);
+
   useEffect(() => {
     const fetchIncomingFriendRequests = async () => {
       try {
@@ -650,6 +653,12 @@ function Homepage() {
       setTransferDestination("Select a friend");
     }
   }, [showTransferDialog, friendsList]);
+
+  useEffect(() => {
+    if (userInfo?.primaryService) {
+      window.electronAPI.updatePrimaryService(userInfo.primaryService);
+    }
+  }, [userInfo]);
 
   const refreshSpotifyPlaylists = () => {
     setLoadingSpotify(true);
@@ -1158,112 +1167,6 @@ function Homepage() {
                     </Box>
                   </Stack>
                 </Paper>
-
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    bgcolor: "rgba(134, 97, 193, 0.05)",
-                    borderRadius: 2,
-                  }}
-                >
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    Connected Services
-                  </Typography>
-                  <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-                    <Chip
-                      label="Spotify"
-                      icon={
-                        userInfo.spotifyConnected ? (
-                          <ChevronDown size={16} style={{ opacity: 0 }} />
-                        ) : null
-                      }
-                      deleteIcon={
-                        userInfo.spotifyConnected ? (
-                          <ChevronDown size={16} style={{ opacity: 0 }} />
-                        ) : null
-                      }
-                      onDelete={
-                        userInfo.spotifyConnected ? () => {} : undefined
-                      }
-                      sx={{
-                        bgcolor: userInfo.spotifyConnected
-                          ? "#1DB954"
-                          : "rgba(134, 97, 193, 0.1)",
-                        color: userInfo.spotifyConnected
-                          ? "white"
-                          : "text.primary",
-                        "& .MuiChip-icon": { color: "inherit" },
-                        "& .MuiChip-deleteIcon": { color: "inherit" },
-                      }}
-                    />
-                    <Chip
-                      label="Apple Music"
-                      icon={
-                        userInfo.appleMusicConnected ? (
-                          <ChevronDown size={16} style={{ opacity: 0 }} />
-                        ) : null
-                      }
-                      deleteIcon={
-                        userInfo.appleMusicConnected ? (
-                          <ChevronDown size={16} style={{ opacity: 0 }} />
-                        ) : null
-                      }
-                      onDelete={
-                        userInfo.appleMusicConnected ? () => {} : undefined
-                      }
-                      sx={{
-                        bgcolor: userInfo.appleMusicConnected
-                          ? "#FC3C44"
-                          : "rgba(134, 97, 193, 0.1)",
-                        color: userInfo.appleMusicConnected
-                          ? "white"
-                          : "text.primary",
-                        "& .MuiChip-icon": { color: "inherit" },
-                        "& .MuiChip-deleteIcon": { color: "inherit" },
-                      }}
-                    />
-                  </Box>
-
-                  <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
-                    {!userInfo.spotifyConnected && (
-                      <Button
-                        variant="contained"
-                        onClick={() =>
-                          window.electronAPI?.connectSpotify().then(() => {
-                            refreshSpotifyPlaylists();
-                          })
-                        }
-                        sx={{
-                          bgcolor: "#1DB954",
-                          "&:hover": {
-                            bgcolor: "#19a34a",
-                          },
-                        }}
-                      >
-                        Connect Spotify
-                      </Button>
-                    )}
-                    {!userInfo.appleMusicConnected && (
-                      <Button
-                        variant="contained"
-                        onClick={() =>
-                          window.electronAPI.connectAppleMusic().then(() => {
-                            refreshAppleMusicPlaylists();
-                          })
-                        }
-                        sx={{
-                          bgcolor: "#FC3C44",
-                          "&:hover": {
-                            bgcolor: "#e02e38",
-                          },
-                        }}
-                      >
-                        Connect Apple Music
-                      </Button>
-                    )}
-                  </Box>
-                </Paper>
               </Stack>
             ) : (
               <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
@@ -1286,13 +1189,208 @@ function Homepage() {
             <Typography variant="h5" color="text.primary" sx={{ mb: 3 }}>
               Settings
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              This is the settings page.
-            </Typography>
+            {userInfo ? (
+              <Stack spacing={3}>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    bgcolor: "rgba(134, 97, 193, 0.05)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Connected Services
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                    <Chip
+                      label="Spotify"
+                      icon={
+                        userInfo.connectedServices.spotify ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      deleteIcon={
+                        userInfo.connectedServices.spotify ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      onDelete={
+                        userInfo.connectedServices.spotify
+                          ? () => {}
+                          : undefined
+                      }
+                      sx={{
+                        bgcolor: userInfo.connectedServices.spotify
+                          ? "#1DB954"
+                          : "rgba(134, 97, 193, 0.1)",
+                        color: userInfo.connectedServices.spotify
+                          ? "white"
+                          : "text.primary",
+                        "& .MuiChip-icon": { color: "inherit" },
+                        "& .MuiChip-deleteIcon": { color: "inherit" },
+                      }}
+                    />
+                    <Chip
+                      label="Apple Music"
+                      icon={
+                        userInfo.connectedServices.appleMusic ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      deleteIcon={
+                        userInfo.connectedServices.appleMusic ? (
+                          <ChevronDown size={16} style={{ opacity: 0 }} />
+                        ) : null
+                      }
+                      onDelete={
+                        userInfo.connectedServices.appleMusic
+                          ? () => {}
+                          : undefined
+                      }
+                      sx={{
+                        bgcolor: userInfo.connectedServices.appleMusic
+                          ? "#FC3C44"
+                          : "rgba(134, 97, 193, 0.1)",
+                        color: userInfo.connectedServices.appleMusic
+                          ? "white"
+                          : "text.primary",
+                        "& .MuiChip-icon": { color: "inherit" },
+                        "& .MuiChip-deleteIcon": { color: "inherit" },
+                      }}
+                    />
+                  </Box>
+
+                  <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
+                    {!userInfo.connectedServices.spotify && (
+                      <Button
+                        variant="contained"
+                        onClick={() =>
+                          window.electronAPI?.connectSpotify().then(() => {
+                            refreshSpotifyPlaylists();
+                          })
+                        }
+                        sx={{
+                          bgcolor: "#1DB954",
+                          "&:hover": {
+                            bgcolor: "#19a34a",
+                          },
+                        }}
+                      >
+                        Connect Spotify
+                      </Button>
+                    )}
+                    {!userInfo.connectedServices.appleMusic && (
+                      <Button
+                        variant="contained"
+                        onClick={() =>
+                          window.electronAPI.connectAppleMusic().then(() => {
+                            refreshAppleMusicPlaylists();
+                          })
+                        }
+                        sx={{
+                          bgcolor: "#FC3C44",
+                          "&:hover": {
+                            bgcolor: "#e02e38",
+                          },
+                        }}
+                      >
+                        Connect Apple Music
+                      </Button>
+                    )}
+                  </Box>
+                </Paper>
+                {/* Primary Service Selection */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    bgcolor: "rgba(134, 97, 193, 0.05)",
+                    borderRadius: 2,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Primary Service
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
+                    Select which music service you want to use as your primary
+                    service.
+                  </Typography>
+
+                  <Box sx={{ width: "100%", maxWidth: 400 }}>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <Select
+                        value={primaryService || userInfo.primaryService || ""}
+                        onChange={(e) => updatePrimaryService(e.target.value)}
+                        disabled={
+                          !userInfo.connectedServices?.spotify &&
+                          !userInfo.connectedServices?.appleMusic
+                        }
+                      >
+                        <MenuItem value="" disabled>
+                          Select a service
+                        </MenuItem>
+                        {userInfo.connectedServices?.spotify && (
+                          <MenuItem value="spotify">Spotify</MenuItem>
+                        )}
+                        {userInfo.connectedServices?.appleMusic && (
+                          <MenuItem value="appleMusic">Apple Music</MenuItem>
+                        )}
+                      </Select>
+                    </FormControl>
+
+                    <Button
+                      variant="contained"
+                      onClick={() => {
+                        window.electronAPI
+                          .updatePrimaryService(primaryService)
+                          .then(() => {
+                            // Refresh user info to show the change
+                            fetchUserInfo();
+                            // Show success message
+                            addNotification({
+                              type: "info",
+                              message: `Primary service updated to ${primaryService === "spotify" ? "Spotify" : "Apple Music"}.`,
+                              read: false,
+                            });
+                          })
+                          .catch((error) => {
+                            console.error(
+                              "Failed to update primary service:",
+                              error,
+                            );
+                            addNotification({
+                              type: "error",
+                              message: "Failed to update primary service.",
+                              read: false,
+                            });
+                          });
+                      }}
+                      disabled={
+                        !primaryService ||
+                        primaryService === userInfo.primaryService
+                      }
+                      sx={styles.continueButton}
+                    >
+                      Save Changes
+                    </Button>
+                  </Box>
+                </Paper>
+              </Stack>
+            ) : (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress size={40} sx={{ color: "primary.main" }} />
+              </Box>
+            )}
+
             <Button
               variant="contained"
               onClick={() => setCurrentPage("main")}
-              sx={styles.continueButton}
+              sx={{ ...styles.continueButton, mt: 3 }}
             >
               Back to Main
             </Button>
@@ -1318,7 +1416,13 @@ function Homepage() {
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Find Friends
               </Typography>
-              <Box sx={{ display: "flex", mb: 2 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  mb: 2,
+                  alignItems: "center",
+                }}
+              >
                 <TextField
                   fullWidth
                   placeholder="Search by email or username"

@@ -4,7 +4,11 @@ import dotenv from "dotenv";
 import { BrowserWindow } from "electron";
 import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
-import { getAuthInstance, updateUserInFirestore } from "./firebase.js";
+import {
+  getAuthInstance,
+  updateConnectedServices,
+  updatePrimaryService,
+} from "./firebase.js";
 import {
   getSpotifyToken,
   setSpotifyToken,
@@ -176,7 +180,9 @@ function handleSpotifyNavigation(url, expectedState, resolve, reject) {
   }
 
   exchangeSpotifyCodeForToken(code)
-    .then(() => {
+    .then(async () => {
+      await updateConnectedServices("spotify");
+      await updatePrimaryService("spotify");
       resolve({ success: true });
     })
     .catch(reject)
@@ -422,6 +428,10 @@ async function initiateAppleMusicAuth() {
 
             await setAppleMusicToken(appleMusicToken);
 
+            await updateConnectedServices("appleMusic");
+
+            await updatePrimaryService("appleMusic");
+
             // Store the success state
             const success = { success: true };
 
@@ -430,11 +440,6 @@ async function initiateAppleMusicAuth() {
               appleMusicAuthWindow.destroy();
               appleMusicAuthWindow = null;
             }
-
-            // Update user connected services
-            const user = getAuthInstance().currentUser;
-            console.log("FNJENRJFKNJRKFNF");
-            console.log(user);
 
             // Resolve with the success state
             resolve(success);

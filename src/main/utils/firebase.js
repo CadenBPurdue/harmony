@@ -12,6 +12,7 @@ import { initiateGoogleAuth } from "./auth_manager.js";
 import {
   getUserFromFirestore,
   writeUserToFirestore,
+  getCurrentUserFromFirestore,
 } from "./firebaseHelper.js";
 import { getGoogleToken, clearGoogleToken } from "./safe_storage.js";
 
@@ -166,16 +167,16 @@ async function updateUserInFirestore(user) {
   }
 }
 
-async function updateConnectedSerives(service) {
+async function updateConnectedServices(service) {
   try {
-    const user = getAuthInstance().currentUser;
+    const user = await getCurrentUserFromFirestore();
     if (!user) {
       console.error("[Firebase] User is not authenticated");
       return;
     }
 
-    var spotifyConnected = false;
-    var appleMusicConnected = false;
+    var spotifyConnected = user.connectedServices.spotify;
+    var appleMusicConnected = user.connectedServices.appleMusic;
     if (service == "appleMusic") {
       appleMusicConnected = true;
     } else if (service == "spotify") {
@@ -192,9 +193,36 @@ async function updateConnectedSerives(service) {
         },
       };
       await writeUserToFirestore(updatedUser);
-      console.log(
-        `[Firebase] Updated last login timestamp for user ${user.uid}`,
-      );
+      console.log(`[Firebase] Updated connected services for user ${user.uid}`);
+    } else {
+      // User does not exist, create the user
+      const newUser = getNewUser(user);
+
+      await writeUserToFirestore(newUser); // Pass the newUser object correctly
+      console.log(`[Firebase] Created new user ${user.uid}`);
+    }
+  } catch (error) {
+    console.error("[Firebase] Error updating user in Firestore:", error);
+    throw error;
+  }
+}
+
+async function updatePrimaryService(service) {
+  try {
+    const user = await getCurrentUserFromFirestore();
+    if (!user) {
+      console.error("[Firebase] User is not authenticated");
+      return;
+    }
+
+    if (user) {
+      // User exists, update the last logged in timestamp
+      const updatedUser = {
+        ...user,
+        primaryService: service,
+      };
+      await writeUserToFirestore(updatedUser);
+      console.log(`[Firebase] Updated primary service for user ${user.uid}`);
     } else {
       // User does not exist, create the user
       const newUser = getNewUser(user);
@@ -261,6 +289,7 @@ function getNewUser(user) {
     },
     friends: [],
     incomingFriendRequests: [],
+    primaryService: "",
   };
 }
 
@@ -276,7 +305,8 @@ export {
   authenticateWithFirebase,
   getDbInstance,
   getAuthInstance,
-  updateConnectedSerives,
+  updateConnectedServices,
   updateFriendsList,
   updateUserInFirestore,
+  updatePrimaryService,
 };

@@ -155,6 +155,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("firebase:setAppleMusicConnected");
   },
 
+  updatePrimaryService: (service) => {
+    console.log("Calling updatePrimaryService from preload");
+    return ipcRenderer.invoke("firebase:updatePrimaryService", service);
+  },
+
   // Open external links in the default browser
   openExternal: (url) => {
     console.log("Opening external URL:", url);
