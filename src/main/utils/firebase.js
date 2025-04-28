@@ -194,7 +194,38 @@ async function updateConnectedServices(service) {
       };
       await writeUserToFirestore(updatedUser);
       console.log(
-        `[Firebase] Updated last login timestamp for user ${user.uid}`,
+        `[Firebase] Updated connected services for user ${user.uid}`,
+      );
+    } else {
+      // User does not exist, create the user
+      const newUser = getNewUser(user);
+
+      await writeUserToFirestore(newUser); // Pass the newUser object correctly
+      console.log(`[Firebase] Created new user ${user.uid}`);
+    }
+  } catch (error) {
+    console.error("[Firebase] Error updating user in Firestore:", error);
+    throw error;
+  }
+}
+
+async function updatePrimaryService(service) {
+  try {
+    const user = await getCurrentUserFromFirestore();
+    if (!user) {
+      console.error("[Firebase] User is not authenticated");
+      return;
+    }
+
+    if (user) {
+      // User exists, update the last logged in timestamp
+      const updatedUser = {
+        ...user,
+        primaryService: service,
+      };
+      await writeUserToFirestore(updatedUser);
+      console.log(
+        `[Firebase] Updated primary service for user ${user.uid}`,
       );
     } else {
       // User does not exist, create the user
@@ -262,6 +293,7 @@ function getNewUser(user) {
     },
     friends: [],
     incomingFriendRequests: [],
+    primaryService: "",
   };
 }
 
@@ -280,4 +312,5 @@ export {
   updateConnectedServices,
   updateFriendsList,
   updateUserInFirestore,
+  updatePrimaryService,
 };

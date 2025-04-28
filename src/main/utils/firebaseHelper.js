@@ -79,6 +79,7 @@ function validateUser(user) {
     connectedServices: "object",
     friends: "array",
     incomingFriendRequests: "array",
+    primaryService: "string",
   };
 
   function validateObject(obj, schema) {
