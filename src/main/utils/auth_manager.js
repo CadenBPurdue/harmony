@@ -423,7 +423,7 @@ async function initiateAppleMusicAuth() {
 
             await setAppleMusicToken(appleMusicToken);
 
-            await updateConnectedServices('appleMusic');
+            await updateConnectedServices("appleMusic");
 
             // Store the success state
             const success = { success: true };
