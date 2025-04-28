@@ -193,9 +193,7 @@ async function updateConnectedServices(service) {
         },
       };
       await writeUserToFirestore(updatedUser);
-      console.log(
-        `[Firebase] Updated connected services for user ${user.uid}`,
-      );
+      console.log(`[Firebase] Updated connected services for user ${user.uid}`);
     } else {
       // User does not exist, create the user
       const newUser = getNewUser(user);
@@ -224,9 +222,7 @@ async function updatePrimaryService(service) {
         primaryService: service,
       };
       await writeUserToFirestore(updatedUser);
-      console.log(
-        `[Firebase] Updated primary service for user ${user.uid}`,
-      );
+      console.log(`[Firebase] Updated primary service for user ${user.uid}`);
     } else {
       // User does not exist, create the user
       const newUser = getNewUser(user);
