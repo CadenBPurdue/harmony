@@ -181,6 +181,9 @@ function Homepage() {
   const [unfollowDialogOpen, setUnfollowDialogOpen] = useState(false);
   const [userToUnfollow, setUserToUnfollow] = useState(null);
 
+  const [primaryService, updatePrimaryService] = useState("");
+
+
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const {
     notifications,
@@ -651,6 +654,12 @@ function Homepage() {
       setTransferDestination("Select a friend");
     }
   }, [showTransferDialog, friendsList]);
+
+  useEffect(() => {
+  if (userInfo?.primaryService) {
+    window.electronAPI.updatePrimaryService(userInfo.primaryService);
+  }
+}, [userInfo]);
 
   const refreshSpotifyPlaylists = () => {
     setLoadingSpotify(true);
@@ -1288,8 +1297,7 @@ function Homepage() {
                     )}
                   </Box>
                 </Paper>
-
-                {/* Other settings options could be added here */}
+                {/* Primary Service Selection */}
                 <Paper
                   elevation={0}
                   sx={{
@@ -1299,11 +1307,60 @@ function Homepage() {
                   }}
                 >
                   <Typography variant="h6" sx={{ mb: 2 }}>
-                    Application Settings
+                    Primary Service
                   </Typography>
-                  <Typography variant="body1" color="text.secondary">
-                    Additional settings options can be placed here.
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Select which music service you want to use as your primary service.
                   </Typography>
+                  
+                  <Box sx={{ width: "100%", maxWidth: 400 }}>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <Select
+                        value={primaryService || userInfo.primaryService || ""}
+                        onChange={(e) => updatePrimaryService(e.target.value)}
+                        disabled={!userInfo.connectedServices?.spotify && !userInfo.connectedServices?.appleMusic}
+                      >
+                        <MenuItem value="" disabled>
+                          Select a service
+                        </MenuItem>
+                        {userInfo.connectedServices?.spotify && (
+                          <MenuItem value="spotify">Spotify</MenuItem>
+                        )}
+                        {userInfo.connectedServices?.appleMusic && (
+                          <MenuItem value="appleMusic">Apple Music</MenuItem>
+                        )}
+                      </Select>
+                    </FormControl>
+                    
+                    <Button
+                      variant="contained"
+                      onClick={() => {
+                        window.electronAPI.updatePrimaryService(primaryService)
+                          .then(() => {
+                            // Refresh user info to show the change
+                            fetchUserInfo();
+                            // Show success message
+                            addNotification({
+                              type: "info",
+                              message: `Primary service updated to ${primaryService === "spotify" ? "Spotify" : "Apple Music"}.`,
+                              read: false,
+                            });
+                          })
+                          .catch(error => {
+                            console.error("Failed to update primary service:", error);
+                            addNotification({
+                              type: "error",
+                              message: "Failed to update primary service.",
+                              read: false,
+                            });
+                          });
+                      }}
+                      disabled={!primaryService || primaryService === userInfo.primaryService}
+                      sx={styles.continueButton}
+                    >
+                      Save Changes
+                    </Button>
+                  </Box>
                 </Paper>
               </Stack>
             ) : (
