@@ -818,6 +818,12 @@ function Homepage() {
     });
   }, []);
 
+  useEffect(() => {
+    if (userInfo && userInfo.primaryService) {
+      updatePrimaryService(userInfo.primaryService);
+    }
+  }, [userInfo]);
+
   // Helper function to check if playlist is selected
   const isPlaylistSelected = (playlist) => {
     if (!selectedPlaylist) return false;
@@ -1268,6 +1274,7 @@ function Homepage() {
                         onClick={() =>
                           window.electronAPI?.connectSpotify().then(() => {
                             refreshSpotifyPlaylists();
+                            fetchUserInfo();
                           })
                         }
                         sx={{
@@ -1286,6 +1293,7 @@ function Homepage() {
                         onClick={() =>
                           window.electronAPI.connectAppleMusic().then(() => {
                             refreshAppleMusicPlaylists();
+                            fetchUserInfo();
                           })
                         }
                         sx={{
@@ -1357,6 +1365,7 @@ function Homepage() {
                               message: `Primary service updated to ${primaryService === "spotify" ? "Spotify" : "Apple Music"}.`,
                               read: false,
                             });
+                            updatePrimaryService("");
                           })
                           .catch((error) => {
                             console.error(
