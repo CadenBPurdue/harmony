@@ -1198,23 +1198,23 @@ function Homepage() {
                     <Chip
                       label="Spotify"
                       icon={
-                        userInfo.spotifyConnected ? (
+                        userInfo.connectedServices.spotify ? (
                           <ChevronDown size={16} style={{ opacity: 0 }} />
                         ) : null
                       }
                       deleteIcon={
-                        userInfo.spotifyConnected ? (
+                        userInfo.connectedServices.spotify ? (
                           <ChevronDown size={16} style={{ opacity: 0 }} />
                         ) : null
                       }
                       onDelete={
-                        userInfo.spotifyConnected ? () => {} : undefined
+                        userInfo.connectedServices.spotify ? () => {} : undefined
                       }
                       sx={{
-                        bgcolor: userInfo.spotifyConnected
+                        bgcolor: userInfo.connectedServices.spotify
                           ? "#1DB954"
                           : "rgba(134, 97, 193, 0.1)",
-                        color: userInfo.spotifyConnected
+                        color: userInfo.connectedServices.spotify
                           ? "white"
                           : "text.primary",
                         "& .MuiChip-icon": { color: "inherit" },
@@ -1224,23 +1224,23 @@ function Homepage() {
                     <Chip
                       label="Apple Music"
                       icon={
-                        userInfo.appleMusicConnected ? (
+                        userInfo.connectedServices.appleMusic ? (
                           <ChevronDown size={16} style={{ opacity: 0 }} />
                         ) : null
                       }
                       deleteIcon={
-                        userInfo.appleMusicConnected ? (
+                        userInfo.connectedServices.appleMusic ? (
                           <ChevronDown size={16} style={{ opacity: 0 }} />
                         ) : null
                       }
                       onDelete={
-                        userInfo.appleMusicConnected ? () => {} : undefined
+                        userInfo.connectedServices.appleMusic ? () => {} : undefined
                       }
                       sx={{
-                        bgcolor: userInfo.appleMusicConnected
+                        bgcolor: userInfo.connectedServices.appleMusic
                           ? "#FC3C44"
                           : "rgba(134, 97, 193, 0.1)",
-                        color: userInfo.appleMusicConnected
+                        color: userInfo.connectedServices.appleMusic
                           ? "white"
                           : "text.primary",
                         "& .MuiChip-icon": { color: "inherit" },
@@ -1250,7 +1250,7 @@ function Homepage() {
                   </Box>
 
                   <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
-                    {!userInfo.spotifyConnected && (
+                    {!userInfo.connectedServices.spotify && (
                       <Button
                         variant="contained"
                         onClick={() =>
@@ -1268,7 +1268,7 @@ function Homepage() {
                         Connect Spotify
                       </Button>
                     )}
-                    {!userInfo.appleMusicConnected && (
+                    {!userInfo.connectedServices.appleMusic && (
                       <Button
                         variant="contained"
                         onClick={() =>
