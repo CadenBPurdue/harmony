@@ -77,11 +77,11 @@ export function registerIpcHandlers() {
   });
 
   ipcMain.handle("firebase:setSpotifyConnected", async () => {
-    return await updateConnectedSerives("spotify");
+    return await updateConnectedServices("spotify");
   });
 
   ipcMain.handle("firebase:setAppleMusicConnected", async () => {
-    return await updateConnectedSerives("appleMusic");
+    return await updateConnectedServices("appleMusic");
   });
 
   ipcMain.handle("firebase:updatePrimaryService", async (event, service) => {
