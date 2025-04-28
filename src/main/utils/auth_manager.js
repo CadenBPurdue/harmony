@@ -177,7 +177,7 @@ function handleSpotifyNavigation(url, expectedState, resolve, reject) {
 
   exchangeSpotifyCodeForToken(code)
     .then(async () => {
-      await updateConnectedServices('spotify');
+      await updateConnectedServices("spotify");
       resolve({ success: true });
     })
     .catch(reject)
