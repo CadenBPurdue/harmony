@@ -4,7 +4,11 @@ import dotenv from "dotenv";
 import { BrowserWindow } from "electron";
 import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
-import { getAuthInstance, updateConnectedServices, updatePrimaryService } from "./firebase.js";
+import {
+  getAuthInstance,
+  updateConnectedServices,
+  updatePrimaryService,
+} from "./firebase.js";
 import {
   getSpotifyToken,
   setSpotifyToken,
