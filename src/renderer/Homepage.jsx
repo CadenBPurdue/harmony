@@ -471,7 +471,7 @@ function Homepage() {
       if (currentUser.primaryService === "appleMusic") {
         const results = await window.electronAPI.transferToAppleMusic(playlist);
         const newPlaylist = await window.electronAPI.getAppleMusicPlaylist(results.playlistId);
-        
+
         window.electronAPI.debug("New playlist from Apple Music:");
         window.electronAPI.debug(newPlaylist);
 
