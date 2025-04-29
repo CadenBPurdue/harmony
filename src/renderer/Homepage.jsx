@@ -48,47 +48,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNotifications } from "./NotificationContext";
 import { theme, styles, colors } from "./styles/theme";
 
-const fetchSharedPlaylists = async () => {
-  window.electronAPI.debug("Fetching shared playlists...");
-
-  const sharedPlaylistIds = await window.electronAPI.getSharedPlaylists();
-
-  if (!sharedPlaylistIds || sharedPlaylistIds.length === 0) {
-    return;
-  }
-  const currentUser = await window.electronAPI.getCurrentUserFromFirebase();
-
-  sharedPlaylistIds.forEach(async (playlistId) => {
-    const playlist =
-      await window.electronAPI.getPlaylistFromFirebase(playlistId);
-    const sharedPlaylistName = playlist.name;
-    const storedPlaylistIds =
-      await window.electronAPI.getPlaylistsFromFirebase();
-    if (!storedPlaylistIds || storedPlaylistIds.length === 0) {
-      return;
-    }
-
-    var storedPlaylistNames = [];
-    storedPlaylistIds.forEach(async (storedPlaylistId) => {
-      const storedPlaylist =
-        await window.electronAPI.getPlaylistFromFirebase(storedPlaylistId);
-      storedPlaylistNames.push(storedPlaylist.name);
-    });
-
-    const playlistExists = storedPlaylistNames.some(
-      (name) => name === sharedPlaylistName,
-    );
-
-    if (!playlistExists) {
-      if (currentUser.primaryService === "appleMusic") {
-        await window.electronAPI.transferToAppleMusic(playlist);
-      } else {
-        await window.electronAPI.transferToSpotify(playlist);
-      }
-    }
-  });
-};
-
 // Function to format duration from milliseconds to MM:SS format
 const formatDuration = (milliseconds) => {
   if (!milliseconds) return "--:--";
@@ -488,6 +447,47 @@ function Homepage() {
 
     fetchIncomingFriendRequests();
   }, []);
+
+  const fetchSharedPlaylists = async () => {
+    window.electronAPI.debug("Fetching shared playlists...");
+
+    const sharedPlaylistIds = await window.electronAPI.getSharedPlaylists();
+
+    if (!sharedPlaylistIds || sharedPlaylistIds.length === 0) {
+      return;
+    }
+    const currentUser = await window.electronAPI.getCurrentUserFromFirebase();
+
+    sharedPlaylistIds.forEach(async (playlistId) => {
+      const playlist =
+        await window.electronAPI.getPlaylistFromFirebase(playlistId);
+
+      addNotification({
+        type: "info",
+        message: `Playlist "${playlist.name}" from ${playlist.user} was transfered to your primary service.`,
+        read: false,
+      });
+
+      if (currentUser.primaryService === "appleMusic") {
+        const results = await window.electronAPI.transferToAppleMusic(playlist);
+        const newPlaylist = await window.electronAPI.getAppleMusicPlaylist(
+          results.playlistId,
+        );
+
+        window.electronAPI.debug("New playlist from Apple Music:");
+        window.electronAPI.debug(newPlaylist);
+
+        await window.electronAPI.transferPlaylistToFirebase(newPlaylist);
+      } else {
+        const results = await window.electronAPI.transferToSpotify(playlist);
+        const newPlaylist = await window.electronAPI.getSpotifyPlaylist(
+          results.playlistId,
+        );
+        await window.electronAPI.transferPlaylistToFirebase(newPlaylist);
+      }
+      window.electronAPI.removeSharedWith(playlist);
+    });
+  };
 
   useEffect(() => {
     fetchSharedPlaylists();
@@ -957,43 +957,57 @@ function Homepage() {
               color: "white",
             }}
           />
-          {!spotifyStatus.isComplete && spotifyStatus.total > 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                mr: 1,
-                position: "relative",
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering dropdown toggle
+                refreshSpotifyPlaylists();
               }}
+              sx={{ color: "white", mr: 1 }}
             >
-              {/* Background track (lighter color) */}
-              <CircularProgress
-                size={20}
-                variant="determinate"
-                value={100}
+              <RefreshCw size={16} />
+            </IconButton>
+            {!spotifyStatus.isComplete && spotifyStatus.total > 0 ? (
+              <Box
                 sx={{
-                  color: "rgba(255, 255, 255, 0.3)",
-                  position: "absolute",
+                  display: "flex",
+                  alignItems: "center",
+                  mr: 1,
+                  position: "relative",
                 }}
-              />
-              {/* Foreground progress (filled portion) */}
-              <CircularProgress
-                size={20}
-                variant="determinate"
-                value={(spotifyStatus.loaded / spotifyStatus.total) * 100}
-                sx={{ color: "white" }}
-              />
-              <Typography variant="caption" sx={{ ml: 1.5, color: "white" }}>
-                {Math.round((spotifyStatus.loaded / spotifyStatus.total) * 100)}
-                %
-              </Typography>
-            </Box>
-          ) : null}
-          {spotifyOpen ? (
-            <ChevronUp color="white" size={18} />
-          ) : (
-            <ChevronDown color="white" size={18} />
-          )}
+              >
+                {/* Background track (lighter color) */}
+                <CircularProgress
+                  size={20}
+                  variant="determinate"
+                  value={100}
+                  sx={{
+                    color: "rgba(255, 255, 255, 0.3)",
+                    position: "absolute",
+                  }}
+                />
+                {/* Foreground progress (filled portion) */}
+                <CircularProgress
+                  size={20}
+                  variant="determinate"
+                  value={(spotifyStatus.loaded / spotifyStatus.total) * 100}
+                  sx={{ color: "white" }}
+                />
+                <Typography variant="caption" sx={{ ml: 1.5, color: "white" }}>
+                  {Math.round(
+                    (spotifyStatus.loaded / spotifyStatus.total) * 100,
+                  )}
+                  %
+                </Typography>
+              </Box>
+            ) : null}
+            {spotifyOpen ? (
+              <ChevronUp color="white" size={18} />
+            ) : (
+              <ChevronDown color="white" size={18} />
+            )}
+          </Box>
         </ListItem>
 
         <Collapse in={spotifyOpen} timeout="auto" unmountOnExit>
@@ -1040,45 +1054,59 @@ function Homepage() {
               color: "white",
             }}
           />
-          {!appleMusicStatus.isComplete && appleMusicStatus.total > 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                mr: 1,
-                position: "relative",
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering dropdown toggle
+                refreshAppleMusicPlaylists();
               }}
+              sx={{ color: "white", mr: 1 }}
             >
-              {/* Background track (lighter color) */}
-              <CircularProgress
-                size={20}
-                variant="determinate"
-                value={100}
+              <RefreshCw size={16} />
+            </IconButton>
+            {!appleMusicStatus.isComplete && appleMusicStatus.total > 0 ? (
+              <Box
                 sx={{
-                  color: "rgba(255, 255, 255, 0.3)",
-                  position: "absolute",
+                  display: "flex",
+                  alignItems: "center",
+                  mr: 1,
+                  position: "relative",
                 }}
-              />
-              {/* Foreground progress (filled portion) */}
-              <CircularProgress
-                size={20}
-                variant="determinate"
-                value={(appleMusicStatus.loaded / appleMusicStatus.total) * 100}
-                sx={{ color: "white" }}
-              />
-              <Typography variant="caption" sx={{ ml: 1.5, color: "white" }}>
-                {Math.round(
-                  (appleMusicStatus.loaded / appleMusicStatus.total) * 100,
-                )}
-                %
-              </Typography>
-            </Box>
-          ) : null}
-          {appleMusicOpen ? (
-            <ChevronUp color="white" size={18} />
-          ) : (
-            <ChevronDown color="white" size={18} />
-          )}
+              >
+                {/* Background track (lighter color) */}
+                <CircularProgress
+                  size={20}
+                  variant="determinate"
+                  value={100}
+                  sx={{
+                    color: "rgba(255, 255, 255, 0.3)",
+                    position: "absolute",
+                  }}
+                />
+                {/* Foreground progress (filled portion) */}
+                <CircularProgress
+                  size={20}
+                  variant="determinate"
+                  value={
+                    (appleMusicStatus.loaded / appleMusicStatus.total) * 100
+                  }
+                  sx={{ color: "white" }}
+                />
+                <Typography variant="caption" sx={{ ml: 1.5, color: "white" }}>
+                  {Math.round(
+                    (appleMusicStatus.loaded / appleMusicStatus.total) * 100,
+                  )}
+                  %
+                </Typography>
+              </Box>
+            ) : null}
+            {appleMusicOpen ? (
+              <ChevronUp color="white" size={18} />
+            ) : (
+              <ChevronDown color="white" size={18} />
+            )}
+          </Box>
         </ListItem>
 
         <Collapse in={appleMusicOpen} timeout="auto" unmountOnExit>

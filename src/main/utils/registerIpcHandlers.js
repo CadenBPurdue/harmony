@@ -26,6 +26,7 @@ import {
   acceptFriendRequest,
   denyFriendRequest,
   manageFriendRequests,
+  removeUserFromPlaylist,
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
 
@@ -242,6 +243,16 @@ export function registerIpcHandlers() {
     return appleMusicApi.getPlaylistLibrary(skipDetailsLoading);
   });
 
+  ipcMain.handle("playlist:spotify", async (event, playlistId) => {
+    await spotifyApi.initialize();
+    return spotifyApi.getPlaylist(playlistId);
+  });
+
+  ipcMain.handle("playlist:appleMusic", async (event, playlistId) => {
+    await appleMusicApi.initialize();
+    return appleMusicApi.getPlaylist(playlistId);
+  });
+
   // Add a handler to get Apple Music loading status
   ipcMain.handle("getAppleMusicStatus", async () => {
     return appleMusicApi.getPlaylistLoadingStatus();
@@ -249,6 +260,10 @@ export function registerIpcHandlers() {
 
   ipcMain.handle("getSpotifyStatus", async () => {
     return spotifyApi.getPlaylistLoadingStatus();
+  });
+
+  ipcMain.handle("firebase:removeSharedWith", async (event, playlist) => {
+    return await removeUserFromPlaylist(playlist);
   });
 
   // Add a handler to get a specific Apple Music playlist

@@ -417,9 +417,8 @@ class AppleMusicApi {
     }
 
     try {
-      console.log(`[AppleMusicApi] Getting playlist: ${input}`);
+      console.log(`[AppleMusicApi] Getting playlist: ${input}`); // Extract playlist ID from input if it's a URL or URI (from main version)
 
-      // Extract playlist ID from input if it's a URL or URI (from main version)
       let playlistId = input;
       if (typeof input === "string") {
         if (input.includes("music.apple.com")) {
@@ -430,9 +429,8 @@ class AppleMusicApi {
           playlistId = input.split(":")[2];
           console.log("[AppleMusicApi] Extracted ID from URI:", playlistId);
         }
-      }
+      } // Check if we already know this playlist doesn't exist or had an error
 
-      // Check if we already know this playlist doesn't exist or had an error
       if (this.loadedPlaylists.has(playlistId)) {
         const loadedData = this.loadedPlaylists.get(playlistId);
 
@@ -451,9 +449,8 @@ class AppleMusicApi {
             throw new Error("Playlist not found");
           }
         }
-      }
+      } // Get playlist metadata
 
-      // Get playlist metadata
       let playlistResponse;
       try {
         playlistResponse = await this.api.get(
@@ -461,9 +458,8 @@ class AppleMusicApi {
         );
       } catch (error) {
         if (error.response && error.response.status === 404) {
-          console.log(`[AppleMusicApi] Playlist ${playlistId} not found`);
+          console.log(`[AppleMusicApi] Playlist ${playlistId} not found`); // Store in loaded playlists to avoid future attempts
 
-          // Store in loaded playlists to avoid future attempts
           this.loadedPlaylists.set(playlistId, {
             tracks: {},
             trackCount: 0,
@@ -476,51 +472,51 @@ class AppleMusicApi {
         throw error;
       }
 
-      const playlist = playlistResponse.data.data[0];
+      const playlist = playlistResponse.data.data[0]; // Check if we have already loaded tracks for this playlist
 
-      // Check if we have already loaded tracks for this playlist
       if (this.loadedPlaylists.has(playlistId)) {
         const loadedData = this.loadedPlaylists.get(playlistId);
         console.log(
           `[AppleMusicApi] Using pre-loaded tracks for playlist: ${playlist.attributes?.name}`,
-        );
+        ); // Convert tracks to array if it's an object
+
+        let tracksArray = [];
+        if (loadedData.tracks) {
+          // Ensure we have an array of tracks
+          tracksArray = Object.values(loadedData.tracks);
+        }
 
         return {
           user: "", // info has to match firebase schema
           origin: "Apple Music",
           name: playlist.attributes?.name || "",
           id: playlistId,
-          // Use loadedData instead of undefined tracks/totalDuration variables
-          numberOfTracks: loadedData.trackCount, // Changed from Object.keys(tracks).length
-          duration: loadedData.duration, // Changed from totalDuration
+          numberOfTracks: loadedData.trackCount,
+          duration: loadedData.duration,
           description: playlist.attributes?.description?.standard || "",
           image:
             playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") ||
             "",
-          tracks: Object.values(loadedData.tracks), // Changed from Object.values(tracks)
+          tracks: tracksArray, // Always return as array
           isLoading: false,
           loadError: false,
-          numberOfTracks: loadedData.trackCount, // Changed from Object.keys(tracks).length
           sharedWith: [],
         };
-      }
+      } // Get tracks if not already loaded
 
-      // Get tracks if not already loaded
       console.log(
         `[AppleMusicApi] Loading tracks for playlist: ${playlist.attributes?.name}`,
-      );
+      ); // Get all tracks with pagination
 
-      // Get all tracks with pagination
       let allTracks;
       try {
         allTracks = await this.getAllPlaylistTracks(playlistId);
       } catch (error) {
         console.error(`[AppleMusicApi] Error loading tracks: ${error.message}`);
         allTracks = [];
-      }
+      } // Process tracks into an object first for internal storage
 
-      // Process tracks
-      const tracks = {};
+      const tracksObject = {};
       let totalDuration = 0;
 
       if (allTracks.length > 0) {
@@ -528,7 +524,7 @@ class AppleMusicApi {
 
         allTracks.forEach((track) => {
           const trackDuration = track.attributes?.durationInMillis || 0;
-          tracks[track.id] = {
+          tracksObject[track.id] = {
             name: track.attributes?.name || "",
             artist: track.attributes?.artistName || "",
             album: track.attributes?.albumName || "",
@@ -543,16 +539,17 @@ class AppleMusicApi {
         console.log(
           `[AppleMusicApi] No tracks found in playlist ${playlist.attributes?.name}`,
         );
-      }
+      } // Convert to array for return value
 
-      // Store for future use
+      const tracksArray = Object.values(tracksObject); // Store for future use (store both object and array)
+
       this.loadedPlaylists.set(playlistId, {
-        tracks: tracks,
-        trackCount: Object.keys(tracks).length,
+        tracks: tracksObject,
+        tracksArray: tracksArray,
+        trackCount: tracksArray.length,
         duration: totalDuration,
-      });
+      }); // Update progress if this was one of our tracked playlists
 
-      // Update progress if this was one of our tracked playlists
       if (!this.loadingProgress.isComplete) {
         this.loadingProgress.loaded += 1;
         if (this.loadingProgress.loaded >= this.loadingProgress.total) {
@@ -570,12 +567,11 @@ class AppleMusicApi {
         image:
           playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") ||
           "",
-        tracks: tracks,
+        tracks: tracksArray, // Return as array
         isLoading: false,
-        loadError: false,
-        // Properties from main version
+        loadError: false, // Properties from main version
         id: playlistId,
-        numberOfTracks: Object.keys(tracks).length,
+        numberOfTracks: tracksArray.length,
         sharedWith: [],
       };
     } catch (error) {
@@ -589,10 +585,9 @@ class AppleMusicApi {
         duration: 0,
         description: `Error: ${error.message}`,
         image: "",
-        tracks: [], // <- Make sure this is an empty array, not an object
+        tracks: [], // Always return an empty array, not an object
         isLoading: false,
-        loadError: true,
-        // Properties from main version
+        loadError: true, // Properties from main version
         id: typeof input === "string" ? input : "unknown",
         numberOfTracks: 0,
         sharedWith: [],
