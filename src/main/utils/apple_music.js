@@ -412,201 +412,187 @@ class AppleMusicApi {
   }
 
   async getPlaylist(input) {
-    if (!this.api) {
-      await this.initialize();
-    }
-  
-    try {
-      console.log(`[AppleMusicApi] Getting playlist: ${input}`);
-  
-      // Extract playlist ID from input if it's a URL or URI (from main version)
-      let playlistId = input;
-      if (typeof input === "string") {
-        if (input.includes("music.apple.com")) {
-          const urlParts = input.split("/");
-          playlistId = urlParts[urlParts.length - 1];
-          console.log("[AppleMusicApi] Extracted ID from URL:", playlistId);
-        } else if (input.startsWith("apple:playlist:")) {
-          playlistId = input.split(":")[2];
-          console.log("[AppleMusicApi] Extracted ID from URI:", playlistId);
-        }
-      }
-  
-      // Check if we already know this playlist doesn't exist or had an error
-      if (this.loadedPlaylists.has(playlistId)) {
-        const loadedData = this.loadedPlaylists.get(playlistId);
-  
-        if (loadedData.notFound) {
-          console.log(
-            `[AppleMusicApi] Playlist ${playlistId} was previously not found`,
-          );
-          throw new Error("Playlist not found");
-        }
-  
-        if (loadedData.error) {
-          console.log(
-            `[AppleMusicApi] Playlist ${playlistId} previously had an error: ${loadedData.errorMessage}`,
-          );
-          if (loadedData.errorMessage.includes("404")) {
-            throw new Error("Playlist not found");
-          }
-        }
-      }
-  
-      // Get playlist metadata
-      let playlistResponse;
-      try {
-        playlistResponse = await this.api.get(
-          `/v1/me/library/playlists/${playlistId}`,
-        );
-      } catch (error) {
-        if (error.response && error.response.status === 404) {
-          console.log(`[AppleMusicApi] Playlist ${playlistId} not found`);
-  
-          // Store in loaded playlists to avoid future attempts
-          this.loadedPlaylists.set(playlistId, {
-            tracks: {},
-            trackCount: 0,
-            duration: 0,
-            notFound: true,
-          });
-  
-          throw new Error("Playlist not found");
-        }
-        throw error;
-      }
-  
-      const playlist = playlistResponse.data.data[0];
-  
-      // Check if we have already loaded tracks for this playlist
-      if (this.loadedPlaylists.has(playlistId)) {
-        const loadedData = this.loadedPlaylists.get(playlistId);
-        console.log(
-          `[AppleMusicApi] Using pre-loaded tracks for playlist: ${playlist.attributes?.name}`,
-        );
-  
-        // Convert tracks to array if it's an object
-        let tracksArray = [];
-        if (loadedData.tracks) {
-          // Ensure we have an array of tracks
-          tracksArray = Object.values(loadedData.tracks);
-        }
-  
-        return {
-          user: "", // info has to match firebase schema
-          origin: "Apple Music",
-          name: playlist.attributes?.name || "",
-          id: playlistId,
-          numberOfTracks: loadedData.trackCount,
-          duration: loadedData.duration,
-          description: playlist.attributes?.description?.standard || "",
-          image:
-            playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") ||
-            "",
-          tracks: tracksArray, // Always return as array
-          isLoading: false,
-          loadError: false,
-          sharedWith: [],
-        };
-      }
-  
-      // Get tracks if not already loaded
-      console.log(
-        `[AppleMusicApi] Loading tracks for playlist: ${playlist.attributes?.name}`,
-      );
-  
-      // Get all tracks with pagination
-      let allTracks;
-      try {
-        allTracks = await this.getAllPlaylistTracks(playlistId);
-      } catch (error) {
-        console.error(`[AppleMusicApi] Error loading tracks: ${error.message}`);
-        allTracks = [];
-      }
-  
-      // Process tracks into an object first for internal storage
-      const tracksObject = {};
-      let totalDuration = 0;
-  
-      if (allTracks.length > 0) {
-        console.log(`[AppleMusicApi] Found ${allTracks.length} tracks`);
-  
-        allTracks.forEach((track) => {
-          const trackDuration = track.attributes?.durationInMillis || 0;
-          tracksObject[track.id] = {
-            name: track.attributes?.name || "",
-            artist: track.attributes?.artistName || "",
-            album: track.attributes?.albumName || "",
-            duration: trackDuration,
-            image:
-              track.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") ||
-              "",
-          };
-          totalDuration += trackDuration;
-        });
-      } else {
-        console.log(
-          `[AppleMusicApi] No tracks found in playlist ${playlist.attributes?.name}`,
-        );
-      }
-  
-      // Convert to array for return value
-      const tracksArray = Object.values(tracksObject);
-  
-      // Store for future use (store both object and array)
-      this.loadedPlaylists.set(playlistId, {
-        tracks: tracksObject,
-        tracksArray: tracksArray,
-        trackCount: tracksArray.length,
-        duration: totalDuration,
-      });
-  
-      // Update progress if this was one of our tracked playlists
-      if (!this.loadingProgress.isComplete) {
-        this.loadingProgress.loaded += 1;
-        if (this.loadingProgress.loaded >= this.loadingProgress.total) {
-          this.loadingProgress.isComplete = true;
-        }
-      }
-  
-      return {
-        origin: "Apple Music",
-        name: playlist.attributes?.name || "",
-        user: "",
-        playlist_id: playlistId,
-        duration: totalDuration,
-        description: playlist.attributes?.description?.standard || "",
-        image:
-          playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") ||
-          "",
-        tracks: tracksArray, // Return as array
-        isLoading: false,
-        loadError: false,
-        // Properties from main version
-        id: playlistId,
-        numberOfTracks: tracksArray.length,
-        sharedWith: [],
-      };
-    } catch (error) {
-      console.error(`[AppleMusicApi] Error getting playlist ${input}:`, error);
-  
-      return {
-        origin: "Apple Music",
-        name: "Error Loading Playlist",
-        user: "",
-        playlist_id: typeof input === "string" ? input : "unknown",
-        duration: 0,
-        description: `Error: ${error.message}`,
-        image: "",
-        tracks: [], // Always return an empty array, not an object
-        isLoading: false,
-        loadError: true,
-        // Properties from main version
-        id: typeof input === "string" ? input : "unknown",
-        numberOfTracks: 0,
-        sharedWith: [],
-      };
-    }
+    if (!this.api) {
+      await this.initialize();
+    }
+
+    try {
+      console.log(`[AppleMusicApi] Getting playlist: ${input}`); // Extract playlist ID from input if it's a URL or URI (from main version)
+
+      let playlistId = input;
+      if (typeof input === "string") {
+        if (input.includes("music.apple.com")) {
+          const urlParts = input.split("/");
+          playlistId = urlParts[urlParts.length - 1];
+          console.log("[AppleMusicApi] Extracted ID from URL:", playlistId);
+        } else if (input.startsWith("apple:playlist:")) {
+          playlistId = input.split(":")[2];
+          console.log("[AppleMusicApi] Extracted ID from URI:", playlistId);
+        }
+      } // Check if we already know this playlist doesn't exist or had an error
+
+      if (this.loadedPlaylists.has(playlistId)) {
+        const loadedData = this.loadedPlaylists.get(playlistId);
+
+        if (loadedData.notFound) {
+          console.log(
+            `[AppleMusicApi] Playlist ${playlistId} was previously not found`,
+          );
+          throw new Error("Playlist not found");
+        }
+
+        if (loadedData.error) {
+          console.log(
+            `[AppleMusicApi] Playlist ${playlistId} previously had an error: ${loadedData.errorMessage}`,
+          );
+          if (loadedData.errorMessage.includes("404")) {
+            throw new Error("Playlist not found");
+          }
+        }
+      } // Get playlist metadata
+
+      let playlistResponse;
+      try {
+        playlistResponse = await this.api.get(
+          `/v1/me/library/playlists/${playlistId}`,
+        );
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          console.log(`[AppleMusicApi] Playlist ${playlistId} not found`); // Store in loaded playlists to avoid future attempts
+
+          this.loadedPlaylists.set(playlistId, {
+            tracks: {},
+            trackCount: 0,
+            duration: 0,
+            notFound: true,
+          });
+
+          throw new Error("Playlist not found");
+        }
+        throw error;
+      }
+
+      const playlist = playlistResponse.data.data[0]; // Check if we have already loaded tracks for this playlist
+
+      if (this.loadedPlaylists.has(playlistId)) {
+        const loadedData = this.loadedPlaylists.get(playlistId);
+        console.log(
+          `[AppleMusicApi] Using pre-loaded tracks for playlist: ${playlist.attributes?.name}`,
+        ); // Convert tracks to array if it's an object
+
+        let tracksArray = [];
+        if (loadedData.tracks) {
+          // Ensure we have an array of tracks
+          tracksArray = Object.values(loadedData.tracks);
+        }
+
+        return {
+          user: "", // info has to match firebase schema
+          origin: "Apple Music",
+          name: playlist.attributes?.name || "",
+          id: playlistId,
+          numberOfTracks: loadedData.trackCount,
+          duration: loadedData.duration,
+          description: playlist.attributes?.description?.standard || "",
+          image:
+            playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") ||
+            "",
+          tracks: tracksArray, // Always return as array
+          isLoading: false,
+          loadError: false,
+          sharedWith: [],
+        };
+      } // Get tracks if not already loaded
+
+      console.log(
+        `[AppleMusicApi] Loading tracks for playlist: ${playlist.attributes?.name}`,
+      ); // Get all tracks with pagination
+
+      let allTracks;
+      try {
+        allTracks = await this.getAllPlaylistTracks(playlistId);
+      } catch (error) {
+        console.error(`[AppleMusicApi] Error loading tracks: ${error.message}`);
+        allTracks = [];
+      } // Process tracks into an object first for internal storage
+
+      const tracksObject = {};
+      let totalDuration = 0;
+
+      if (allTracks.length > 0) {
+        console.log(`[AppleMusicApi] Found ${allTracks.length} tracks`);
+
+        allTracks.forEach((track) => {
+          const trackDuration = track.attributes?.durationInMillis || 0;
+          tracksObject[track.id] = {
+            name: track.attributes?.name || "",
+            artist: track.attributes?.artistName || "",
+            album: track.attributes?.albumName || "",
+            duration: trackDuration,
+            image:
+              track.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") ||
+              "",
+          };
+          totalDuration += trackDuration;
+        });
+      } else {
+        console.log(
+          `[AppleMusicApi] No tracks found in playlist ${playlist.attributes?.name}`,
+        );
+      } // Convert to array for return value
+
+      const tracksArray = Object.values(tracksObject); // Store for future use (store both object and array)
+
+      this.loadedPlaylists.set(playlistId, {
+        tracks: tracksObject,
+        tracksArray: tracksArray,
+        trackCount: tracksArray.length,
+        duration: totalDuration,
+      }); // Update progress if this was one of our tracked playlists
+
+      if (!this.loadingProgress.isComplete) {
+        this.loadingProgress.loaded += 1;
+        if (this.loadingProgress.loaded >= this.loadingProgress.total) {
+          this.loadingProgress.isComplete = true;
+        }
+      }
+
+      return {
+        origin: "Apple Music",
+        name: playlist.attributes?.name || "",
+        user: "",
+        playlist_id: playlistId,
+        duration: totalDuration,
+        description: playlist.attributes?.description?.standard || "",
+        image:
+          playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") ||
+          "",
+        tracks: tracksArray, // Return as array
+        isLoading: false,
+        loadError: false, // Properties from main version
+        id: playlistId,
+        numberOfTracks: tracksArray.length,
+        sharedWith: [],
+      };
+    } catch (error) {
+      console.error(`[AppleMusicApi] Error getting playlist ${input}:`, error);
+
+      return {
+        origin: "Apple Music",
+        name: "Error Loading Playlist",
+        user: "",
+        playlist_id: typeof input === "string" ? input : "unknown",
+        duration: 0,
+        description: `Error: ${error.message}`,
+        image: "",
+        tracks: [], // Always return an empty array, not an object
+        isLoading: false,
+        loadError: true, // Properties from main version
+        id: typeof input === "string" ? input : "unknown",
+        numberOfTracks: 0,
+        sharedWith: [],
+      };
+    }
   }
 
   getPlaylistLoadingStatus() {

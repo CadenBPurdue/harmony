@@ -450,14 +450,14 @@ function Homepage() {
 
   const fetchSharedPlaylists = async () => {
     window.electronAPI.debug("Fetching shared playlists...");
-  
+
     const sharedPlaylistIds = await window.electronAPI.getSharedPlaylists();
-  
+
     if (!sharedPlaylistIds || sharedPlaylistIds.length === 0) {
       return;
     }
     const currentUser = await window.electronAPI.getCurrentUserFromFirebase();
-  
+
     sharedPlaylistIds.forEach(async (playlistId) => {
       const playlist =
         await window.electronAPI.getPlaylistFromFirebase(playlistId);
@@ -467,10 +467,12 @@ function Homepage() {
         message: `Playlist "${playlist.name}" from ${playlist.user} was transfered to your primary service.`,
         read: false,
       });
-    
+
       if (currentUser.primaryService === "appleMusic") {
         const results = await window.electronAPI.transferToAppleMusic(playlist);
-        const newPlaylist = await window.electronAPI.getAppleMusicPlaylist(results.playlistId);
+        const newPlaylist = await window.electronAPI.getAppleMusicPlaylist(
+          results.playlistId,
+        );
 
         window.electronAPI.debug("New playlist from Apple Music:");
         window.electronAPI.debug(newPlaylist);
@@ -478,7 +480,9 @@ function Homepage() {
         await window.electronAPI.transferPlaylistToFirebase(newPlaylist);
       } else {
         const results = await window.electronAPI.transferToSpotify(playlist);
-        const newPlaylist = await window.electronAPI.getSpotifyPlaylist(results.playlistId);
+        const newPlaylist = await window.electronAPI.getSpotifyPlaylist(
+          results.playlistId,
+        );
         await window.electronAPI.transferPlaylistToFirebase(newPlaylist);
       }
       window.electronAPI.removeSharedWith(playlist);
@@ -991,7 +995,9 @@ function Homepage() {
                   sx={{ color: "white" }}
                 />
                 <Typography variant="caption" sx={{ ml: 1.5, color: "white" }}>
-                  {Math.round((spotifyStatus.loaded / spotifyStatus.total) * 100)}
+                  {Math.round(
+                    (spotifyStatus.loaded / spotifyStatus.total) * 100,
+                  )}
                   %
                 </Typography>
               </Box>
@@ -1082,7 +1088,9 @@ function Homepage() {
                 <CircularProgress
                   size={20}
                   variant="determinate"
-                  value={(appleMusicStatus.loaded / appleMusicStatus.total) * 100}
+                  value={
+                    (appleMusicStatus.loaded / appleMusicStatus.total) * 100
+                  }
                   sx={{ color: "white" }}
                 />
                 <Typography variant="caption" sx={{ ml: 1.5, color: "white" }}>
