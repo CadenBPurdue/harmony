@@ -115,6 +115,7 @@ class AppleMusicApi {
             id: playlistId,
             numberOfTracks: loadedData.trackCount || 0,
             sharedWith: [],
+            collabWith: [],
           };
         }
 
@@ -137,6 +138,7 @@ class AppleMusicApi {
           id: playlistId,
           numberOfTracks: 0,
           sharedWith: [],
+          collabWith: [],
         };
       });
 
@@ -333,6 +335,7 @@ class AppleMusicApi {
                   ) || "",
                 tracks: Object.values(tracks), // Convert tracks object to array
                 sharedWith: [],
+                collabWith: [],
               };
 
               if (
@@ -501,6 +504,7 @@ class AppleMusicApi {
           isLoading: false,
           loadError: false,
           sharedWith: [],
+          collabWith: [],
         };
       } // Get tracks if not already loaded
 
@@ -573,6 +577,7 @@ class AppleMusicApi {
         id: playlistId,
         numberOfTracks: tracksArray.length,
         sharedWith: [],
+        collabWith: [],
       };
     } catch (error) {
       console.error(`[AppleMusicApi] Error getting playlist ${input}:`, error);
@@ -591,6 +596,7 @@ class AppleMusicApi {
         id: typeof input === "string" ? input : "unknown",
         numberOfTracks: 0,
         sharedWith: [],
+        collabWith: [],
       };
     }
   }

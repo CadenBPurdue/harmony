@@ -23,6 +23,7 @@ function validatePlaylist(playlist) {
     image: "string",
     tracks: "array",
     sharedWith: "array",
+    collabWith: "array",
   };
 
   const trackSchema = {
