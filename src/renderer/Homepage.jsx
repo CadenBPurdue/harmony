@@ -687,12 +687,6 @@ function Homepage() {
           });
         }
 
-        // Added from main version: Send playlists to Firebase if needed
-        if (window.electronAPI.transferPlaylistToFirebase) {
-          playlists.forEach((playlist) => {
-            window.electronAPI.transferPlaylistToFirebase(playlist);
-          });
-        }
       })
       .catch((error) => {
         console.error("Error fetching Spotify playlists:", error);
@@ -767,13 +761,6 @@ function Homepage() {
       .getAppleMusicLibrary()
       .then((playlists) => {
         setAppleMusicPlaylists(playlists);
-
-        // Added from main version: Send playlists to Firebase if needed
-        if (window.electronAPI.transferPlaylistToFirebase) {
-          playlists.forEach((playlist) => {
-            window.electronAPI.transferPlaylistToFirebase(playlist);
-          });
-        }
 
         // Check if any playlists are still loading
         const hasLoadingPlaylists = playlists.some((p) => p.isLoading);
