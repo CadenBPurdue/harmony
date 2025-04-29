@@ -326,14 +326,27 @@ class AppleMusicApi {
                 numberOfTracks: Object.keys(tracks).length,
                 duration: totalDuration,
                 description: playlist.attributes?.description?.standard || "",
-                image: playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") || "",
+                image:
+                  playlist.attributes?.artwork?.url?.replace(
+                    "{w}x{h}",
+                    "300x300",
+                  ) || "",
                 tracks: Object.values(tracks), // Convert tracks object to array
                 sharedWith: [],
               };
 
-              if (global.electronAPI && global.electronAPI.writePlaylistToFirestore) {
-                global.electronAPI.writePlaylistToFirestore(playlistForFirebase)
-                  .catch(err => console.error(`[AppleMusicApi] Error writing playlist ${playlistId} to Firebase:`, err));
+              if (
+                global.electronAPI &&
+                global.electronAPI.writePlaylistToFirestore
+              ) {
+                global.electronAPI
+                  .writePlaylistToFirestore(playlistForFirebase)
+                  .catch((err) =>
+                    console.error(
+                      `[AppleMusicApi] Error writing playlist ${playlistId} to Firebase:`,
+                      err,
+                    ),
+                  );
               }
 
               // Update progress

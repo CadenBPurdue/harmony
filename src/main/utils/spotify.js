@@ -385,15 +385,23 @@ class SpotifyApi {
                 numberOfTracks: tracksArray.length,
                 duration: totalDuration,
                 description: playlist.description || "",
-                image: playlist.images && playlist.images.length > 0 ? playlist.images[0].url : "",
+                image:
+                  playlist.images && playlist.images.length > 0
+                    ? playlist.images[0].url
+                    : "",
                 tracks: tracksArray, // Use array version
                 sharedWith: [],
               };
-              
+
               // Send to Firebase
-              if (global.electronAPI && global.electronAPI.writePlaylistToFirestore) {
-                global.electronAPI.writePlaylistToFirestore(playlistForFirebase);
-              }              
+              if (
+                global.electronAPI &&
+                global.electronAPI.writePlaylistToFirestore
+              ) {
+                global.electronAPI.writePlaylistToFirestore(
+                  playlistForFirebase,
+                );
+              }
 
               // Update progress
               this.loadingProgress.loaded += 1;

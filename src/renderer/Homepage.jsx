@@ -686,7 +686,6 @@ function Homepage() {
             isComplete: true,
           });
         }
-
       })
       .catch((error) => {
         console.error("Error fetching Spotify playlists:", error);

@@ -325,6 +325,6 @@ export function registerIpcHandlers() {
         console.error("Error writing playlist to Firestore:", error);
         throw error;
       }
-    }
+    },
   };
 }
