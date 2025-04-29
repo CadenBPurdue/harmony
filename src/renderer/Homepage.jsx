@@ -706,7 +706,7 @@ function Homepage() {
       })
       .catch((error) => {
         console.error("Error fetching Spotify playlists:", error);
-      })
+      });
   };
 
   // Handle transfer function
