@@ -978,186 +978,199 @@ function Homepage() {
       }}
     >
       <List component="nav" sx={{ p: 2 }}>
-        {/* Spotify Dropdown */}
-        <ListItem
-          button
-          onClick={() => setSpotifyOpen(!spotifyOpen)}
-          sx={dropdownHeaderStyle}
-        >
-          <ListItemText
-            primary="Spotify"
-            primaryTypographyProps={{
-              fontWeight: "bold",
-              color: "white",
-            }}
-          />
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent triggering dropdown toggle
-                hardResetSpotifyPlaylists();
-              }}
-              sx={{ color: "white", mr: 1 }}
+        {/* Only render Spotify section if connected */}
+        {userInfo && userInfo.connectedServices && userInfo.connectedServices.spotify === true && (
+          <>
+            {/* Spotify Dropdown */}
+            <ListItem
+              button
+              onClick={() => setSpotifyOpen(!spotifyOpen)}
+              sx={dropdownHeaderStyle}
             >
-              <RefreshCw size={16} />
-            </IconButton>
-            {!spotifyStatus.isComplete && spotifyStatus.total > 0 ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  mr: 1,
-                  position: "relative",
+              <ListItemText
+                primary="Spotify"
+                primaryTypographyProps={{
+                  fontWeight: "bold",
+                  color: "white",
                 }}
-              >
-                {/* Background track (lighter color) */}
-                <CircularProgress
-                  size={20}
-                  variant="determinate"
-                  value={100}
-                  sx={{
-                    color: "rgba(255, 255, 255, 0.3)",
-                    position: "absolute",
+              />
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent triggering dropdown toggle
+                    hardResetSpotifyPlaylists();
                   }}
-                />
-                {/* Foreground progress (filled portion) */}
-                <CircularProgress
-                  size={20}
-                  variant="determinate"
-                  value={(spotifyStatus.loaded / spotifyStatus.total) * 100}
-                  sx={{ color: "white" }}
-                />
-                <Typography variant="caption" sx={{ ml: 1.5, color: "white" }}>
-                  {Math.round(
-                    (spotifyStatus.loaded / spotifyStatus.total) * 100,
-                  )}
-                  %
-                </Typography>
-              </Box>
-            ) : null}
-            {spotifyOpen ? (
-              <ChevronUp color="white" size={18} />
-            ) : (
-              <ChevronDown color="white" size={18} />
-            )}
-          </Box>
-        </ListItem>
-
-        <Collapse in={spotifyOpen} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            {loadingSpotify ? (
-              <ListItem sx={{ pl: 2 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    width: "100%",
-                    py: 1,
-                  }}
+                  sx={{ color: "white", mr: 1 }}
                 >
-                  <CircularProgress size={24} sx={{ color: "primary.main" }} />
-                </Box>
-              </ListItem>
-            ) : (
-              spotifyPlaylists.map((playlist, index) =>
-                renderPlaylistItem(playlist, index),
-              )
-            )}
-
-            {spotifyPlaylists.length === 0 && !loadingSpotify && (
-              <ListItem sx={{ pl: 2 }}>
-                <Typography variant="caption" color="text.secondary">
-                  No playlists found
-                </Typography>
-              </ListItem>
-            )}
-          </List>
-        </Collapse>
-
-        {/* Apple Music Dropdown */}
-        <ListItem
-          button
-          onClick={() => setAppleMusicOpen(!appleMusicOpen)}
-          sx={dropdownHeaderStyle}
-        >
-          <ListItemText
-            primary="Apple Music"
-            primaryTypographyProps={{
-              fontWeight: "bold",
-              color: "white",
-            }}
-          />
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent triggering dropdown toggle
-                refreshAppleMusicPlaylists();
-              }}
-              sx={{ color: "white", mr: 1 }}
-            >
-              <RefreshCw size={16} />
-            </IconButton>
-            {!appleMusicStatus.isComplete && appleMusicStatus.total > 0 ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  mr: 1,
-                  position: "relative",
-                }}
-              >
-                {/* Background track (lighter color) */}
-                <CircularProgress
-                  size={20}
-                  variant="determinate"
-                  value={100}
-                  sx={{
-                    color: "rgba(255, 255, 255, 0.3)",
-                    position: "absolute",
-                  }}
-                />
-                {/* Foreground progress (filled portion) */}
-                <CircularProgress
-                  size={20}
-                  variant="determinate"
-                  value={
-                    (appleMusicStatus.loaded / appleMusicStatus.total) * 100
-                  }
-                  sx={{ color: "white" }}
-                />
-                <Typography variant="caption" sx={{ ml: 1.5, color: "white" }}>
-                  {Math.round(
-                    (appleMusicStatus.loaded / appleMusicStatus.total) * 100,
-                  )}
-                  %
-                </Typography>
+                  <RefreshCw size={16} />
+                </IconButton>
+                {!spotifyStatus.isComplete && spotifyStatus.total > 0 ? (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      mr: 1,
+                      position: "relative",
+                    }}
+                  >
+                    {/* Background track (lighter color) */}
+                    <CircularProgress
+                      size={20}
+                      variant="determinate"
+                      value={100}
+                      sx={{
+                        color: "rgba(255, 255, 255, 0.3)",
+                        position: "absolute",
+                      }}
+                    />
+                    {/* Foreground progress (filled portion) */}
+                    <CircularProgress
+                      size={20}
+                      variant="determinate"
+                      value={(spotifyStatus.loaded / spotifyStatus.total) * 100}
+                      sx={{ color: "white" }}
+                    />
+                    <Typography variant="caption" sx={{ ml: 1.5, color: "white" }}>
+                      {Math.round((spotifyStatus.loaded / spotifyStatus.total) * 100)}%
+                    </Typography>
+                  </Box>
+                ) : null}
+                {spotifyOpen ? (
+                  <ChevronUp color="white" size={18} />
+                ) : (
+                  <ChevronDown color="white" size={18} />
+                )}
               </Box>
-            ) : null}
-            {appleMusicOpen ? (
-              <ChevronUp color="white" size={18} />
-            ) : (
-              <ChevronDown color="white" size={18} />
-            )}
+            </ListItem>
+  
+            <Collapse in={spotifyOpen} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {loadingSpotify ? (
+                  <ListItem sx={{ pl: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        width: "100%",
+                        py: 1,
+                      }}
+                    >
+                      <CircularProgress size={24} sx={{ color: "primary.main" }} />
+                    </Box>
+                  </ListItem>
+                ) : (
+                  spotifyPlaylists.map((playlist, index) =>
+                    renderPlaylistItem(playlist, index)
+                  )
+                )}
+  
+                {spotifyPlaylists.length === 0 && !loadingSpotify && (
+                  <ListItem sx={{ pl: 2 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      No playlists found
+                    </Typography>
+                  </ListItem>
+                )}
+              </List>
+            </Collapse>
+          </>
+        )}
+  
+        {/* Only render Apple Music section if connected */}
+        {userInfo && userInfo.connectedServices && userInfo.connectedServices.appleMusic === true && (
+          <>
+            {/* Apple Music Dropdown */}
+            <ListItem
+              button
+              onClick={() => setAppleMusicOpen(!appleMusicOpen)}
+              sx={dropdownHeaderStyle}
+            >
+              <ListItemText
+                primary="Apple Music"
+                primaryTypographyProps={{
+                  fontWeight: "bold",
+                  color: "white",
+                }}
+              />
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent triggering dropdown toggle
+                    refreshAppleMusicPlaylists();
+                  }}
+                  sx={{ color: "white", mr: 1 }}
+                >
+                  <RefreshCw size={16} />
+                </IconButton>
+                {!appleMusicStatus.isComplete && appleMusicStatus.total > 0 ? (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      mr: 1,
+                      position: "relative",
+                    }}
+                  >
+                    {/* Background track (lighter color) */}
+                    <CircularProgress
+                      size={20}
+                      variant="determinate"
+                      value={100}
+                      sx={{
+                        color: "rgba(255, 255, 255, 0.3)",
+                        position: "absolute",
+                      }}
+                    />
+                    {/* Foreground progress (filled portion) */}
+                    <CircularProgress
+                      size={20}
+                      variant="determinate"
+                      value={(appleMusicStatus.loaded / appleMusicStatus.total) * 100}
+                      sx={{ color: "white" }}
+                    />
+                    <Typography variant="caption" sx={{ ml: 1.5, color: "white" }}>
+                      {Math.round((appleMusicStatus.loaded / appleMusicStatus.total) * 100)}%
+                    </Typography>
+                  </Box>
+                ) : null}
+                {appleMusicOpen ? (
+                  <ChevronUp color="white" size={18} />
+                ) : (
+                  <ChevronDown color="white" size={18} />
+                )}
+              </Box>
+            </ListItem>
+  
+            <Collapse in={appleMusicOpen} timeout="auto" unmountOnExit>
+              <List component="div" disablePadding>
+                {appleMusicPlaylists.map((playlist, index) =>
+                  renderPlaylistItem(playlist, index)
+                )}
+  
+                {appleMusicPlaylists.length === 0 && !loadingAppleMusic && (
+                  <ListItem sx={{ pl: 2 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      No playlists found
+                    </Typography>
+                  </ListItem>
+                )}
+              </List>
+            </Collapse>
+          </>
+        )}
+        
+        {/* Message when no services are connected or userInfo is still loading */}
+        {(!userInfo || !userInfo.connectedServices || 
+          (userInfo.connectedServices.spotify !== true && 
+           userInfo.connectedServices.appleMusic !== true)) && (
+          <Box sx={{ p: 2, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              {!userInfo ? 'Loading...' : 'No music services connected. Please go to Settings to connect a service.'}
+            </Typography>
           </Box>
-        </ListItem>
-
-        <Collapse in={appleMusicOpen} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding>
-            {appleMusicPlaylists.map((playlist, index) =>
-              renderPlaylistItem(playlist, index),
-            )}
-
-            {appleMusicPlaylists.length === 0 && !loadingAppleMusic && (
-              <ListItem sx={{ pl: 2 }}>
-                <Typography variant="caption" color="text.secondary">
-                  No playlists found
-                </Typography>
-              </ListItem>
-            )}
-          </List>
-        </Collapse>
+        )}
       </List>
     </Box>
   );
