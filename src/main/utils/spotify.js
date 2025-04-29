@@ -262,7 +262,6 @@ class SpotifyApi {
             name: item.name || "",
             playlist_id: playlistId,
             numberOfTracks: loadedData.trackCount || 0,
-            number_of_tracks: loadedData.trackCount || 0,
             duration: loadedData.duration || 0,
             description: item.description || "",
             image:
@@ -282,7 +281,6 @@ class SpotifyApi {
           name: item.name || "",
           playlist_id: playlistId,
           numberOfTracks: item.tracks?.total || 0,
-          number_of_tracks: item.tracks?.total || 0,
           duration: 0,
           description: item.description || "",
           image:

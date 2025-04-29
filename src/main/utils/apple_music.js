@@ -100,7 +100,6 @@ class AppleMusicApi {
             name: playlist.attributes?.name || "",
             user: "",
             playlist_id: playlistId,
-            number_of_tracks: loadedData.trackCount || 0,
             duration: loadedData.duration || 0,
             description: playlist.attributes?.description?.standard || "",
             image:
@@ -535,7 +534,6 @@ class AppleMusicApi {
         name: playlist.attributes?.name || "",
         user: "",
         playlist_id: playlistId,
-        number_of_tracks: Object.keys(tracks).length,
         duration: totalDuration,
         description: playlist.attributes?.description?.standard || "",
         image:
@@ -557,7 +555,6 @@ class AppleMusicApi {
         name: "Error Loading Playlist",
         user: "",
         playlist_id: typeof input === "string" ? input : "unknown",
-        number_of_tracks: 0,
         duration: 0,
         description: `Error: ${error.message}`,
         image: "",
