@@ -313,6 +313,65 @@ class SpotifyApi {
     }
   }
 
+  async getFreshPlaylistLibrary() {
+    try {
+      // Make sure we have a valid auth token
+      if (!this.auth_token) {
+        console.warn("[SpotifyApi] No auth token available, initializing...");
+        await this.initialize();
+      }
+
+      console.log("TESTING");
+
+      // Make sure we have a user ID
+      if (!this.user_id) {
+        console.warn("[SpotifyApi] No user ID available, fetching...");
+        this.user_id = await this.getUserId();
+      }
+
+      // Fetch playlists
+      const response = await axios.get(
+        `https://api.spotify.com/v1/users/${this.user_id}/playlists`,
+        {
+          headers: { Authorization: `Bearer ${this.auth_token}` },
+        },
+      );
+
+      // Check if we got a valid response
+      if (!response.data || !response.data.items) {
+        console.error("[SpotifyApi] Invalid playlist response:", response.data);
+        return []; // Return empty array instead of throwing
+      }
+
+      // Process playlists safely with error handling for each one
+      const playlistPromises = response.data.items.map(async (item) => {
+        try {
+          const playlist_id = item.id;
+          return await this.getPlaylist(playlist_id);
+        } catch (error) {
+          console.error(
+            `[SpotifyApi] Error fetching playlist ${item.id}:`,
+            error.message,
+          );
+          return null; // Return null for failed playlists
+        }
+      });
+
+      const results = await Promise.all(playlistPromises);
+
+      // Filter out null results (failed playlists)
+      const playlists = results.filter((p) => p !== null);
+
+      return playlists;
+    } catch (error) {
+      console.error(
+        "[SpotifyApi] Failed to fetch user playlists:",
+        error.response?.data || error.message,
+      );
+      return []; // Return empty array instead of throwing
+    }
+  }
+
   async loadPlaylistDetailsInBackground(playlists) {
     if (this.isLoadingDetails) {
       console.log("[SpotifyApi] Background loading already in progress");

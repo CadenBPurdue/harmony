@@ -473,17 +473,15 @@ function Homepage() {
         const newPlaylist = await window.electronAPI.getAppleMusicPlaylist(
           results.playlistId,
         );
-
-        window.electronAPI.debug("New playlist from Apple Music:");
-        window.electronAPI.debug(newPlaylist);
-
         await window.electronAPI.transferPlaylistToFirebase(newPlaylist);
+        refreshAppleMusicPlaylists();
       } else {
         const results = await window.electronAPI.transferToSpotify(playlist);
         const newPlaylist = await window.electronAPI.getSpotifyPlaylist(
           results.playlistId,
         );
         await window.electronAPI.transferPlaylistToFirebase(newPlaylist);
+        hardResetSpotifyPlaylists();
       }
       window.electronAPI.removeSharedWith(playlist);
     });
@@ -692,6 +690,22 @@ function Homepage() {
       })
       .finally(() => {
         setLoadingSpotify(false);
+      });
+  };
+
+  const hardResetSpotifyPlaylists = () => {
+    window.electronAPI
+      .resetSpotifyLibrary()
+      .then((playlists) => {
+        setSpotifyPlaylists(playlists);
+        setSpotifyStatus({
+          loaded: playlists.length,
+          total: playlists.length,
+          isComplete: true,
+        });
+      })
+      .catch((error) => {
+        console.error("Error fetching Spotify playlists:", error);
       });
   };
 
@@ -962,7 +976,7 @@ function Homepage() {
               size="small"
               onClick={(e) => {
                 e.stopPropagation(); // Prevent triggering dropdown toggle
-                refreshSpotifyPlaylists();
+                hardResetSpotifyPlaylists();
               }}
               sx={{ color: "white", mr: 1 }}
             >
