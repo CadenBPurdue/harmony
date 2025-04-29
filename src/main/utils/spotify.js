@@ -270,6 +270,7 @@ class SpotifyApi {
             isLoading: false,
             loadError: false,
             sharedWith: [],
+            collabWith: [],
           };
         }
 
@@ -289,6 +290,7 @@ class SpotifyApi {
           isLoading: true,
           loadError: false,
           sharedWith: [],
+          collabWith: [],
         };
       });
 
@@ -450,6 +452,7 @@ class SpotifyApi {
                     : "",
                 tracks: tracksArray, // Use array version
                 sharedWith: [],
+                collabWith: [],
               };
 
               // Send to Firebase
@@ -975,6 +978,7 @@ class SpotifyApi {
 
     playlist.duration = totalDuration;
     playlist.sharedWith = [];
+    playlist.collabWith = [];
     return playlist;
   }
 }
