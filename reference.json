@@ -3,7 +3,7 @@
     "origin": "spotify or apple music",
     "name": "playlist name",
     "playlist_id": "playlist id",
-    "number_of_tracks": "number of tracks in the playlist",
+    "numberOfTracks": "number of tracks in the playlist",
     "duration": "duration of the playlist",
     "description": "playlist description",
     "image": "image url",
