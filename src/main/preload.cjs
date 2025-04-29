@@ -37,6 +37,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("library:spotify");
   },
 
+  resetSpotifyLibrary: () => {
+    console.log("Calling getFreshSpotifyLibrary from preload");
+    return ipcRenderer.invoke("library:spotifyReset", true);
+  },
+
   getAppleMusicLibrary: (skipDetailsLoading) => {
     console.log("Calling getAppleMusicLibrary from preload");
     return ipcRenderer.invoke("library:appleMusic", skipDetailsLoading);
