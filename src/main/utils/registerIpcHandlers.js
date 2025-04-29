@@ -316,4 +316,15 @@ export function registerIpcHandlers() {
       };
     }
   });
+
+  global.electronAPI = {
+    writePlaylistToFirestore: async (playlist) => {
+      try {
+        return await writePlaylistToFirestore(playlist);
+      } catch (error) {
+        console.error("Error writing playlist to Firestore:", error);
+        throw error;
+      }
+    },
+  };
 }
