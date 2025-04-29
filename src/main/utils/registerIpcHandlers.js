@@ -243,6 +243,16 @@ export function registerIpcHandlers() {
     return appleMusicApi.getPlaylistLibrary(skipDetailsLoading);
   });
 
+  ipcMain.handle("playlist:spotify", async (event, playlistId) => {
+    await spotifyApi.initialize();
+    return spotifyApi.getPlaylist(playlistId);
+  });
+
+  ipcMain.handle("playlist:appleMusic", async (event, playlistId) => {
+    await appleMusicApi.initialize();
+    return appleMusicApi.getPlaylist(playlistId);
+  });
+
   // Add a handler to get Apple Music loading status
   ipcMain.handle("getAppleMusicStatus", async () => {
     return appleMusicApi.getPlaylistLoadingStatus();
@@ -267,16 +277,11 @@ export function registerIpcHandlers() {
       await spotifyApi.initialize();
       console.log(`Transferring "${playlist.name}" to Spotify`);
 
-      console.log("DENIDNEJNDJEKNDE");
-
       // First create the empty playlist
       const playlistId = await spotifyApi.createEmptyPlaylist(
         playlist.name,
         playlist.description,
       );
-
-      console.log("AHHHHHH: Playlist ID:", playlistId);
-      console.log(playlist);
 
       // Then populate it
       const result = await spotifyApi.populatePlaylist(playlistId, playlist);

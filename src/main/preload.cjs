@@ -42,6 +42,16 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("library:appleMusic", skipDetailsLoading);
   },
 
+  getSpotifyPlaylist: (playlistId) => {
+    console.log("Calling getSpotifyPlaylist from preload");
+    return ipcRenderer.invoke("playlist:spotify", playlistId);
+  },
+
+  getAppleMusicPlaylist: (playlistId) => {
+    console.log("Calling getAppleMusicPlaylistTracks from preload");
+    return ipcRenderer.invoke("playlist:appleMusic", playlistId);
+  },
+
   // Get Apple Music status
   getAppleMusicStatus: () => {
     console.log("Calling getAppleMusicStatus from preload");
