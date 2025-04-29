@@ -1,6 +1,5 @@
 // src/main/utils/registerIpcHandlers.js
 import { ipcMain, shell } from "electron";
-import { send } from "vite";
 import { AppleMusicApi } from "./apple_music.js";
 import {
   initiateSpotifyAuth,
