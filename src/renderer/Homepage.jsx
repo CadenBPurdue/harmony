@@ -58,7 +58,6 @@ const fetchSharedPlaylists = async () => {
   }
   const currentUser = await window.electronAPI.getCurrentUserFromFirebase();
 
-
   sharedPlaylistIds.forEach(async (playlistId) => {
     const playlist =
       await window.electronAPI.getPlaylistFromFirebase(playlistId);
@@ -74,7 +73,7 @@ const fetchSharedPlaylists = async () => {
       await window.electronAPI.transferToSpotify(playlist);
       // refreshSpotifyPlaylists();
     }
-  
+
     // remove user id from sharedWith
     const updatedSharedWith = playlist.sharedWith.filter(
       (userId) => userId !== currentUser.userId,

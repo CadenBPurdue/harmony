@@ -588,5 +588,5 @@ export {
   acceptFriendRequest,
   denyFriendRequest,
   manageFriendRequests,
-  removeUserFromPlaylist
+  removeUserFromPlaylist,
 };
