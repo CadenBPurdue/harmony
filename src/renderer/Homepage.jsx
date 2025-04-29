@@ -760,7 +760,7 @@ function Homepage() {
         // Create appropriate notification
         addNotification({
           type: "playlist_transfer_success",
-          message: `Playlist "${selectedPlaylist.name}" sent to ${selectedFriend.displayName}${makeCollaborative ? " (collaborative)" : ""}.`,   
+          message: `Playlist "${selectedPlaylist.name}" sent to ${selectedFriend.displayName}${makeCollaborative ? " (collaborative)" : ""}.`,
           details: {
             playlistName: selectedPlaylist.name,
             destination: selectedFriend.displayName,
@@ -2476,15 +2476,19 @@ function Homepage() {
                 </Select>
               </FormControl>
               <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  sx={{ mb: 1 }}
+                >
                   Playlist Options
                 </Typography>
                 <FormControl component="fieldset">
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
                     <Typography variant="body2" color="text.secondary">
                       Make collaborative
                     </Typography>
-                    <Switch 
+                    <Switch
                       checked={makeCollaborative}
                       onChange={(e) => setMakeCollaborative(e.target.checked)}
                       color="primary"
