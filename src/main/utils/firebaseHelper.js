@@ -138,6 +138,34 @@ async function writePlaylistToFirestore(playlist) {
   }
 }
 
+async function removeUserFromPlaylist(playlist) {
+  if (!getAuthInstance().currentUser) {
+    throw new Error("User must be authenticated before writing playlists");
+  }
+  const db = getDbInstance();
+  const collection = "playlists";
+  if (!validatePlaylist(playlist)) {
+    throw new Error("Invalid playlist format");
+  }
+
+  const userId = getAuthInstance().currentUser.uid;
+  try {
+    const updatedPlaylist = {
+      ...playlist,
+      sharedWith: playlist.sharedWith.filter((id) => id !== userId),
+    };
+    const docRef = doc(db, collection, playlist.id);
+    await setDoc(docRef, updatedPlaylist, { merge: true });
+    console.log(
+      `[Firebase Helper] Playlist written to ${collection}/${playlist.id}`,
+    );
+    return { success: true };
+  } catch (error) {
+    console.error("Error writing playlist to Firestore:", error);
+    throw error;
+  }
+}
+
 async function getPlaylistsFromFirestore() {
   const db = getDbInstance();
   const auth = getAuthInstance();
@@ -560,4 +588,5 @@ export {
   acceptFriendRequest,
   denyFriendRequest,
   manageFriendRequests,
+  removeUserFromPlaylist
 };

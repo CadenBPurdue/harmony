@@ -75,6 +75,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("transfer:appleMusic", playlist);
   },
 
+  removeSharedWith: (playlist) => {
+    console.log("Calling removeSharedWith from preload");
+    return ipcRenderer.invoke("firebase:removeSharedWith", playlist);
+  },
+
   transferPlaylistToFirebase: (playlist) => {
     console.log("Calling transferPlaylistToFirebase from preload");
     return ipcRenderer.invoke("firebase:writePlaylist", playlist);

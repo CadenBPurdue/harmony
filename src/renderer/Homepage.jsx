@@ -58,34 +58,35 @@ const fetchSharedPlaylists = async () => {
   }
   const currentUser = await window.electronAPI.getCurrentUserFromFirebase();
 
+
   sharedPlaylistIds.forEach(async (playlistId) => {
     const playlist =
       await window.electronAPI.getPlaylistFromFirebase(playlistId);
-    const sharedPlaylistName = playlist.name;
-    const storedPlaylistIds =
-      await window.electronAPI.getPlaylistsFromFirebase();
-    if (!storedPlaylistIds || storedPlaylistIds.length === 0) {
-      return;
+
+    var primaryService = "";
+
+    if (currentUser.primaryService === "appleMusic") {
+      primaryService = "Spotify";
+      await window.electronAPI.transferToAppleMusic(playlist);
+      // refreshAppleMusicPlaylists();
+    } else {
+      primaryService = "Apple Music";
+      await window.electronAPI.transferToSpotify(playlist);
+      // refreshSpotifyPlaylists();
     }
-
-    var storedPlaylistNames = [];
-    storedPlaylistIds.forEach(async (storedPlaylistId) => {
-      const storedPlaylist =
-        await window.electronAPI.getPlaylistFromFirebase(storedPlaylistId);
-      storedPlaylistNames.push(storedPlaylist.name);
-    });
-
-    const playlistExists = storedPlaylistNames.some(
-      (name) => name === sharedPlaylistName,
+  
+    // remove user id from sharedWith
+    const updatedSharedWith = playlist.sharedWith.filter(
+      (userId) => userId !== currentUser.userId,
     );
 
-    if (!playlistExists) {
-      if (currentUser.primaryService === "appleMusic") {
-        await window.electronAPI.transferToAppleMusic(playlist);
-      } else {
-        await window.electronAPI.transferToSpotify(playlist);
-      }
-    }
+    addNotification({
+      type: "info",
+      message: `Playlist "${playlist.name}" was transferred to ${primaryService} from ${playlist.user}.`,
+      read: false,
+    });
+
+    window.electronAPI.removeSharedWith(playlist);
   });
 };
 

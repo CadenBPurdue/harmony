@@ -26,6 +26,7 @@ import {
   acceptFriendRequest,
   denyFriendRequest,
   manageFriendRequests,
+  removeUserFromPlaylist,
 } from "./firebaseHelper.js";
 import { SpotifyApi } from "./spotify.js";
 
@@ -251,6 +252,10 @@ export function registerIpcHandlers() {
     return spotifyApi.getPlaylistLoadingStatus();
   });
 
+  ipcMain.handle("firebase:removeSharedWith", async (event, playlist) => {
+    return await removeUserFromPlaylist(playlist);
+  });
+
   // Add a handler to get a specific Apple Music playlist
   ipcMain.handle("getAppleMusicPlaylist", async (event, playlistId) => {
     await appleMusicApi.initialize();
@@ -262,11 +267,16 @@ export function registerIpcHandlers() {
       await spotifyApi.initialize();
       console.log(`Transferring "${playlist.name}" to Spotify`);
 
+      console.log("DENIDNEJNDJEKNDE");
+
       // First create the empty playlist
       const playlistId = await spotifyApi.createEmptyPlaylist(
         playlist.name,
         playlist.description,
       );
+
+      console.log("AHHHHHH: Playlist ID:", playlistId);
+      console.log(playlist);
 
       // Then populate it
       const result = await spotifyApi.populatePlaylist(playlistId, playlist);
