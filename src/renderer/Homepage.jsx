@@ -465,7 +465,6 @@ function Homepage() {
         await window.electronAPI.getPlaylistFromFirebase(playlistId);
 
       if (playlist.collabWith.includes(currentUser.userId)) {
-
         addNotification({
           type: "info",
           message: `Collaborative playlist "${playlist.name}" from ${playlist.user} was transfered to your primary service.`,
@@ -485,7 +484,7 @@ function Homepage() {
           results.playlistId,
         );
         if (playlist.collabWith.includes(currentUser.userId)) {
-          newPlaylist.collabWith = playlist.userId;
+          newPlaylist.collabWith.push(playlist.userId);
         }
         await window.electronAPI.transferPlaylistToFirebase(newPlaylist);
         refreshAppleMusicPlaylists();
