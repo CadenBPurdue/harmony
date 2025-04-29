@@ -494,7 +494,7 @@ function Homepage() {
           results.playlistId,
         );
         if (playlist.collabWith.includes(currentUser.userId)) {
-          newPlaylist.collabWith = playlist.userId;
+          newPlaylist.collabWith.push(playlist.userId);
         }
         await window.electronAPI.transferPlaylistToFirebase(newPlaylist);
         hardResetSpotifyPlaylists();
