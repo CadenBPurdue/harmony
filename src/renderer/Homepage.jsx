@@ -508,22 +508,26 @@ function Homepage() {
   }, []);
 
   const getPlaylistDifferences = (recvPlaylist, myPlaylist) => {
-
     // find the songs on recvPlaylist that are not on myPlaylist
     var diffSongs = [];
     recvPlaylist.tracks.forEach((track) => {
       const found = myPlaylist.tracks.find(
+<<<<<<< HEAD
         (t) => t.name === track.name,
+=======
+        (t) =>
+          window.electronAPI.normalizeSongTitle(t.name) ===
+          window.electronAPI.normalizeSongTitle(track.name),
+>>>>>>> 08cd9b61ef7330be5c8ade5d96b6da0aa057b431
       );
       if (!found) {
         diffSongs.push(track);
       }
     });
     return diffSongs;
-  }
+  };
 
   const fetchCollabPlaylists = async () => {
-
     const collabPlaylistIds = await window.electronAPI.getCollabPlaylists();
 
     if (!collabPlaylistIds || collabPlaylistIds.length === 0) {

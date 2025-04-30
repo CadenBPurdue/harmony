@@ -3,6 +3,7 @@ import axios from "axios";
 import dotenv from "dotenv";
 import { v4 as uuidv4 } from "uuid";
 import { getCurrentUserFromFirestore } from "./firebaseHelper.js";
+import { getPlaylistFromFirestore } from "./firebaseHelper.js";
 import {
   normalizeTrackTitle,
   normalizeArtistName,
@@ -11,7 +12,6 @@ import {
   findBestMatch,
 } from "./match_scoring.js";
 import { getSpotifyToken } from "./safe_storage.js";
-import { getPlaylistFromFirestore } from "./firebaseHelper.js";
 // Import match_scoring utilities
 
 class SpotifyApi {
@@ -460,12 +460,14 @@ class SpotifyApi {
                 global.electronAPI.writePlaylistToFirestore
               ) {
                 try {
-                  const existingPlaylist = await getPlaylistFromFirestore(playlistForFirebase.id);
+                  const existingPlaylist = await getPlaylistFromFirestore(
+                    playlistForFirebase.id,
+                  );
                   playlistForFirebase.collabWith = existingPlaylist.collabWith;
                 } catch {
                   console.log(
                     `[SpotifyApi] Playlist ${playlistForFirebase.id} not found in Firebase`,
-                  );  
+                  );
                 }
                 global.electronAPI.writePlaylistToFirestore(
                   playlistForFirebase,
