@@ -120,7 +120,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("firebase:getSharedPlaylists");
   },
 
-  getCollabPlaylists: () => { 
+  getCollabPlaylists: () => {
     console.log("Calling getCollabPlaylists from preload");
     return ipcRenderer.invoke("firebase:getCollabPlaylists");
   },
