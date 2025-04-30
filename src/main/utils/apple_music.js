@@ -9,6 +9,7 @@ import {
   findBestMatch,
 } from "./match_scoring.js";
 import { getAppleMusicToken } from "./safe_storage.js";
+import { getPlaylistFromFirestore } from "./firebaseHelper.js";
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -342,14 +343,20 @@ class AppleMusicApi {
                 global.electronAPI &&
                 global.electronAPI.writePlaylistToFirestore
               ) {
+                try {
+                  const playlist = await getPlaylistFromFirestore(playlistForFirebase.id);
+                  playlistForFirebase.collabWith = playlist.collabWith;
+                } catch {
+                  console.log("[AppleMusicApi] Playlist not found in Firestore");
+                }
                 global.electronAPI
-                  .writePlaylistToFirestore(playlistForFirebase)
-                  .catch((err) =>
-                    console.error(
-                      `[AppleMusicApi] Error writing playlist ${playlistId} to Firebase:`,
-                      err,
-                    ),
-                  );
+                    .writePlaylistToFirestore(playlistForFirebase)
+                    .catch((err) =>
+                      console.error(
+                        `[AppleMusicApi] Error writing playlist ${playlistId} to Firebase:`,
+                        err,
+                      ),
+                    );
               }
 
               // Update progress

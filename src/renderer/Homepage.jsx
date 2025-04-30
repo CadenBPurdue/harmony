@@ -507,6 +507,47 @@ function Homepage() {
     fetchSharedPlaylists();
   }, []);
 
+  const getPlaylistDifferences = (recvPlaylist, myPlaylist) => {
+
+    // find the songs on recvPlaylist that are not on myPlaylist
+    var diffSongs = [];
+    recvPlaylist.tracks.forEach((track) => {
+      const found = myPlaylist.tracks.find(
+        (t) => window.electronAPI.normalizeSongTitle(t.name) === window.electronAPI.normalizeSongTitle(track.name),
+      );
+      if (!found) {
+        diffSongs.push(track);
+      }
+    });
+    return diffSongs;
+  }
+
+  const fetchCollabPlaylists = async () => {
+
+    const collabPlaylistIds = await window.electronAPI.getCollabPlaylists();
+
+    if (!collabPlaylistIds || collabPlaylistIds.length === 0) {
+      return;
+    }
+
+    const myPlaylists = await window.electronAPI.getPlaylistsFromFirebase()      
+
+    collabPlaylistIds.forEach(async (collabPlaylistId) => {
+      const friendsPlaylist =
+        await window.electronAPI.getPlaylistFromFirebase(collabPlaylistId);
+
+      const myPlaylist = myPlaylists.find(
+        (p) => p.name === friendsPlaylist.name,
+      );
+
+      window.electronAPI.debug(myPlaylist);
+
+      const diffSongs = getPlaylistDifferences(friendsPlaylist, myPlaylist);
+
+      window.electronAPI.debug(diffSongs);
+    });
+  };
+
   // Poll Apple Music playlist loading status
   const pollAppleMusicStatus = useCallback(() => {
     // Only poll if we have Apple Music playlists that may still be loading
@@ -673,6 +714,10 @@ function Homepage() {
       window.electronAPI.updatePrimaryService(userInfo.primaryService);
     }
   }, [userInfo]);
+
+  useEffect(() => {
+    fetchCollabPlaylists();
+  }, []);
 
   const refreshSpotifyPlaylists = () => {
     setLoadingSpotify(true);

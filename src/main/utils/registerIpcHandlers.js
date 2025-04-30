@@ -17,6 +17,7 @@ import {
   writePlaylistToFirestore,
   getPlaylistsFromFirestore,
   getSharedPlaylistsFromFirestore,
+  getCollabPlaylistsFromFirestore,
   getPlaylistFromFirestore,
   getUsersFromFirestore,
   getUserFromFirestore,
@@ -61,6 +62,10 @@ export function registerIpcHandlers() {
 
   ipcMain.handle("firebase:getSharedPlaylists", async () => {
     return await getSharedPlaylistsFromFirestore();
+  });
+
+  ipcMain.handle("firebase:getCollabPlaylists", async () => {
+    return await getCollabPlaylistsFromFirestore();
   });
 
   ipcMain.handle("firebase:getUserInfo", async (event, userId) => {
@@ -212,6 +217,11 @@ export function registerIpcHandlers() {
       console.error("Failed to clear credentials:", error);
       throw error;
     }
+  });
+
+  ipcMain.handle("nomalize:songTitle", async (event, songTitle) => {
+    await appleMusicAPI.initialize();
+    return appleMusicAPI.normalizeTrackTitle(songTitle);
   });
 
   ipcMain.handle("auth:firebase", async () => {
