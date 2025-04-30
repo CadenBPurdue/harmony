@@ -512,13 +512,7 @@ function Homepage() {
     var diffSongs = [];
     recvPlaylist.tracks.forEach((track) => {
       const found = myPlaylist.tracks.find(
-<<<<<<< HEAD
         (t) => t.name === track.name,
-=======
-        (t) =>
-          window.electronAPI.normalizeSongTitle(t.name) ===
-          window.electronAPI.normalizeSongTitle(track.name),
->>>>>>> 08cd9b61ef7330be5c8ade5d96b6da0aa057b431
       );
       if (!found) {
         diffSongs.push(track);
