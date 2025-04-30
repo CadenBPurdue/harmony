@@ -224,15 +224,21 @@ export function registerIpcHandlers() {
     return appleMusicApi.normalizeTrackTitle(songTitle);
   });
 
-  ipcMain.handle("playlist:addSongsToSpotify", async (event, playlistId, songs) => {
-    await spotifyApi.initialize();
-    return spotifyApi.addSongsToPlaylist(playlistId, songs);
-  });
+  ipcMain.handle(
+    "playlist:addSongsToSpotify",
+    async (event, playlistId, songs) => {
+      await spotifyApi.initialize();
+      return spotifyApi.addSongsToPlaylist(playlistId, songs);
+    },
+  );
 
-  ipcMain.handle("playlist:addSongsToAppleMusic", async (event, playlistId, songs) => {
-    await appleMusicApi.initialize();
-    return appleMusicApi.addSongsToPlaylist(playlistId, songs);
-  });
+  ipcMain.handle(
+    "playlist:addSongsToAppleMusic",
+    async (event, playlistId, songs) => {
+      await appleMusicApi.initialize();
+      return appleMusicApi.addSongsToPlaylist(playlistId, songs);
+    },
+  );
 
   ipcMain.handle("auth:firebase", async () => {
     try {

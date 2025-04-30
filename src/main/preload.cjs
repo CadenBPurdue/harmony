@@ -105,7 +105,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke(
       "playlist:addSongsToAppleMusic",
       playlistId,
-      songs
+      songs,
     );
   },
 

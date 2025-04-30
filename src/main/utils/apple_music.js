@@ -344,8 +344,10 @@ class AppleMusicApi {
                 global.electronAPI.writePlaylistToFirestore
               ) {
                 try {
-                  const playlist = await getPlaylistFromFirestore(playlistForFirebase.id);
-                  if (playlist) {                    
+                  const playlist = await getPlaylistFromFirestore(
+                    playlistForFirebase.id,
+                  );
+                  if (playlist) {
                     playlistForFirebase.collabWith = playlist.collabWith;
                   }
                 } catch {
@@ -625,40 +627,40 @@ class AppleMusicApi {
     if (!this.api) {
       await this.initialize();
     }
-  
+
     console.log(`[AppleMusicApi] Adding songs to playlist: ${playlistId}`);
-    
+
     try {
       // Find song IDs
       const songIds = [];
-      
+
       for (const song of songs) {
         const songId = await this.findSong(song);
         if (songId) {
           songIds.push({
             id: songId,
-            type: "songs"
+            type: "songs",
           });
         }
       }
-      
+
       // Add songs to playlist
       if (songIds.length > 0) {
         await this.api.post(`/v1/me/library/playlists/${playlistId}/tracks`, {
-          data: songIds
+          data: songIds,
         });
       }
-      
+
       return {
         success: true,
         tracksAdded: songIds.length,
-        totalTracks: songs.length
+        totalTracks: songs.length,
       };
     } catch (error) {
       console.error("[AppleMusicApi] Error adding songs:", error.message);
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }

@@ -508,32 +508,29 @@ function Homepage() {
   }, []);
 
   const getPlaylistDifferences = (recvPlaylist, myPlaylist) => {
-
     // find the songs on recvPlaylist that are not on myPlaylist
     var diffSongs = [];
     recvPlaylist.tracks.forEach((track) => {
-      const found = myPlaylist.tracks.find(
-        (t) => t.name === track.name,
-      );
+      const found = myPlaylist.tracks.find((t) => t.name === track.name);
       if (!found) {
         diffSongs.push(track);
       }
     });
     return diffSongs;
-  }
+  };
 
   const fetchCollabPlaylists = async () => {
-
     const collabPlaylistIds = await window.electronAPI.getCollabPlaylists();
 
     if (!collabPlaylistIds || collabPlaylistIds.length === 0) {
       return;
     }
 
-    const myPlaylistIds = await window.electronAPI.getPlaylistsFromFirebase() 
+    const myPlaylistIds = await window.electronAPI.getPlaylistsFromFirebase();
     var myPlaylists = [];
-    myPlaylistIds.forEach( async (playlistId) => {
-      const playlist = await window.electronAPI.getPlaylistFromFirebase(playlistId);
+    myPlaylistIds.forEach(async (playlistId) => {
+      const playlist =
+        await window.electronAPI.getPlaylistFromFirebase(playlistId);
       myPlaylists.push(playlist);
     });
 
@@ -562,14 +559,24 @@ function Homepage() {
       }
 
       if (myPlaylist.origin === "Spotify") {
-        await window.electronAPI.addSongsToSpotifyPlaylist(myPlaylist.id, diffSongs);
-        const updatedPlaylist = await window.electronAPI.getSpotifyPlaylist(myPlaylist.id);
+        await window.electronAPI.addSongsToSpotifyPlaylist(
+          myPlaylist.id,
+          diffSongs,
+        );
+        const updatedPlaylist = await window.electronAPI.getSpotifyPlaylist(
+          myPlaylist.id,
+        );
         updatedPlaylist.collabWith.push(friendsPlaylist.userId);
         await window.electronAPI.transferPlaylistToFirebase(updatedPlaylist);
         hardResetSpotifyPlaylists();
       } else {
-        await window.electronAPI.addSongsToAppleMusicPlaylist(myPlaylist.id, diffSongs);
-        const updatedPlaylist = await window.electronAPI.getAppleMusicPlaylist(myPlaylist.id);
+        await window.electronAPI.addSongsToAppleMusicPlaylist(
+          myPlaylist.id,
+          diffSongs,
+        );
+        const updatedPlaylist = await window.electronAPI.getAppleMusicPlaylist(
+          myPlaylist.id,
+        );
         updatedPlaylist.collabWith.push(friendsPlaylist.userId);
         await window.electronAPI.transferPlaylistToFirebase(updatedPlaylist);
         refreshAppleMusicPlaylists();
