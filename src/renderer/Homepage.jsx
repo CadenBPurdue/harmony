@@ -506,7 +506,6 @@ function Homepage() {
           newPlaylist.collabWith.push(playlist.userId);
         }
 
-
         await window.electronAPI.transferPlaylistToFirebase(newPlaylist);
         refreshAppleMusicPlaylists();
       } else {
