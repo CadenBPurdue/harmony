@@ -1,6 +1,6 @@
 {
   "name": "harmony",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A music playlist sharing application",
   "author": "Adam Kahl <akahl@purdue.edu>",
   "main": "src/main/main.js",
