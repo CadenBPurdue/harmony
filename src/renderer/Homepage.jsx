@@ -564,11 +564,13 @@ function Homepage() {
       if (myPlaylist.origin === "Spotify") {
         await window.electronAPI.addSongsToSpotifyPlaylist(myPlaylist.id, diffSongs);
         const updatedPlaylist = await window.electronAPI.getSpotifyPlaylist(myPlaylist.id);
+        updatedPlaylist.collabWith.push(friendsPlaylist.userId);
         await window.electronAPI.transferPlaylistToFirebase(updatedPlaylist);
         hardResetSpotifyPlaylists();
       } else {
         await window.electronAPI.addSongsToAppleMusicPlaylist(myPlaylist.id, diffSongs);
         const updatedPlaylist = await window.electronAPI.getAppleMusicPlaylist(myPlaylist.id);
+        updatedPlaylist.collabWith.push(friendsPlaylist.userId);
         await window.electronAPI.transferPlaylistToFirebase(updatedPlaylist);
         refreshAppleMusicPlaylists();
       }
