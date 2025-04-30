@@ -807,7 +807,7 @@ function Homepage() {
   };
 
   const hardResetAppleMusicPlaylists = () => {
-    window.electronAPI  
+    window.electronAPI
       .resetAppleMusicLibrary()
       .then((playlists) => {
         setAppleMusicPlaylists(playlists);

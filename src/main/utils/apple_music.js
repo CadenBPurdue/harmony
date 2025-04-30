@@ -170,7 +170,7 @@ class AppleMusicApi {
     if (!this.api) {
       await this.initialize();
     }
-  
+
     try {
       console.log("[AppleMusicApi] Fetching playlist library...");
       const response = await this.api.get("/v1/me/library/playlists", {
@@ -179,44 +179,51 @@ class AppleMusicApi {
         },
       });
       const playlists = response.data.data;
-  
+
       console.log(`[AppleMusicApi] Found ${playlists.length} playlists`);
-  
+
       // Create array to hold completed playlist objects
       const playlistObjects = [];
-  
+
       // Process each playlist one by one to get tracks
       for (const playlist of playlists) {
         const playlistId = playlist.id;
-        
+
         try {
           // Fetch the tracks for this playlist
-          console.log(`[AppleMusicApi] Fetching tracks for playlist: ${playlist.attributes?.name || playlistId}`);
-          const tracksResponse = await this.api.get(`/v1/me/library/playlists/${playlistId}/tracks`, {
-            params: {
-              limit: 100,
+          console.log(
+            `[AppleMusicApi] Fetching tracks for playlist: ${playlist.attributes?.name || playlistId}`,
+          );
+          const tracksResponse = await this.api.get(
+            `/v1/me/library/playlists/${playlistId}/tracks`,
+            {
+              params: {
+                limit: 100,
+              },
             },
-          });
-          
+          );
+
           const tracks = tracksResponse.data.data || [];
           const tracksObj = {};
           let totalDuration = 0;
-          
+
           // Process each track
-          tracks.forEach(track => {
+          tracks.forEach((track) => {
             const trackId = track.id;
             const milliseconds = track.attributes?.durationInMillis || 0;
             totalDuration += milliseconds;
-            
+
             tracksObj[trackId] = {
               name: track.attributes?.name || "",
               artist: track.attributes?.artistName || "",
               album: track.attributes?.albumName || "",
               duration: milliseconds,
-              image: track.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") || "",
+              image:
+                track.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") ||
+                "",
             };
           });
-          
+
           // Add the playlist with its tracks to the result array
           playlistObjects.push({
             origin: "Apple Music",
@@ -225,7 +232,11 @@ class AppleMusicApi {
             playlist_id: playlistId,
             duration: totalDuration,
             description: playlist.attributes?.description?.standard || "",
-            image: playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") || "",
+            image:
+              playlist.attributes?.artwork?.url?.replace(
+                "{w}x{h}",
+                "300x300",
+              ) || "",
             tracks: tracksObj,
             isLoading: false,
             loadError: false,
@@ -235,13 +246,12 @@ class AppleMusicApi {
             sharedWith: [],
             collabWith: [],
           });
-          
         } catch (trackError) {
           console.error(
             `[AppleMusicApi] Failed to get tracks for playlist ${playlistId}:`,
-            trackError.response?.data || trackError
+            trackError.response?.data || trackError,
           );
-          
+
           // Add the playlist with error status
           playlistObjects.push({
             origin: "Apple Music",
@@ -250,7 +260,11 @@ class AppleMusicApi {
             playlist_id: playlistId,
             duration: 0,
             description: playlist.attributes?.description?.standard || "",
-            image: playlist.attributes?.artwork?.url?.replace("{w}x{h}", "300x300") || "",
+            image:
+              playlist.attributes?.artwork?.url?.replace(
+                "{w}x{h}",
+                "300x300",
+              ) || "",
             tracks: {},
             isLoading: false,
             loadError: true,
@@ -262,7 +276,7 @@ class AppleMusicApi {
           });
         }
       }
-  
+
       return playlistObjects;
     } catch (error) {
       console.error(
