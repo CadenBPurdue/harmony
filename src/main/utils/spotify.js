@@ -324,8 +324,6 @@ class SpotifyApi {
         await this.initialize();
       }
 
-      console.log("TESTING");
-
       // Make sure we have a user ID
       if (!this.user_id) {
         console.warn("[SpotifyApi] No user ID available, fetching...");
@@ -800,6 +798,42 @@ class SpotifyApi {
       throw new Error(
         "Failed to populate playlist: " + (error.message || "Unknown error"),
       );
+    }
+  }
+
+  async addSongsToPlaylist(playlist_id, songs) {
+    if (!this.auth_token) {
+      await this.initialize();
+    }
+
+    try {
+      var songUris = [];
+      for (const song of songs) {
+        const songResults = await this.findSong(song);
+        const songUri = songResults.uri;
+        songUris.push(songUri);
+      }
+
+      const response = await axios.post(
+        `https://api.spotify.com/v1/playlists/${playlist_id}/tracks`,
+        {
+          uris: songUris,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${this.auth_token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error(
+        "Error adding songs to playlist:",
+        error.response ? error.response.data : error.message,
+      );
+      throw new Error("Failed to add songs to playlist");
     }
   }
 
