@@ -1,5 +1,6 @@
 // src/main/utils/apple_music.js
 import axios from "axios";
+import { getPlaylistFromFirestore } from "./firebaseHelper.js";
 import {
   normalizeTrackTitle,
   normalizeArtistName,
@@ -342,6 +343,18 @@ class AppleMusicApi {
                 global.electronAPI &&
                 global.electronAPI.writePlaylistToFirestore
               ) {
+                try {
+                  const playlist = await getPlaylistFromFirestore(
+                    playlistForFirebase.id,
+                  );
+                  if (playlist) {
+                    playlistForFirebase.collabWith = playlist.collabWith;
+                  }
+                } catch {
+                  console.log(
+                    "[AppleMusicApi] Playlist not found in Firestore",
+                  );
+                }
                 global.electronAPI
                   .writePlaylistToFirestore(playlistForFirebase)
                   .catch((err) =>
@@ -608,6 +621,48 @@ class AppleMusicApi {
       isComplete: this.loadingProgress.isComplete,
       isLoading: this.isLoadingDetails,
     };
+  }
+
+  async addSongsToPlaylist(playlistId, songs) {
+    if (!this.api) {
+      await this.initialize();
+    }
+
+    console.log(`[AppleMusicApi] Adding songs to playlist: ${playlistId}`);
+
+    try {
+      // Find song IDs
+      const songIds = [];
+
+      for (const song of songs) {
+        const songId = await this.findSong(song);
+        if (songId) {
+          songIds.push({
+            id: songId,
+            type: "songs",
+          });
+        }
+      }
+
+      // Add songs to playlist
+      if (songIds.length > 0) {
+        await this.api.post(`/v1/me/library/playlists/${playlistId}/tracks`, {
+          data: songIds,
+        });
+      }
+
+      return {
+        success: true,
+        tracksAdded: songIds.length,
+        totalTracks: songs.length,
+      };
+    } catch (error) {
+      console.error("[AppleMusicApi] Error adding songs:", error.message);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
   }
 
   async findSong(songUF) {

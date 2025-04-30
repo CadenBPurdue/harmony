@@ -507,6 +507,83 @@ function Homepage() {
     fetchSharedPlaylists();
   }, []);
 
+  const getPlaylistDifferences = (recvPlaylist, myPlaylist) => {
+    // find the songs on recvPlaylist that are not on myPlaylist
+    var diffSongs = [];
+    recvPlaylist.tracks.forEach((track) => {
+      const found = myPlaylist.tracks.find((t) => t.name === track.name);
+      if (!found) {
+        diffSongs.push(track);
+      }
+    });
+    return diffSongs;
+  };
+
+  const fetchCollabPlaylists = async () => {
+    const collabPlaylistIds = await window.electronAPI.getCollabPlaylists();
+
+    if (!collabPlaylistIds || collabPlaylistIds.length === 0) {
+      return;
+    }
+
+    const myPlaylistIds = await window.electronAPI.getPlaylistsFromFirebase();
+    var myPlaylists = [];
+    myPlaylistIds.forEach(async (playlistId) => {
+      const playlist =
+        await window.electronAPI.getPlaylistFromFirebase(playlistId);
+      myPlaylists.push(playlist);
+    });
+
+    collabPlaylistIds.forEach(async (collabPlaylistId) => {
+      window.electronAPI.debug("Fetching collab playlist...");
+      const friendsPlaylist =
+        await window.electronAPI.getPlaylistFromFirebase(collabPlaylistId);
+
+      window.electronAPI.debug("Friends playlist:");
+      window.electronAPI.debug(friendsPlaylist);
+
+      const myPlaylist = myPlaylists.find(
+        (p) => p.name === friendsPlaylist.name,
+      );
+
+      window.electronAPI.debug("My playlist:");
+      window.electronAPI.debug(myPlaylist);
+
+      const diffSongs = getPlaylistDifferences(friendsPlaylist, myPlaylist);
+
+      window.electronAPI.debug("Diff songs:");
+      window.electronAPI.debug(diffSongs);
+
+      if (!diffSongs || diffSongs.length === 0) {
+        return;
+      }
+
+      if (myPlaylist.origin === "Spotify") {
+        await window.electronAPI.addSongsToSpotifyPlaylist(
+          myPlaylist.id,
+          diffSongs,
+        );
+        const updatedPlaylist = await window.electronAPI.getSpotifyPlaylist(
+          myPlaylist.id,
+        );
+        updatedPlaylist.collabWith.push(friendsPlaylist.userId);
+        await window.electronAPI.transferPlaylistToFirebase(updatedPlaylist);
+        hardResetSpotifyPlaylists();
+      } else {
+        await window.electronAPI.addSongsToAppleMusicPlaylist(
+          myPlaylist.id,
+          diffSongs,
+        );
+        const updatedPlaylist = await window.electronAPI.getAppleMusicPlaylist(
+          myPlaylist.id,
+        );
+        updatedPlaylist.collabWith.push(friendsPlaylist.userId);
+        await window.electronAPI.transferPlaylistToFirebase(updatedPlaylist);
+        refreshAppleMusicPlaylists();
+      }
+    });
+  };
+
   // Poll Apple Music playlist loading status
   const pollAppleMusicStatus = useCallback(() => {
     // Only poll if we have Apple Music playlists that may still be loading
@@ -673,6 +750,10 @@ function Homepage() {
       window.electronAPI.updatePrimaryService(userInfo.primaryService);
     }
   }, [userInfo]);
+
+  useEffect(() => {
+    fetchCollabPlaylists();
+  }, []);
 
   const refreshSpotifyPlaylists = () => {
     setLoadingSpotify(true);

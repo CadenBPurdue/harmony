@@ -90,6 +90,25 @@ contextBridge.exposeInMainWorld("electronAPI", {
     return ipcRenderer.invoke("transfer:appleMusic", playlist);
   },
 
+  normalizeSongTitle: (songTitle) => {
+    console.log("Calling normalizeSongTitle from preload");
+    return ipcRenderer.invoke("nomalize:songTitle", songTitle);
+  },
+
+  addSongsToSpotifyPlaylist: (playlistId, songs) => {
+    console.log("Calling addSongsToSpotifyPlaylist from preload");
+    return ipcRenderer.invoke("playlist:addSongsToSpotify", playlistId, songs);
+  },
+
+  addSongsToAppleMusicPlaylist: (playlistId, songs) => {
+    console.log("Calling addSongsToAppleMusicPlaylist from preload");
+    return ipcRenderer.invoke(
+      "playlist:addSongsToAppleMusic",
+      playlistId,
+      songs,
+    );
+  },
+
   removeSharedWith: (playlist) => {
     console.log("Calling removeSharedWith from preload");
     return ipcRenderer.invoke("firebase:removeSharedWith", playlist);
@@ -113,6 +132,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getSharedPlaylists: () => {
     console.log("Calling getSharedPlaylists from preload");
     return ipcRenderer.invoke("firebase:getSharedPlaylists");
+  },
+
+  getCollabPlaylists: () => {
+    console.log("Calling getCollabPlaylists from preload");
+    return ipcRenderer.invoke("firebase:getCollabPlaylists");
   },
 
   getUserInfoFromFirebase: (userId) => {
