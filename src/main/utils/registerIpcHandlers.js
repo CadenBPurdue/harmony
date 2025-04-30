@@ -273,6 +273,11 @@ export function registerIpcHandlers() {
     return appleMusicApi.getPlaylistLibrary(skipDetailsLoading);
   });
 
+  ipcMain.handle("library:appleMusicReset", async () => {
+    await appleMusicApi.initialize();
+    return appleMusicApi.getFreshPlaylistLibrary();
+  });
+
   ipcMain.handle("playlist:spotify", async (event, playlistId) => {
     await spotifyApi.initialize();
     return spotifyApi.getPlaylist(playlistId);
