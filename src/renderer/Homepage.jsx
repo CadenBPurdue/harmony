@@ -464,32 +464,85 @@ function Homepage() {
       const playlist =
         await window.electronAPI.getPlaylistFromFirebase(playlistId);
 
-      if (playlist.collabWith.includes(currentUser.userId)) {
-        addNotification({
-          type: "info",
-          message: `Collaborative playlist "${playlist.name}" from ${playlist.user} was transfered to your primary service.`,
-          read: false,
-        });
-      } else {
-        addNotification({
-          type: "info",
-          message: `Playlist "${playlist.name}" from ${playlist.user} was transfered to your primary service.`,
-          read: false,
-        });
-      }
-
       if (currentUser.primaryService === "appleMusic") {
         const results = await window.electronAPI.transferToAppleMusic(playlist);
+
+        if (playlist.collabWith.includes(currentUser.userId)) {
+          addNotification({
+            type: "info",
+            message: `Collaborative playlist "${playlist.name}" from ${playlist.user} was transfered to your primary service (${results.failedCount} songs were not transfered).`,
+            read: false,
+          });
+
+          if (results.failedCount > 0) {
+            const trackNames = results.failedSongs.map((song) => song.name);
+            addNotification({
+              type: "info",
+              message: `Failed songs: ${trackNames.join(", ")}`,
+              read: false,
+            });
+          }
+        } else {
+          addNotification({
+            type: "info",
+            message: `Playlist "${playlist.name}" from ${playlist.user} was transfered to your primary service (${results.failedCount} songs were not transfered).`,
+            read: false,
+          });
+
+          if (results.failedCount > 0) {
+            const trackNames = results.failedSongs.map((song) => song.name);
+            addNotification({
+              type: "info",
+              message: `Failed songs: ${trackNames.join(", ")}`,
+              read: false,
+            });
+          }
+        }
+
         var newPlaylist = await window.electronAPI.getAppleMusicPlaylist(
           results.playlistId,
         );
         if (playlist.collabWith.includes(currentUser.userId)) {
           newPlaylist.collabWith.push(playlist.userId);
         }
+
         await window.electronAPI.transferPlaylistToFirebase(newPlaylist);
         refreshAppleMusicPlaylists();
       } else {
         const results = await window.electronAPI.transferToSpotify(playlist);
+
+        if (playlist.collabWith.includes(currentUser.userId)) {
+          addNotification({
+            type: "info",
+            message: `Collaborative playlist "${playlist.name}" from ${playlist.user} was transfered to your primary service (${results.failedCount} songs were not transfered).`,
+            read: false,
+          });
+
+          if (results.failedCount > 0) {
+            const trackNames = results.failedSongs.map((song) => song.name);
+            addNotification({
+              type: "info",
+              message: `Failed songs: ${trackNames.join(", ")}`,
+              read: false,
+            });
+          }
+        } else {
+          addNotification({
+            type: "info",
+            message: `Playlist "${playlist.name}" from ${playlist.user} was transfered to your primary service (${results.failedCount} songs were not transfered).`,
+            read: false,
+          });
+
+          if (results.failedCount > 0) {
+            const trackNames = results.failedSongs.map((song) => song.name);
+            addNotification({
+              type: "info",
+              message: `Failed songs: ${trackNames.join(", ")}`,
+              read: false,
+            });
+          }
+        }
+
         var newPlaylist = await window.electronAPI.getSpotifyPlaylist(
           results.playlistId,
         );
