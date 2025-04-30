@@ -344,10 +344,10 @@ class AppleMusicApi {
                 global.electronAPI.writePlaylistToFirestore
               ) {
                 try {
-                  const playlist = await getPlaylistFromFirestore(
-                    playlistForFirebase.id,
-                  );
-                  playlistForFirebase.collabWith = playlist.collabWith;
+                  const playlist = await getPlaylistFromFirestore(playlistForFirebase.id);
+                  if (playlist) {                    
+                    playlistForFirebase.collabWith = playlist.collabWith;
+                  }
                 } catch {
                   console.log(
                     "[AppleMusicApi] Playlist not found in Firestore",

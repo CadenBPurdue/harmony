@@ -508,6 +508,7 @@ function Homepage() {
   }, []);
 
   const getPlaylistDifferences = (recvPlaylist, myPlaylist) => {
+
     // find the songs on recvPlaylist that are not on myPlaylist
     var diffSongs = [];
     recvPlaylist.tracks.forEach((track) => {
@@ -519,9 +520,10 @@ function Homepage() {
       }
     });
     return diffSongs;
-  };
+  }
 
   const fetchCollabPlaylists = async () => {
+
     const collabPlaylistIds = await window.electronAPI.getCollabPlaylists();
 
     if (!collabPlaylistIds || collabPlaylistIds.length === 0) {
@@ -554,6 +556,10 @@ function Homepage() {
 
       window.electronAPI.debug("Diff songs:");
       window.electronAPI.debug(diffSongs);
+
+      if (!diffSongs || diffSongs.length === 0) {
+        return;
+      }
 
       if (myPlaylist.origin === "Spotify") {
         await window.electronAPI.addSongsToSpotifyPlaylist(myPlaylist.id, diffSongs);
