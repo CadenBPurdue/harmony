@@ -806,6 +806,22 @@ function Homepage() {
       });
   };
 
+  const hardResetAppleMusicPlaylists = () => {
+    window.electronAPI
+      .resetAppleMusicLibrary()
+      .then((playlists) => {
+        setAppleMusicPlaylists(playlists);
+        setAppleMusicStatus({
+          loaded: playlists.length,
+          total: playlists.length,
+          isComplete: true,
+        });
+      })
+      .catch((error) => {
+        console.error("Error fetching Apple Music playlists:", error);
+      });
+  };
+
   // Handle transfer function
   const handleTransfer = async () => {
     setIsTransferring(true);
@@ -1194,7 +1210,7 @@ function Homepage() {
                     size="small"
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent triggering dropdown toggle
-                      refreshAppleMusicPlaylists();
+                      hardResetAppleMusicPlaylists();
                     }}
                     sx={{ color: "white", mr: 1 }}
                   >
